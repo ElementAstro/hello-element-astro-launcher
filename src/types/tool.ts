@@ -54,3 +54,28 @@ export interface ToolCategory {
 
 export type ToolCreateParams = Omit<Tool, "id">;
 export type ToolUpdateParams = Partial<Omit<Tool, "id">>;
+
+export type ToolInputValue = string | number | boolean;
+
+export interface TableRow {
+  [key: string]: CellValue;
+}
+
+// 改为类型别名
+export type TableData = TableRow[];
+
+// 添加具体的图表数据类型定义
+export interface ChartData {
+  type: "line" | "bar" | "pie" | "scatter" | "area";
+  data: {
+    labels?: string[];
+    datasets: Array<{
+      label?: string;
+      data: number[];
+      backgroundColor?: string | string[];
+      borderColor?: string | string[];
+    }>;
+  };
+}
+
+export type CellValue = string | number | boolean | null;

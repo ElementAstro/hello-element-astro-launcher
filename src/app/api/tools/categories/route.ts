@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server"
-import type { ToolCategory } from "@/types/tool"
+import { NextResponse } from "next/server";
+import type { ToolCategory } from "@/types/tool";
 
 // Mock data for tool categories
 const categories: ToolCategory[] = [
@@ -38,20 +38,22 @@ const categories: ToolCategory[] = [
     icon: "Wrench",
     count: 5,
   },
-]
+];
 
 export async function GET() {
   try {
     // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 300))
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
-    return NextResponse.json({ categories })
+    return NextResponse.json({ categories });
   } catch (error) {
-    console.error("Error fetching tool categories:", error)
+    console.error("Error fetching tool categories:", error);
     return NextResponse.json(
-      { error: "Failed to fetch tool categories", message: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 },
-    )
+      {
+        error: "Failed to fetch tool categories",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }
-

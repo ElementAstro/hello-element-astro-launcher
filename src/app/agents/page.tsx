@@ -20,6 +20,7 @@ import {
   Terminal,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,33 @@ import { toast, Toaster } from "sonner";
 
 import { useAppStore } from "@/store/store";
 import type { Agent, AgentLog } from "@/types/agent";
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: {
+    opacity: 0,
+    y: 20,
+  },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 24,
+    },
+  },
+};
 
 export default function AgentsPage() {
   const router = useRouter();
@@ -176,7 +204,11 @@ export default function AgentsPage() {
 
   return (
     <AppLayout>
-      <div className="flex-1 overflow-auto pb-16 md:pb-0">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex-1 overflow-auto pb-16 md:pb-0"
+      >
         <div className="container py-6 space-y-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
@@ -224,62 +256,83 @@ export default function AgentsPage() {
             </div>
           </div>
 
-          {isAgentLoading ? (
-            <div className="space-y-4">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Card key={i}>
-                  <CardHeader className="pb-2">
-                    <Skeleton className="h-6 w-48" />
-                    <Skeleton className="h-4 w-full" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex justify-between items-center">
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-4 w-24" />
+          <AnimatePresence mode="wait">
+            {isAgentLoading ? (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-4"
+              >
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Card key={i}>
+                    <CardHeader className="pb-2">
+                      <Skeleton className="h-6 w-48" />
+                      <Skeleton className="h-4 w-full" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex justify-between items-center">
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-4 w-24" />
+                        </div>
+                        <Skeleton className="h-9 w-24" />
                       </div>
-                      <Skeleton className="h-9 w-24" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : filteredAgents.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="rounded-full bg-muted p-3 mb-4">
-                <Terminal className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-medium">No agents found</h3>
-              <p className="text-muted-foreground mt-2 mb-4 max-w-md">
-                {searchQuery
-                  ? "No agents match your search criteria. Try a different search term."
-                  : "You haven't created any agents yet. Create your first agent to automate your astronomy workflow."}
-              </p>
-              <Button onClick={() => router.push("/agents/create")}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Agent
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredAgents.map((agent) => (
-                <AgentCard
-                  key={agent.id}
-                  agent={agent}
-                  onRun={handleRunAgent}
-                  onStop={handleStopAgent}
-                  onEdit={() => router.push(`/agents/edit/${agent.id}`)}
-                  onDelete={() => {
-                    setAgentToDelete(agent.id);
-                    setIsDeleteDialogOpen(true);
-                  }}
-                  onViewLogs={() => handleViewLogs(agent)}
-                />
-              ))}
-            </div>
-          )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </motion.div>
+            ) : filteredAgents.length === 0 ? (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="flex flex-col items-center justify-center py-12 text-center"
+              >
+                <div className="rounded-full bg-muted p-3 mb-4">
+                  <Terminal className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-medium">No agents found</h3>
+                <p className="text-muted-foreground mt-2 mb-4 max-w-md">
+                  {searchQuery
+                    ? "No agents match your search criteria. Try a different search term."
+                    : "You haven't created any agents yet. Create your first agent to automate your astronomy workflow."}
+                </p>
+                <Button onClick={() => router.push("/agents/create")}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Agent
+                </Button>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="agents"
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+                className="space-y-4"
+              >
+                {filteredAgents.map((agent) => (
+                  <motion.div key={agent.id} variants={itemVariants} layout>
+                    <AgentCard
+                      agent={agent}
+                      onRun={handleRunAgent}
+                      onStop={handleStopAgent}
+                      onEdit={() => router.push(`/agents/edit/${agent.id}`)}
+                      onDelete={() => {
+                        setAgentToDelete(agent.id);
+                        setIsDeleteDialogOpen(true);
+                      }}
+                      onViewLogs={() => handleViewLogs(agent)}
+                    />
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog
@@ -349,10 +402,12 @@ export default function AgentsPage() {
                           {log.level.toUpperCase()}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {log.timestamp ? format(
-                            parseISO(log.timestamp as string),
-                            "MMM d, yyyy HH:mm:ss"
-                          ) : ""}
+                          {log.timestamp
+                            ? format(
+                                parseISO(log.timestamp as string),
+                                "MMM d, yyyy HH:mm:ss"
+                              )
+                            : ""}
                         </span>
                       </div>
                       <p className="text-sm mt-1">{log.message}</p>
@@ -430,90 +485,100 @@ function AgentCard({
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              {agent.name}
-              {getStatusBadge()}
-            </CardTitle>
-            <CardDescription className="mt-1">
-              {agent.description}
-            </CardDescription>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onEdit}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onViewLogs}>
-                <Terminal className="h-4 w-4 mr-2" />
-                View Logs
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Copy className="h-4 w-4 mr-2" />
-                Duplicate
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive" onClick={onDelete}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col md:flex-row justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center text-sm text-muted-foreground">
-              <Calendar className="h-4 w-4 mr-2" />
-              <span>
-                Type: {agent.type.charAt(0).toUpperCase() + agent.type.slice(1)}
-              </span>
+    <motion.div
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+    >
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                {agent.name}
+                {getStatusBadge()}
+              </CardTitle>
+              <CardDescription className="mt-1">
+                {agent.description}
+              </CardDescription>
             </div>
-            {agent.lastRun && (
-              <div className="flex items-center text-sm text-muted-foreground">
-                <Clock className="h-4 w-4 mr-2" />
-                <span>
-                  Last run:{" "}
-                  {format(parseISO(agent.lastRun), "MMM d, yyyy HH:mm")}
-                </span>
-              </div>
-            )}
-            {agent.nextRun && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onEdit}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onViewLogs}>
+                  <Terminal className="h-4 w-4 mr-2" />
+                  View Logs
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Duplicate
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={onDelete}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row justify-between gap-4">
+            <div className="space-y-1">
               <div className="flex items-center text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4 mr-2" />
                 <span>
-                  Next run:{" "}
-                  {format(parseISO(agent.nextRun), "MMM d, yyyy HH:mm")}
+                  Type:{" "}
+                  {agent.type.charAt(0).toUpperCase() + agent.type.slice(1)}
                 </span>
               </div>
-            )}
-          </div>
+              {agent.lastRun && (
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4 mr-2" />
+                  <span>
+                    Last run:{" "}
+                    {format(parseISO(agent.lastRun), "MMM d, yyyy HH:mm")}
+                  </span>
+                </div>
+              )}
+              {agent.nextRun && (
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  <span>
+                    Next run:{" "}
+                    {format(parseISO(agent.nextRun), "MMM d, yyyy HH:mm")}
+                  </span>
+                </div>
+              )}
+            </div>
 
-          <div className="flex gap-2 self-end">
-            {agent.status === "running" ? (
-              <Button variant="outline" onClick={() => onStop(agent.id)}>
-                <Pause className="h-4 w-4 mr-2" />
-                Stop
-              </Button>
-            ) : (
-              <Button onClick={() => onRun(agent.id)}>
-                <Play className="h-4 w-4 mr-2" />
-                Run
-              </Button>
-            )}
+            <div className="flex gap-2 self-end">
+              {agent.status === "running" ? (
+                <Button variant="outline" onClick={() => onStop(agent.id)}>
+                  <Pause className="h-4 w-4 mr-2" />
+                  Stop
+                </Button>
+              ) : (
+                <Button onClick={() => onRun(agent.id)}>
+                  <Play className="h-4 w-4 mr-2" />
+                  Run
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }

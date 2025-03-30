@@ -1,4 +1,4 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
   try {
@@ -25,47 +25,58 @@ export async function GET() {
           percentUsed: 20,
         },
       },
-    }
+    };
 
-    return NextResponse.json({ systemInfo })
+    return NextResponse.json({ systemInfo });
   } catch (error) {
-    console.error("Error fetching system info:", error)
-    return NextResponse.json({ error: "Failed to fetch system information" }, { status: 500 })
+    console.error("Error fetching system info:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch system information" },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { action } = await request.json()
+    const { action } = await request.json();
 
     if (!action) {
-      return NextResponse.json({ error: "Missing required parameter: action" }, { status: 400 })
+      return NextResponse.json(
+        { error: "Missing required parameter: action" },
+        { status: 400 }
+      );
     }
 
     // Handle different system actions
     switch (action) {
       case "reload":
         // In a real application, this would reload the application
-        console.log("Reloading application")
+        console.log("Reloading application");
         return NextResponse.json({
           success: true,
           message: "Application reloaded successfully",
-        })
+        });
 
       case "shutdown":
         // In a real application, this would shut down the application
-        console.log("Shutting down application")
+        console.log("Shutting down application");
         return NextResponse.json({
           success: true,
           message: "Application shut down successfully",
-        })
+        });
 
       default:
-        return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 })
+        return NextResponse.json(
+          { error: `Unknown action: ${action}` },
+          { status: 400 }
+        );
     }
   } catch (error) {
-    console.error("Error performing system action:", error)
-    return NextResponse.json({ error: "Failed to perform system action" }, { status: 500 })
+    console.error("Error performing system action:", error);
+    return NextResponse.json(
+      { error: "Failed to perform system action" },
+      { status: 500 }
+    );
   }
 }
-

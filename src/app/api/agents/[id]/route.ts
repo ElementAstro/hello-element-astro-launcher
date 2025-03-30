@@ -1,6 +1,10 @@
-import { type NextRequest, NextResponse } from "next/server"
-import type { AgentUpdateParams } from "@/types/agent"
-import { v4 as uuidv4 } from "uuid"
+import { type NextRequest, NextResponse } from "next/server";
+import type {
+  AgentUpdateParams,
+  AgentLog,
+  AgentConfig,
+} from "@/types/agent";
+import { v4 as uuidv4 } from "uuid";
 
 // This would normally be imported from a database
 // For this example, we'll use the agents array from the main route
@@ -9,7 +13,8 @@ const agents = [
   {
     id: "1",
     name: "Nightly Imaging Sequence",
-    description: "Automatically captures a series of deep sky objects based on visibility and weather conditions",
+    description:
+      "Automatically captures a series of deep sky objects based on visibility and weather conditions",
     status: "idle",
     type: "imaging",
     lastRun: "2023-12-15T20:30:00Z",
@@ -83,7 +88,8 @@ const agents = [
   {
     id: "2",
     name: "Weather Monitor",
-    description: "Monitors weather conditions and sends alerts when conditions change",
+    description:
+      "Monitors weather conditions and sends alerts when conditions change",
     status: "running",
     type: "observation",
     lastRun: "2023-12-16T18:00:00Z",
@@ -126,89 +132,131 @@ const agents = [
       },
     ],
   },
-]
+];
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const id = params.id
-    const agent = agents.find((a) => a.id === id)
+    const id = params.id;
+    const agent = agents.find((a) => a.id === id);
 
     if (!agent) {
-      return NextResponse.json({ error: "Agent not found", message: `Agent with id ${id} not found` }, { status: 404 })
+      return NextResponse.json(
+        { error: "Agent not found", message: `Agent with id ${id} not found` },
+        { status: 404 }
+      );
     }
 
     // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 300))
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
-    return NextResponse.json({ agent })
+    return NextResponse.json({ agent });
   } catch (error) {
-    console.error(`Error fetching agent ${params.id}:`, error)
+    console.error(`Error fetching agent ${params.id}:`, error);
     return NextResponse.json(
-      { error: "Failed to fetch agent", message: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 },
-    )
+      {
+        error: "Failed to fetch agent",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const id = params.id
-    const updates: AgentUpdateParams = await request.json()
+    const id = params.id;
+    const updates: AgentUpdateParams = await request.json();
 
-    const agentIndex = agents.findIndex((a) => a.id === id)
+    const agentIndex = agents.findIndex((a) => a.id === id);
     if (agentIndex === -1) {
-      return NextResponse.json({ error: "Agent not found", message: `Agent with id ${id} not found` }, { status: 404 })
+      return NextResponse.json(
+        { error: "Agent not found", message: `Agent with id ${id} not found` },
+        { status: 404 }
+      );
     }
 
-    // Update agent
+    // Update agent while preserving the original structure
     const updatedAgent = {
       ...agents[agentIndex],
       ...updates,
       updatedAt: new Date().toISOString(),
-    }
+      lastRun: updates.lastRun ?? agents[agentIndex].lastRun,
+      nextRun: updates.nextRun ?? agents[agentIndex].nextRun ?? undefined,
+    };
 
-    // Add new logs if provided
+    // Add new logs if provided with proper typing
     if (updates.logs) {
-      updatedAgent.logs = [...updatedAgent.logs, ...updates.logs.map((log) => ({ ...log, id: uuidv4() }))]
+      const newLogs: AgentLog[] = updates.logs.map((log) => ({
+        ...log,
+        id: uuidv4(), // Always generate a new ID for each log
+      }));
+      updatedAgent.logs = [
+        ...(updatedAgent.logs || []),
+        ...newLogs,
+      ] as AgentLog[];
     }
 
-    agents[agentIndex] = updatedAgent
+    // Ensure config structure is maintained
+    if (updates.config) {
+      updatedAgent.config = {
+        ...agents[agentIndex].config,
+        ...updates.config,
+      } as AgentConfig;
+    }
 
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 300))
+    agents[agentIndex] = updatedAgent;
 
-    return NextResponse.json({ agent: updatedAgent })
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    return NextResponse.json({ agent: updatedAgent });
   } catch (error) {
-    console.error(`Error updating agent ${params.id}:`, error)
+    console.error(`Error updating agent ${params.id}:`, error);
     return NextResponse.json(
-      { error: "Failed to update agent", message: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 },
-    )
+      {
+        error: "Failed to update agent",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const id = params.id
+    const id = params.id;
 
-    const agentIndex = agents.findIndex((a) => a.id === id)
+    const agentIndex = agents.findIndex((a) => a.id === id);
     if (agentIndex === -1) {
-      return NextResponse.json({ error: "Agent not found", message: `Agent with id ${id} not found` }, { status: 404 })
+      return NextResponse.json(
+        { error: "Agent not found", message: `Agent with id ${id} not found` },
+        { status: 404 }
+      );
     }
 
     // Remove agent
-    agents.splice(agentIndex, 1)
+    agents.splice(agentIndex, 1);
 
     // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 300))
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error(`Error deleting agent ${params.id}:`, error)
+    console.error(`Error deleting agent ${params.id}:`, error);
     return NextResponse.json(
-      { error: "Failed to delete agent", message: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 },
-    )
+      {
+        error: "Failed to delete agent",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }
-

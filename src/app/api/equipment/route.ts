@@ -1,5 +1,5 @@
-import { type NextRequest, NextResponse } from "next/server"
-import type { EquipmentItem } from "@/types"
+import { type NextRequest, NextResponse } from "next/server";
+import type { EquipmentItem } from "@/types";
 
 export async function GET() {
   try {
@@ -32,22 +32,28 @@ export async function GET() {
           cooling: "Yes",
         },
       },
-    ]
+    ];
 
-    return NextResponse.json({ equipment })
+    return NextResponse.json({ equipment });
   } catch (error) {
-    console.error("Error fetching equipment:", error)
-    return NextResponse.json({ error: "Failed to fetch equipment" }, { status: 500 })
+    console.error("Error fetching equipment:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch equipment" },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json()
+    const data = await request.json();
 
     // Validate the equipment data
     if (!data.name || !data.type) {
-      return NextResponse.json({ error: "Missing required fields: name, type" }, { status: 400 })
+      return NextResponse.json(
+        { error: "Missing required fields: name, type" },
+        { status: 400 }
+      );
     }
 
     // In a real application, this would save to a database
@@ -59,16 +65,18 @@ export async function POST(request: NextRequest) {
       status: data.status || "Disconnected",
       driver: data.driver || "",
       details: data.details || {},
-    }
+    };
 
     return NextResponse.json({
       success: true,
       message: "Equipment added successfully",
       equipment: newEquipment,
-    })
+    });
   } catch (error) {
-    console.error("Error adding equipment:", error)
-    return NextResponse.json({ error: "Failed to add equipment" }, { status: 500 })
+    console.error("Error adding equipment:", error);
+    return NextResponse.json(
+      { error: "Failed to add equipment" },
+      { status: 500 }
+    );
   }
 }
-

@@ -23,7 +23,14 @@ import {
   Copy,
   History,
 } from "lucide-react";
-
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,7 +82,15 @@ import {
 } from "@/components/ui/select";
 
 import { useAppStore } from "@/store/store";
-import type { Tool, ToolInput, ToolResult, ToolInputValue, TableData, ChartData, CellValue } from "@/types/tool";
+import type {
+  Tool,
+  ToolInput,
+  ToolResult,
+  ToolInputValue,
+  TableData,
+  ChartData,
+  CellValue,
+} from "@/types/tool";
 import { format, parseISO } from "date-fns";
 
 export default function ToolsPage() {
@@ -86,7 +101,9 @@ export default function ToolsPage() {
   const [toolToDelete, setToolToDelete] = useState<string | null>(null);
   const [isRunDialogOpen, setIsRunDialogOpen] = useState(false);
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
-  const [toolInputs, setToolInputs] = useState<Record<string, ToolInputValue>>({});
+  const [toolInputs, setToolInputs] = useState<Record<string, ToolInputValue>>(
+    {}
+  );
   const [toolResult, setToolResult] = useState<ToolResult | null>(null);
   const [isRunning, setIsRunning] = useState(false);
 
@@ -105,7 +122,7 @@ export default function ToolsPage() {
     const loadData = async () => {
       try {
         await Promise.all([fetchTools(), fetchToolCategories()]);
-      } catch (_) {
+      } catch {
         toast("Failed to load tools. Please try again.");
       }
     };
@@ -136,13 +153,11 @@ export default function ToolsPage() {
       setIsDeleteDialogOpen(false);
       setToolToDelete(null);
       toast("Tool Deleted", {
-        description: "The tool has been deleted successfully."
+        description: "The tool has been deleted successfully.",
       });
-    } catch (error) {
-      toast({
-        title: "Error",
+    } catch {
+      toast.error("Error", {
         description: "Failed to delete tool. Please try again.",
-        variant: "destructive",
       });
     }
   };
@@ -150,11 +165,9 @@ export default function ToolsPage() {
   const handleToggleFavorite = async (id: string) => {
     try {
       await toggleToolFavorite(id);
-    } catch (error) {
-      toast({
-        title: "Error",
+    } catch {
+      toast.error("Error", {
         description: "Failed to update favorite status. Please try again.",
-        variant: "destructive",
       });
     }
   };
@@ -168,10 +181,8 @@ export default function ToolsPage() {
       .map((input) => input.name);
 
     if (missingInputs.length > 0) {
-      toast({
-        title: "Missing Required Inputs",
+      toast.error("Missing Required Inputs", {
         description: `Please provide values for: ${missingInputs.join(", ")}`,
-        variant: "destructive",
       });
       return;
     }
@@ -182,15 +193,12 @@ export default function ToolsPage() {
     try {
       const result = await runTool(selectedTool.id, toolInputs);
       setToolResult(result);
-      toast({
-        title: "Tool Executed",
+      toast("Tool Executed", {
         description: "The tool has been executed successfully.",
       });
-    } catch (error) {
-      toast({
-        title: "Error",
+    } catch {
+      toast.error("Error", {
         description: "Failed to run tool. Please try again.",
-        variant: "destructive",
       });
     } finally {
       setIsRunning(false);
@@ -216,33 +224,13 @@ export default function ToolsPage() {
   const handleRefresh = async () => {
     try {
       await Promise.all([fetchTools(), fetchToolCategories()]);
-      toast({
-        title: "Refreshed",
+      toast("Refreshed", {
         description: "Tool list has been refreshed.",
       });
-    } catch (error) {
-      toast({
-        title: "Error",
+    } catch {
+      toast.error("Error", {
         description: "Failed to refresh tools. Please try again.",
-        variant: "destructive",
       });
-    }
-  };
-
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case "calculation":
-        return <Calculator className="h-4 w-4" />;
-      case "conversion":
-        return <ArrowLeftRight className="h-4 w-4" />;
-      case "planning":
-        return <Calendar className="h-4 w-4" />;
-      case "analysis":
-        return <BarChart className="h-4 w-4" />;
-      case "utility":
-        return <Wrench className="h-4 w-4" />;
-      default:
-        return <Wrench className="h-4 w-4" />;
     }
   };
 
@@ -481,7 +469,11 @@ export default function ToolsPage() {
                             {output.type === "image" ? (
                               <div className="border rounded-md p-2 flex justify-center">
                                 <Image
-                                  src={typeof value === "string" ? value : "/placeholder.svg"}
+                                  src={
+                                    typeof value === "string"
+                                      ? value
+                                      : "/placeholder.svg"
+                                  }
                                   alt={output.name}
                                   width={300}
                                   height={200}
@@ -490,43 +482,37 @@ export default function ToolsPage() {
                               </div>
                             ) : output.type === "table" ? (
                               <div className="border rounded-md overflow-x-auto">
-                                <table className="min-w-full divide-y divide-border">
-                                  <thead className="bg-muted">
-                                    <tr>
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
                                       {Object.keys(value[0] || {}).map(
                                         (key) => (
-                                          <th
-                                            key={key}
-                                            className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
-                                          >
-                                            {key}
-                                          </th>
+                                          <TableHead key={key}>{key}</TableHead>
                                         )
                                       )}
-                                    </tr>
-                                  </thead>
-                                  <tbody className="bg-card divide-y divide-border">
-                                    {value.map((row: TableRow, i: number) => (
-                                      <tr key={i}>
-                                        {Object.values(row).map(
-                                          (cell: CellValue, j: number) => (
-                                            <td
-                                              key={j}
-                                              className="px-4 py-2 text-sm"
-                                            >
-                                              {cell?.toString()}
-                                            </td>
-                                          )
-                                        )}
-                                      </tr>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {(value as TableRow[]).map((row, i) => (
+                                      <TableRow key={i}>
+                                        {Object.values(row).map((cell, j) => (
+                                          <TableCell key={j}>
+                                            {cell?.toString()}
+                                          </TableCell>
+                                        ))}
+                                      </TableRow>
                                     ))}
-                                  </tbody>
-                                </table>
+                                  </TableBody>
+                                </Table>
                               </div>
                             ) : output.type === "chart" ? (
                               <div className="border rounded-md p-2 flex justify-center">
                                 <Image
-                                  src={typeof value === "string" ? value : "/placeholder.svg"}
+                                  src={
+                                    typeof value === "string"
+                                      ? value
+                                      : "/placeholder.svg"
+                                  }
                                   alt={output.name}
                                   width={400}
                                   height={200}
@@ -769,7 +755,10 @@ function ToolInputField({ input, value, onChange }: ToolInputFieldProps) {
             </SelectTrigger>
             <SelectContent>
               {input.options?.map((option) => (
-                <SelectItem key={String(option.value)} value={String(option.value)}>
+                <SelectItem
+                  key={String(option.value)}
+                  value={String(option.value)}
+                >
                   {option.label}
                 </SelectItem>
               ))}

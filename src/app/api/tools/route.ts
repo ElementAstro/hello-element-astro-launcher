@@ -1,13 +1,14 @@
-import { type NextRequest, NextResponse } from "next/server"
-import type { Tool, ToolCreateParams } from "@/types/tool"
-import { v4 as uuidv4 } from "uuid"
+import { type NextRequest, NextResponse } from "next/server";
+import type { Tool, ToolCreateParams } from "@/types/tool";
+import { v4 as uuidv4 } from "uuid";
 
 // Mock data for tools
 const tools: Tool[] = [
   {
     id: "1",
     name: "Exposure Calculator",
-    description: "Calculate optimal exposure settings based on equipment and target",
+    description:
+      "Calculate optimal exposure settings based on equipment and target",
     category: "calculation",
     icon: "/placeholder.svg?height=40&width=40",
     lastUsed: "2023-12-15T20:30:00Z",
@@ -140,7 +141,8 @@ const tools: Tool[] = [
   {
     id: "3",
     name: "Imaging Session Planner",
-    description: "Plan your imaging session based on target visibility and weather",
+    description:
+      "Plan your imaging session based on target visibility and weather",
     category: "planning",
     icon: "/placeholder.svg?height=40&width=40",
     lastUsed: "2023-12-14T21:00:00Z",
@@ -190,33 +192,39 @@ const tools: Tool[] = [
       },
     ],
   },
-]
+];
 
 export async function GET() {
   try {
     // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
-    return NextResponse.json({ tools })
+    return NextResponse.json({ tools });
   } catch (error) {
-    console.error("Error fetching tools:", error)
+    console.error("Error fetching tools:", error);
     return NextResponse.json(
-      { error: "Failed to fetch tools", message: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 },
-    )
+      {
+        error: "Failed to fetch tools",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const data: ToolCreateParams = await request.json()
+    const data: ToolCreateParams = await request.json();
 
     // Validate required fields
     if (!data.name || !data.category || !data.inputs || !data.outputs) {
       return NextResponse.json(
-        { error: "Missing required fields", message: "Name, category, inputs, and outputs are required" },
-        { status: 400 },
-      )
+        {
+          error: "Missing required fields",
+          message: "Name, category, inputs, and outputs are required",
+        },
+        { status: 400 }
+      );
     }
 
     // Create new tool
@@ -229,23 +237,25 @@ export async function POST(request: NextRequest) {
       favorite: data.favorite || false,
       inputs: data.inputs,
       outputs: data.outputs,
-    }
+    };
 
-    if (data.lastUsed) newTool.lastUsed = data.lastUsed
+    if (data.lastUsed) newTool.lastUsed = data.lastUsed;
 
     // Add to tools array
-    tools.push(newTool)
+    tools.push(newTool);
 
     // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
-    return NextResponse.json({ tool: newTool }, { status: 201 })
+    return NextResponse.json({ tool: newTool }, { status: 201 });
   } catch (error) {
-    console.error("Error creating tool:", error)
+    console.error("Error creating tool:", error);
     return NextResponse.json(
-      { error: "Failed to create tool", message: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 },
-    )
+      {
+        error: "Failed to create tool",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }
-

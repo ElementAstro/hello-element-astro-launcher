@@ -1,4 +1,4 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server";
 
 // This would normally be imported from a database
 // For this example, we'll use the tools array from the main route
@@ -7,7 +7,8 @@ const tools = [
   {
     id: "1",
     name: "Exposure Calculator",
-    description: "Calculate optimal exposure settings based on equipment and target",
+    description:
+      "Calculate optimal exposure settings based on equipment and target",
     category: "calculation",
     icon: "/placeholder.svg?height=40&width=40",
     lastUsed: "2023-12-15T20:30:00Z",
@@ -140,7 +141,8 @@ const tools = [
   {
     id: "3",
     name: "Imaging Session Planner",
-    description: "Plan your imaging session based on target visibility and weather",
+    description:
+      "Plan your imaging session based on target visibility and weather",
     category: "planning",
     icon: "/placeholder.svg?height=40&width=40",
     lastUsed: "2023-12-14T21:00:00Z",
@@ -190,31 +192,39 @@ const tools = [
       },
     ],
   },
-]
+];
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const id = params.id
-    const { favorite } = await request.json()
+    const id = params.id;
+    const { favorite } = await request.json();
 
-    const toolIndex = tools.findIndex((t) => t.id === id)
+    const toolIndex = tools.findIndex((t) => t.id === id);
     if (toolIndex === -1) {
-      return NextResponse.json({ error: "Tool not found", message: `Tool with id ${id} not found` }, { status: 404 })
+      return NextResponse.json(
+        { error: "Tool not found", message: `Tool with id ${id} not found` },
+        { status: 404 }
+      );
     }
 
     // Update favorite status
-    tools[toolIndex].favorite = favorite
+    tools[toolIndex].favorite = favorite;
 
     // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 200))
+    await new Promise((resolve) => setTimeout(resolve, 200));
 
-    return NextResponse.json({ tool: tools[toolIndex] })
+    return NextResponse.json({ tool: tools[toolIndex] });
   } catch (error) {
-    console.error(`Error toggling favorite for tool ${params.id}:`, error)
+    console.error(`Error toggling favorite for tool ${params.id}:`, error);
     return NextResponse.json(
-      { error: "Failed to toggle favorite", message: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 },
-    )
+      {
+        error: "Failed to toggle favorite",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }
-

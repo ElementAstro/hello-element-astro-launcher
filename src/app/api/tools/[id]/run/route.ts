@@ -1,6 +1,6 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { v4 as uuidv4 } from "uuid"
-import type { ToolResult } from "@/types/tool"
+import { type NextRequest, NextResponse } from "next/server";
+import { v4 as uuidv4 } from "uuid";
+import type { ToolResult } from "@/types/tool";
 
 // This would normally be imported from a database
 // For this example, we'll use the tools array from the main route
@@ -9,7 +9,8 @@ const tools = [
   {
     id: "1",
     name: "Exposure Calculator",
-    description: "Calculate optimal exposure settings based on equipment and target",
+    description:
+      "Calculate optimal exposure settings based on equipment and target",
     category: "calculation",
     icon: "/placeholder.svg?height=40&width=40",
     lastUsed: "2023-12-15T20:30:00Z",
@@ -142,7 +143,8 @@ const tools = [
   {
     id: "3",
     name: "Imaging Session Planner",
-    description: "Plan your imaging session based on target visibility and weather",
+    description:
+      "Plan your imaging session based on target visibility and weather",
     category: "planning",
     icon: "/placeholder.svg?height=40&width=40",
     lastUsed: "2023-12-14T21:00:00Z",
@@ -192,44 +194,60 @@ const tools = [
       },
     ],
   },
-]
+];
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const id = params.id
-    const { inputs } = await request.json()
+    const id = params.id;
+    const { inputs } = await request.json();
 
-    const tool = tools.find((t) => t.id === id)
+    const tool = tools.find((t) => t.id === id);
     if (!tool) {
-      return NextResponse.json({ error: "Tool not found", message: `Tool with id ${id} not found` }, { status: 404 })
+      return NextResponse.json(
+        { error: "Tool not found", message: `Tool with id ${id} not found` },
+        { status: 404 }
+      );
     }
 
     // Validate required inputs
     const missingInputs = tool.inputs
       .filter((input) => input.required && !inputs[input.name])
-      .map((input) => input.name)
+      .map((input) => input.name);
 
     if (missingInputs.length > 0) {
       return NextResponse.json(
         {
           error: "Missing required inputs",
-          message: `The following required inputs are missing: ${missingInputs.join(", ")}`,
+          message: `The following required inputs are missing: ${missingInputs.join(
+            ", "
+          )}`,
         },
-        { status: 400 },
-      )
+        { status: 400 }
+      );
     }
 
     // Update tool lastUsed
-    tool.lastUsed = new Date().toISOString()
+    tool.lastUsed = new Date().toISOString();
 
     // Simulate tool execution
-    const startTime = Date.now()
+    const startTime = Date.now();
 
     // Simulate processing delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Generate mock outputs based on the tool
-    let outputs: Record<string, any> = {}
+    type OutputValue =
+      | string
+      | number
+      | boolean
+      | null
+      | { [key: string]: string | number }[] // 用于表格数据
+      | string[]; // 用于图表数据
+
+    // 替换原来的 Record<string, any>
+    let outputs: Record<string, OutputValue> = {};
 
     if (id === "1") {
       // Exposure Calculator
@@ -238,26 +256,34 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         iso: [100, 200, 400, 800, 1600, 3200][Math.floor(Math.random() * 6)],
         gain: Math.round(Math.random() * 200 + 50),
         frameCount: Math.round(Math.random() * 50 + 20),
-      }
+      };
     } else if (id === "2") {
       // Polar Alignment Assistant
       outputs = {
         polarStarPosition: "/placeholder.svg?height=200&width=200",
-        azimuth: `${(Math.random() * 2 - 1).toFixed(2)}° ${Math.random() > 0.5 ? "East" : "West"}`,
-        altitude: `${(Math.random() * 2 - 1).toFixed(2)}° ${Math.random() > 0.5 ? "Up" : "Down"}`,
-      }
+        azimuth: `${(Math.random() * 2 - 1).toFixed(2)}° ${
+          Math.random() > 0.5 ? "East" : "West"
+        }`,
+        altitude: `${(Math.random() * 2 - 1).toFixed(2)}° ${
+          Math.random() > 0.5 ? "Up" : "Down"
+        }`,
+      };
     } else if (id === "3") {
       // Imaging Session Planner
-      const targets = inputs.targets.split(",").map((t: string) => t.trim())
+      const targets = inputs.targets.split(",").map((t: string) => t.trim());
 
       outputs = {
         visibilityChart: "/placeholder.svg?height=300&width=600",
         optimalTimes: targets.map((target: string) => ({
           target,
-          start: `${Math.floor(Math.random() * 4 + 20)}:${Math.floor(Math.random() * 60)
+          start: `${Math.floor(Math.random() * 4 + 20)}:${Math.floor(
+            Math.random() * 60
+          )
             .toString()
             .padStart(2, "0")}`,
-          end: `${Math.floor(Math.random() * 4 + 1)}:${Math.floor(Math.random() * 60)
+          end: `${Math.floor(Math.random() * 4 + 1)}:${Math.floor(
+            Math.random() * 60
+          )
             .toString()
             .padStart(2, "0")}`,
           altitude: `${Math.floor(Math.random() * 60 + 30)}°`,
@@ -267,11 +293,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
           Math.random() > 0.3
             ? "Clear skies expected with good seeing conditions"
             : "Partly cloudy with moderate seeing conditions",
-      }
+      };
     }
 
-    const endTime = Date.now()
-    const duration = endTime - startTime
+    const endTime = Date.now();
+    const duration = endTime - startTime;
 
     // Create result
     const result: ToolResult = {
@@ -282,15 +308,17 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       outputs,
       duration,
       status: "completed",
-    }
+    };
 
-    return NextResponse.json({ result })
+    return NextResponse.json({ result });
   } catch (error) {
-    console.error(`Error running tool ${params.id}:`, error)
+    console.error(`Error running tool ${params.id}:`, error);
     return NextResponse.json(
-      { error: "Failed to run tool", message: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 },
-    )
+      {
+        error: "Failed to run tool",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }
-

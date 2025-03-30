@@ -1,34 +1,46 @@
-import { type NextRequest, NextResponse } from "next/server"
-import type { Software, SoftwareImportResult } from "@/types"
+import { type NextRequest, NextResponse } from "next/server";
+import type { Software, SoftwareImportResult } from "@/types";
 
 export async function POST(request: NextRequest) {
   try {
     // Parse the JSON data from the request
-    const data = await request.json()
+    const data = await request.json();
 
     if (!Array.isArray(data)) {
-      return NextResponse.json({ error: "Invalid data format. Expected an array of software items." }, { status: 400 })
+      return NextResponse.json(
+        { error: "Invalid data format. Expected an array of software items." },
+        { status: 400 }
+      );
     }
 
     // Validate the software items
-    const validatedSoftware: Software[] = []
-    const failedItems: { name: string; reason: string }[] = []
+    const validatedSoftware: Software[] = [];
+    const failedItems: { name: string; reason: string }[] = [];
 
     data.forEach((item, index) => {
       // Check required fields
       if (!item.name) {
-        failedItems.push({ name: `Item ${index}`, reason: "Missing required field: name" })
-        return
+        failedItems.push({
+          name: `Item ${index}`,
+          reason: "Missing required field: name",
+        });
+        return;
       }
 
       if (!item.description) {
-        failedItems.push({ name: item.name, reason: "Missing required field: description" })
-        return
+        failedItems.push({
+          name: item.name,
+          reason: "Missing required field: description",
+        });
+        return;
       }
 
       if (!item.category) {
-        failedItems.push({ name: item.name, reason: "Missing required field: category" })
-        return
+        failedItems.push({
+          name: item.name,
+          reason: "Missing required field: category",
+        });
+        return;
       }
 
       // Add default values for missing fields
@@ -51,10 +63,10 @@ export async function POST(request: NextRequest) {
         tags: item.tags || [],
         rating: item.rating || 0,
         releaseNotes: item.releaseNotes || "",
-      }
+      };
 
-      validatedSoftware.push(softwareItem)
-    })
+      validatedSoftware.push(softwareItem);
+    });
 
     // In a real application, you would save this to a database
     // For now, we'll just return the validated software
@@ -65,20 +77,22 @@ export async function POST(request: NextRequest) {
       updatedCount: 0,
       failedCount: failedItems.length,
       failedItems: failedItems.length > 0 ? failedItems : undefined,
-    }
+    };
 
     return NextResponse.json({
       success: true,
       message: result.message,
       data: validatedSoftware,
       result,
-    })
+    });
   } catch (error) {
-    console.error("Error importing software:", error)
+    console.error("Error importing software:", error);
     return NextResponse.json(
-      { error: "Failed to import software", message: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 },
-    )
+      {
+        error: "Failed to import software",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }
-

@@ -1,150 +1,337 @@
-"use client"
+"use client";
 
-import type React from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Home, Download, Layers, Box, Cpu, PenToolIcon as Tool, Settings, Power } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Button } from "@/components/ui/button"
-import { useAppStore } from "@/lib/store"
+import type React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  Home,
+  Download,
+  Layers,
+  Box,
+  Cpu,
+  PenToolIcon as Tool,
+  Settings,
+  Power,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { useAppStore } from "@/store/store";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function MainNav() {
-  const pathname = usePathname()
-  const { setSystemModalOpen } = useAppStore()
+  const pathname = usePathname();
+  const { setSystemModalOpen } = useAppStore();
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // 宽屏自动展开导航功能
+  useEffect(() => {
+    const handleResize = () => {
+      // 宽屏幕自动展开导航栏
+      if (typeof window !== "undefined" && window.innerWidth >= 1920) {
+        setIsExpanded(true);
+      } else {
+        setIsExpanded(false);
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      handleResize(); // 初始化时检查窗口宽度
+      window.addEventListener("resize", handleResize);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("resize", handleResize);
+      }
+    };
+  }, []);
+
+  const toggleExpand = () => {
+    setIsExpanded(!isExpanded);
+  };
 
   return (
-    <div className="hidden md:flex flex-col items-center w-16 py-4 border-r bg-muted/30">
+    <motion.div
+      className="hidden md:flex flex-col items-center border-r bg-muted/30"
+      animate={{ width: isExpanded ? "14rem" : "4rem" }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+    >
+      <div className="flex justify-end w-full p-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleExpand}
+          className="p-1 h-6 w-6"
+        >
+          <motion.span
+            initial={false}
+            animate={{ rotate: isExpanded ? 0 : 180 }}
+            transition={{ duration: 0.3 }}
+          >
+            «
+          </motion.span>
+        </Button>
+      </div>
+
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link href="/" className="mb-6">
-              <NavItem icon={<Home className="h-5 w-5" />} label="Home" active={pathname === "/"} />
+            <Link href="/" className="mb-6 w-full">
+              <NavItem
+                icon={<Home className="h-5 w-5" />}
+                label="Home"
+                active={pathname === "/"}
+                showText={isExpanded}
+              />
             </Link>
           </TooltipTrigger>
-          <TooltipContent side="right">Home</TooltipContent>
+          <TooltipContent side="right" className={isExpanded ? "hidden" : ""}>
+            Home
+          </TooltipContent>
         </Tooltip>
       </TooltipProvider>
 
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link href="/launcher">
-              <NavItem icon={<Box className="h-5 w-5" />} label="Launcher" active={pathname === "/launcher"} />
+            <Link href="/launcher" className="w-full">
+              <NavItem
+                icon={<Box className="h-5 w-5" />}
+                label="Launcher"
+                active={pathname === "/launcher"}
+                showText={isExpanded}
+              />
             </Link>
           </TooltipTrigger>
-          <TooltipContent side="right">Launcher</TooltipContent>
+          <TooltipContent side="right" className={isExpanded ? "hidden" : ""}>
+            Launcher
+          </TooltipContent>
         </Tooltip>
       </TooltipProvider>
 
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link href="/download">
-              <NavItem icon={<Download className="h-5 w-5" />} label="Download" active={pathname === "/download"} />
+            <Link href="/download" className="w-full">
+              <NavItem
+                icon={<Download className="h-5 w-5" />}
+                label="Download"
+                active={pathname === "/download"}
+                showText={isExpanded}
+              />
             </Link>
           </TooltipTrigger>
-          <TooltipContent side="right">Download</TooltipContent>
+          <TooltipContent side="right" className={isExpanded ? "hidden" : ""}>
+            Download
+          </TooltipContent>
         </Tooltip>
       </TooltipProvider>
 
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link href="/environment">
-              <NavItem icon={<Layers className="h-5 w-5" />} label="Environment" active={pathname === "/environment"} />
+            <Link href="/environment" className="w-full">
+              <NavItem
+                icon={<Layers className="h-5 w-5" />}
+                label="Environment"
+                active={pathname === "/environment"}
+                showText={isExpanded}
+              />
             </Link>
           </TooltipTrigger>
-          <TooltipContent side="right">Environment</TooltipContent>
+          <TooltipContent side="right" className={isExpanded ? "hidden" : ""}>
+            Environment
+          </TooltipContent>
         </Tooltip>
       </TooltipProvider>
 
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link href="/blocks">
-              <NavItem icon={<Cpu className="h-5 w-5" />} label="Blocks" active={pathname === "/blocks"} />
+            <Link href="/blocks" className="w-full">
+              <NavItem
+                icon={<Cpu className="h-5 w-5" />}
+                label="Blocks"
+                active={pathname === "/blocks"}
+                showText={isExpanded}
+              />
             </Link>
           </TooltipTrigger>
-          <TooltipContent side="right">Blocks</TooltipContent>
+          <TooltipContent side="right" className={isExpanded ? "hidden" : ""}>
+            Blocks
+          </TooltipContent>
         </Tooltip>
       </TooltipProvider>
 
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link href="/proxy">
-              <NavItem icon={<Box className="h-5 w-5" />} label="Proxy" active={pathname === "/proxy"} />
+            <Link href="/proxy" className="w-full">
+              <NavItem
+                icon={<Box className="h-5 w-5" />}
+                label="Proxy"
+                active={pathname === "/proxy"}
+                showText={isExpanded}
+              />
             </Link>
           </TooltipTrigger>
-          <TooltipContent side="right">Proxy</TooltipContent>
+          <TooltipContent side="right" className={isExpanded ? "hidden" : ""}>
+            Proxy
+          </TooltipContent>
         </Tooltip>
       </TooltipProvider>
 
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link href="/tools">
-              <NavItem icon={<Tool className="h-5 w-5" />} label="Tools" active={pathname === "/tools"} />
+            <Link href="/tools" className="w-full">
+              <NavItem
+                icon={<Tool className="h-5 w-5" />}
+                label="Tools"
+                active={pathname === "/tools"}
+                showText={isExpanded}
+              />
             </Link>
           </TooltipTrigger>
-          <TooltipContent side="right">Tools</TooltipContent>
+          <TooltipContent side="right" className={isExpanded ? "hidden" : ""}>
+            Tools
+          </TooltipContent>
         </Tooltip>
       </TooltipProvider>
 
-      <div className="mt-auto">
+      <div className="mt-auto w-full">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link href="/settings">
-                <NavItem icon={<Settings className="h-5 w-5" />} label="Settings" active={pathname === "/settings"} />
+              <Link href="/settings" className="w-full">
+                <NavItem
+                  icon={<Settings className="h-5 w-5" />}
+                  label="Settings"
+                  active={pathname === "/settings"}
+                  showText={isExpanded}
+                />
               </Link>
             </TooltipTrigger>
-            <TooltipContent side="right">Settings</TooltipContent>
+            <TooltipContent side="right" className={isExpanded ? "hidden" : ""}>
+              Settings
+            </TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex flex-col items-center justify-center w-full p-2 text-xs text-muted-foreground hover:text-foreground cursor-pointer">
+              <div
+                className={cn(
+                  "flex items-center justify-center w-full p-2 text-xs text-muted-foreground hover:text-foreground cursor-pointer",
+                  isExpanded && "justify-start px-4"
+                )}
+              >
                 <div className="p-2 rounded-md">
                   <ThemeToggle />
                 </div>
-                <span className="mt-1">Theme</span>
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.span
+                      initial={{ opacity: 0, width: 0 }}
+                      animate={{ opacity: 1, width: "auto" }}
+                      exit={{ opacity: 0, width: 0 }}
+                      className="ml-3 overflow-hidden"
+                    >
+                      Theme
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </div>
             </TooltipTrigger>
-            <TooltipContent side="right">Theme</TooltipContent>
+            <TooltipContent side="right" className={isExpanded ? "hidden" : ""}>
+              Theme
+            </TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" className="w-full p-0" onClick={() => setSystemModalOpen(true)}>
-                <NavItem icon={<Power className="h-5 w-5" />} label="System" active={false} />
+              <Button
+                variant="ghost"
+                className="w-full p-0"
+                onClick={() => setSystemModalOpen(true)}
+              >
+                <NavItem
+                  icon={<Power className="h-5 w-5" />}
+                  label="System"
+                  active={false}
+                  showText={isExpanded}
+                />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">System Control</TooltipContent>
+            <TooltipContent side="right" className={isExpanded ? "hidden" : ""}>
+              System Control
+            </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
-    </div>
-  )
+    </motion.div>
+  );
 }
 
-function NavItem({ icon, label, active }: { icon: React.ReactNode; label: string; active: boolean }) {
+function NavItem({
+  icon,
+  label,
+  active,
+  showText = false,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  active: boolean;
+  showText?: boolean;
+}) {
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center w-full p-2 text-xs text-muted-foreground hover:text-foreground cursor-pointer",
+        "flex items-center w-full p-2 text-xs text-muted-foreground hover:text-foreground cursor-pointer",
         active && "text-primary",
+        showText ? "justify-start px-4" : "flex-col justify-center"
       )}
     >
-      <div className={cn("p-2 rounded-md", active && "bg-primary/10")}>{icon}</div>
-      <span className="mt-1">{label}</span>
+      <motion.div
+        className={cn("p-2 rounded-md", active && "bg-primary/10")}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        {icon}
+      </motion.div>
+      <AnimatePresence>
+        {showText ? (
+          <motion.span
+            className="ml-3 text-sm font-medium"
+            initial={{ opacity: 0, width: 0 }}
+            animate={{ opacity: 1, width: "auto" }}
+            exit={{ opacity: 0, width: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {label}
+          </motion.span>
+        ) : (
+          <motion.span
+            className="mt-1"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {label}
+          </motion.span>
+        )}
+      </AnimatePresence>
     </div>
-  )
+  );
 }
-

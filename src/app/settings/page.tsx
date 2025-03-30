@@ -41,7 +41,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { toast } from "sonner"
+import { toast, Toaster } from "sonner"
+
+// Add type definitions
+type UpdateFrequency = "startup" | "daily" | "weekly" | "monthly" | "never"
+type Theme = "light" | "dark" | "system" | "red-night"
+type DateFormat = "mdy" | "dmy" | "ymd"
+type TimeFormat = "12h" | "24h"
+type TemperatureUnit = "celsius" | "fahrenheit"
+type DistanceUnit = "metric" | "imperial"
+type LogLevel = "error" | "warning" | "info" | "debug" | "verbose"
 
 export default function SettingsPage() {
   const { settings, updateSettings, resetSettings, setTheme } = useAppStore()
@@ -64,7 +73,7 @@ export default function SettingsPage() {
   }
 
   // Handle theme change
-  const handleThemeChange = (theme: typeof settings.appearance.theme) => {
+  const handleThemeChange = (theme: Theme) => {
     handleSettingChange("appearance", "theme", theme)
     setTheme(theme)
   }
@@ -77,16 +86,12 @@ export default function SettingsPage() {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      toast({
-        title: "Settings Saved",
-        description: "Your settings have been saved successfully.",
-        variant: "default",
+      toast.success("Settings saved successfully", {
+        description: "Your settings have been saved.",
       })
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save settings. Please try again.",
-        variant: "destructive",
+      toast.error("Failed to save settings", {
+        description: error instanceof Error ? error.message : "Please try again.",
       })
     } finally {
       setIsSaving(false)
@@ -225,7 +230,9 @@ export default function SettingsPage() {
                       <Label>Update Frequency</Label>
                       <Select
                         value={settings.general.updateFrequency}
-                        onValueChange={(value) => handleSettingChange("general", "updateFrequency", value as any)}
+                        onValueChange={(value: UpdateFrequency) =>
+                          handleSettingChange("general", "updateFrequency", value)
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select frequency" />
@@ -360,7 +367,7 @@ export default function SettingsPage() {
                       <div className="flex items-center gap-4">
                         <RadioGroup
                           value={settings.appearance.theme}
-                          onValueChange={(value) => handleThemeChange(value as any)}
+                          onValueChange={(value) => handleThemeChange(value as Theme)}
                           className="flex flex-wrap gap-2"
                         >
                           <div className="flex items-center space-x-2">
@@ -405,12 +412,12 @@ export default function SettingsPage() {
                           {settings.appearance.fontSize === 1
                             ? "Small"
                             : settings.appearance.fontSize === 2
-                              ? "Medium"
-                              : settings.appearance.fontSize === 3
-                                ? "Large"
-                                : settings.appearance.fontSize === 4
-                                  ? "X-Large"
-                                  : "XX-Large"}
+                            ? "Medium"
+                            : settings.appearance.fontSize === 3
+                            ? "Large"
+                            : settings.appearance.fontSize === 4
+                            ? "X-Large"
+                            : "XX-Large"}
                         </span>
                       </div>
                       <Slider
@@ -743,7 +750,9 @@ export default function SettingsPage() {
                       <Label>Backup Frequency</Label>
                       <Select
                         value={settings.storage.backupFrequency}
-                        onValueChange={(value) => handleSettingChange("storage", "backupFrequency", value as any)}
+                        onValueChange={(value: UpdateFrequency) =>
+                          handleSettingChange("storage", "backupFrequency", value)
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select frequency" />
@@ -890,7 +899,9 @@ export default function SettingsPage() {
                       <Label>Date Format</Label>
                       <Select
                         value={settings.language.dateFormat}
-                        onValueChange={(value) => handleSettingChange("language", "dateFormat", value as any)}
+                        onValueChange={(value: DateFormat) =>
+                          handleSettingChange("language", "dateFormat", value)
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select date format" />
@@ -909,7 +920,9 @@ export default function SettingsPage() {
                       <Label>Time Format</Label>
                       <Select
                         value={settings.language.timeFormat}
-                        onValueChange={(value) => handleSettingChange("language", "timeFormat", value as any)}
+                        onValueChange={(value: TimeFormat) =>
+                          handleSettingChange("language", "timeFormat", value)
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select time format" />
@@ -927,7 +940,9 @@ export default function SettingsPage() {
                       <Label>Temperature Unit</Label>
                       <Select
                         value={settings.language.temperatureUnit}
-                        onValueChange={(value) => handleSettingChange("language", "temperatureUnit", value as any)}
+                        onValueChange={(value: TemperatureUnit) =>
+                          handleSettingChange("language", "temperatureUnit", value)
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select temperature unit" />
@@ -945,7 +960,9 @@ export default function SettingsPage() {
                       <Label>Distance Unit</Label>
                       <Select
                         value={settings.language.distanceUnit}
-                        onValueChange={(value) => handleSettingChange("language", "distanceUnit", value as any)}
+                        onValueChange={(value: DistanceUnit) =>
+                          handleSettingChange("language", "distanceUnit", value)
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select distance unit" />
@@ -990,7 +1007,9 @@ export default function SettingsPage() {
                       <Label>Log Level</Label>
                       <Select
                         value={settings.advanced.logLevel}
-                        onValueChange={(value) => handleSettingChange("advanced", "logLevel", value as any)}
+                        onValueChange={(value: LogLevel) =>
+                          handleSettingChange("advanced", "logLevel", value)
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select log level" />

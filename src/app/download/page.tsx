@@ -55,6 +55,43 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.3 },
+  },
+  hover: {
+    scale: 1.02,
+    transition: { duration: 0.2 },
+  },
+  tap: {
+    scale: 0.98,
+    transition: { duration: 0.1 },
+  },
+};
+
+const progressVariants = {
+  start: { width: "0%" },
+  animate: (progress: number) => ({
+    width: `${progress}%`,
+    transition: { duration: 0.5, ease: "easeInOut" },
+  }),
+};
+
+const downloadListVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      when: "beforeChildren",
+      staggerChildren: 0.1,
+    },
+  },
+};
 
 interface AvailableSoftwareCardProps {
   software: {
@@ -343,7 +380,12 @@ export default function DownloadPage() {
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <motion.div
+                  initial="hidden"
+                  animate="visible"
+                  variants={downloadListVariants}
+                  className="space-y-4"
+                >
                   {downloads.map((download) => (
                     <DownloadItem
                       key={download.id}
@@ -366,7 +408,7 @@ export default function DownloadPage() {
                       }
                     />
                   ))}
-                </div>
+                </motion.div>
               )}
             </TabsContent>
 
@@ -410,11 +452,16 @@ export default function DownloadPage() {
                     </AlertDialog>
                   </div>
 
-                  <div className="space-y-4">
+                  <motion.div
+                    initial="hidden"
+                    animate="visible"
+                    variants={downloadListVariants}
+                    className="space-y-4"
+                  >
                     {downloadHistory.map((download) => (
                       <DownloadItem key={download.id} download={download} />
                     ))}
-                  </div>
+                  </motion.div>
                 </>
               )}
             </TabsContent>
@@ -492,78 +539,104 @@ function DownloadItem({
   };
 
   return (
-    <Card>
-      <CardContent className="p-0">
-        <div className="flex items-center p-4">
-          <div className="mr-4">
-            <Image
-              src={download.icon || "/placeholder.svg"}
-              alt={download.name}
-              width={40}
-              height={40}
-              className="rounded"
-            />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium">{download.name}</h3>
-                <div className="text-sm text-muted-foreground">
-                  Version {download.version} • {download.size}
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="flex items-center gap-1">
-                  {getStatusIcon(download.status)}
-                  {getStatusText(download.status)}
-                </Badge>
-                {download.status !== "completed" &&
-                  download.status !== "error" &&
-                  onCancel && (
-                    <Button variant="ghost" size="icon" onClick={onCancel}>
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
-              </div>
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      whileHover="hover"
+      whileTap="tap"
+      variants={cardVariants}
+    >
+      <Card>
+        <CardContent className="p-0">
+          <div className="flex items-center p-4">
+            <div className="mr-4">
+              <Image
+                src={download.icon || "/placeholder.svg"}
+                alt={download.name}
+                width={40}
+                height={40}
+                className="rounded"
+              />
             </div>
-
-            {download.status !== "completed" && download.status !== "error" && (
-              <div className="mt-2 space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span>{download.progress.toFixed(0)}%</span>
-                  {download.status === "downloading" &&
-                    download.estimatedTimeRemaining && (
-                      <span>{download.estimatedTimeRemaining} remaining</span>
+            <div className="flex-1">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium">{download.name}</h3>
+                  <div className="text-sm text-muted-foreground">
+                    Version {download.version} • {download.size}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    {getStatusIcon(download.status)}
+                    {getStatusText(download.status)}
+                  </Badge>
+                  {download.status !== "completed" &&
+                    download.status !== "error" &&
+                    onCancel && (
+                      <Button variant="ghost" size="icon" onClick={onCancel}>
+                        <X className="h-4 w-4" />
+                      </Button>
                     )}
                 </div>
-                <Progress value={download.progress} />
+              </div>
 
-                {(download.status === "downloading" ||
-                  download.status === "paused") && (
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-xs text-muted-foreground">
-                      {download.speed}
-                    </span>
-                    <div>
-                      {download.status === "downloading" && onPause && (
-                        <Button variant="outline" size="sm" onClick={onPause}>
-                          Pause
-                        </Button>
-                      )}
-                      {download.status === "paused" && onResume && (
-                        <Button variant="outline" size="sm" onClick={onResume}>
-                          Resume
-                        </Button>
-                      )}
+              {download.status !== "completed" &&
+                download.status !== "error" && (
+                  <div className="mt-2 space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span>{download.progress.toFixed(0)}%</span>
+                      {download.status === "downloading" &&
+                        download.estimatedTimeRemaining && (
+                          <span>
+                            {download.estimatedTimeRemaining} remaining
+                          </span>
+                        )}
                     </div>
+                    <motion.div
+                      initial="start"
+                      animate="animate"
+                      custom={download.progress}
+                      variants={progressVariants}
+                    >
+                      <Progress value={download.progress} />
+                    </motion.div>
+
+                    {(download.status === "downloading" ||
+                      download.status === "paused") && (
+                      <div className="flex justify-between items-center mt-2">
+                        <span className="text-xs text-muted-foreground">
+                          {download.speed}
+                        </span>
+                        <div>
+                          {download.status === "downloading" && onPause && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={onPause}
+                            >
+                              Pause
+                            </Button>
+                          )}
+                          {download.status === "paused" && onResume && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={onResume}
+                            >
+                              Resume
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
-            )}
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
 
@@ -572,34 +645,42 @@ function AvailableSoftwareCard({
   onDownload,
 }: AvailableSoftwareCardProps) {
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="p-4 flex flex-row items-center gap-4">
-        <Image
-          src={software.icon || "/placeholder.svg"}
-          alt={software.name}
-          width={40}
-          height={40}
-          className="rounded"
-        />
-        <div>
-          <CardTitle className="text-lg">{software.name}</CardTitle>
-          <div className="text-sm text-muted-foreground">
-            Version {software.version}
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      whileHover="hover"
+      whileTap="tap"
+      variants={cardVariants}
+    >
+      <Card className="overflow-hidden">
+        <CardHeader className="p-4 flex flex-row items-center gap-4">
+          <Image
+            src={software.icon || "/placeholder.svg"}
+            alt={software.name}
+            width={40}
+            height={40}
+            className="rounded"
+          />
+          <div>
+            <CardTitle className="text-lg">{software.name}</CardTitle>
+            <div className="text-sm text-muted-foreground">
+              Version {software.version}
+            </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <CardDescription className="line-clamp-2">
-          {software.description}
-        </CardDescription>
-      </CardContent>
-      <CardFooter className="p-4 flex justify-between items-center border-t">
-        <div className="text-sm text-muted-foreground">{software.size}</div>
-        <Button onClick={onDownload}>
-          <Download className="h-4 w-4 mr-2" />
-          Download
-        </Button>
-      </CardFooter>
-    </Card>
+        </CardHeader>
+        <CardContent className="p-4 pt-0">
+          <CardDescription className="line-clamp-2">
+            {software.description}
+          </CardDescription>
+        </CardContent>
+        <CardFooter className="p-4 flex justify-between items-center border-t">
+          <div className="text-sm text-muted-foreground">{software.size}</div>
+          <Button onClick={onDownload}>
+            <Download className="h-4 w-4 mr-2" />
+            Download
+          </Button>
+        </CardFooter>
+      </Card>
+    </motion.div>
   );
 }

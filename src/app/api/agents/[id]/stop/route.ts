@@ -1,5 +1,5 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { v4 as uuidv4 } from "uuid"
+import { type NextRequest, NextResponse } from "next/server";
+import { v4 as uuidv4 } from "uuid";
 
 // This would normally be imported from a database
 // For this example, we'll use the agents array from the main route
@@ -8,7 +8,8 @@ const agents = [
   {
     id: "1",
     name: "Nightly Imaging Sequence",
-    description: "Automatically captures a series of deep sky objects based on visibility and weather conditions",
+    description:
+      "Automatically captures a series of deep sky objects based on visibility and weather conditions",
     status: "idle",
     type: "imaging",
     lastRun: "2023-12-15T20:30:00Z",
@@ -82,7 +83,8 @@ const agents = [
   {
     id: "2",
     name: "Weather Monitor",
-    description: "Monitors weather conditions and sends alerts when conditions change",
+    description:
+      "Monitors weather conditions and sends alerts when conditions change",
     status: "running",
     type: "observation",
     lastRun: "2023-12-16T18:00:00Z",
@@ -125,48 +127,59 @@ const agents = [
       },
     ],
   },
-]
+];
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const id = params.id
+    const id = params.id;
 
-    const agent = agents.find((a) => a.id === id)
+    const agent = agents.find((a) => a.id === id);
     if (!agent) {
-      return NextResponse.json({ error: "Agent not found", message: `Agent with id ${id} not found` }, { status: 404 })
+      return NextResponse.json(
+        { error: "Agent not found", message: `Agent with id ${id} not found` },
+        { status: 404 }
+      );
     }
 
     // Check if agent is running
     if (agent.status !== "running") {
       return NextResponse.json(
-        { error: "Agent not running", message: `Agent ${agent.name} is not running` },
-        { status: 400 },
-      )
+        {
+          error: "Agent not running",
+          message: `Agent ${agent.name} is not running`,
+        },
+        { status: 400 }
+      );
     }
 
     // Update agent status
-    agent.status = "idle"
-    agent.updatedAt = new Date().toISOString()
+    agent.status = "idle";
+    agent.updatedAt = new Date().toISOString();
 
     // Add log entry
-    const logId = uuidv4()
+    const logId = uuidv4();
     agent.logs.push({
       id: logId,
       timestamp: new Date().toISOString(),
       level: "info",
       message: "Agent stopped by user",
-    })
+    });
 
     // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 300))
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error(`Error stopping agent ${params.id}:`, error)
+    console.error(`Error stopping agent ${params.id}:`, error);
     return NextResponse.json(
-      { error: "Failed to stop agent", message: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 },
-    )
+      {
+        error: "Failed to stop agent",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }
-
