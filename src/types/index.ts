@@ -28,7 +28,7 @@ export interface DownloadItem {
   size: string;
   icon: string;
   category: string;
-  status: "downloading" | "paused" | "completed" | "error";
+  status: "downloading" | "paused" | "completed" | "error" | "waiting" | "verification" | "processing";
   progress: number;
   date: string;
   estimatedTimeRemaining?: string;
