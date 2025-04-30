@@ -1,62 +1,9 @@
 "use client";
 
-import type React from "react";
-
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import {
-  Plus,
-  Search,
-  Star,
-  Calculator,
-  ArrowLeftRight,
-  Calendar,
-  BarChart,
-  Wrench,
-  Clock,
-  MoreHorizontal,
-  RefreshCw,
-  Play,
-  Edit,
-  Trash2,
-  Copy,
-  History,
-} from "lucide-react";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table";
-import { AppLayout } from "@/components/app-layout";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -67,31 +14,24 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
-import { toast, Toaster } from "sonner";
-import { Separator } from "@/components/ui/separator";
-import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Toaster, toast } from "sonner";
+import { AppLayout } from "@/components/app-layout";
 
 import { useAppStore } from "@/store/store";
-import type {
-  Tool,
-  ToolInput,
-  ToolResult,
-  ToolInputValue,
-  TableData,
-  ChartData,
-  CellValue,
-} from "@/types/tool";
-import { format, parseISO } from "date-fns";
+import type { Tool, ToolInputValue, ToolResult as ToolResultType } from "@/types/tool";
+
+import { SearchAndFilter } from "@/components/tools/search-and-filter";
+import { ToolList } from "@/components/tools/tool-list";
+import { ToolInputField } from "@/components/tools/tool-input-field";
+import { ToolResult } from "@/components/tools/tool-result";
 
 export default function ToolsPage() {
   const router = useRouter();
@@ -101,10 +41,8 @@ export default function ToolsPage() {
   const [toolToDelete, setToolToDelete] = useState<string | null>(null);
   const [isRunDialogOpen, setIsRunDialogOpen] = useState(false);
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
-  const [toolInputs, setToolInputs] = useState<Record<string, ToolInputValue>>(
-    {}
-  );
-  const [toolResult, setToolResult] = useState<ToolResult | null>(null);
+  const [toolInputs, setToolInputs] = useState<Record<string, ToolInputValue>>({});
+  const [toolResult, setToolResult] = useState<ToolResultType | null>(null);
   const [isRunning, setIsRunning] = useState(false);
 
   const {
@@ -211,8 +149,15 @@ export default function ToolsPage() {
     // Initialize inputs with default values
     const initialInputs: Record<string, ToolInputValue> = {};
     tool.inputs.forEach((input) => {
-      if (input.default !== undefined) {
-        initialInputs[input.name] = input.default;
+      if (input.default !== undefined && input.default !== null) {
+        const defaultValue = input.default;
+        if (
+          typeof defaultValue === "string" ||
+          typeof defaultValue === "number" ||
+          typeof defaultValue === "boolean"
+        ) {
+          initialInputs[input.name] = defaultValue;
+        }
       }
     });
 
@@ -253,94 +198,25 @@ export default function ToolsPage() {
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="relative w-full md:w-96">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search tools..."
-                className="pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+          <SearchAndFilter
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            onRefresh={handleRefresh}
+          />
 
-            <div className="flex gap-2 w-full md:w-auto">
-              <Tabs
-                value={selectedCategory}
-                onValueChange={setSelectedCategory}
-                className="w-full md:w-auto"
-              >
-                <TabsList className="w-full md:w-auto">
-                  <TabsTrigger value="all">All</TabsTrigger>
-                  <TabsTrigger
-                    value="favorites"
-                    className="flex items-center gap-1"
-                  >
-                    <Star className="h-3.5 w-3.5" />
-                    Favorites
-                  </TabsTrigger>
-                  <TabsTrigger value="calculation">Calculation</TabsTrigger>
-                  <TabsTrigger value="planning">Planning</TabsTrigger>
-                  <TabsTrigger value="utility">Utility</TabsTrigger>
-                </TabsList>
-              </Tabs>
-
-              <Button variant="outline" size="icon" onClick={handleRefresh}>
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          {isToolLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Card key={i}>
-                  <CardHeader className="pb-2">
-                    <Skeleton className="h-6 w-48" />
-                    <Skeleton className="h-4 w-full" />
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-4 w-32" />
-                  </CardContent>
-                  <CardFooter>
-                    <Skeleton className="h-9 w-20" />
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          ) : filteredTools.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="rounded-full bg-muted p-3 mb-4">
-                <Calculator className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-medium">No tools found</h3>
-              <p className="text-muted-foreground mt-2 mb-4 max-w-md">
-                {searchQuery
-                  ? "No tools match your search criteria. Try a different search term."
-                  : "You haven't created any tools yet. Create your first tool to help with your astronomy calculations."}
-              </p>
-              <Button onClick={() => router.push("/tools/create")}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Tool
-              </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredTools.map((tool) => (
-                <ToolCard
-                  key={tool.id}
-                  tool={tool}
-                  onRun={() => handleOpenRunDialog(tool)}
-                  onEdit={() => router.push(`/tools/edit/${tool.id}`)}
-                  onDelete={() => {
-                    setToolToDelete(tool.id);
-                    setIsDeleteDialogOpen(true);
-                  }}
-                  onToggleFavorite={() => handleToggleFavorite(tool.id)}
-                />
-              ))}
-            </div>
-          )}
+          <ToolList
+            tools={filteredTools}
+            isLoading={isToolLoading}
+            searchQuery={searchQuery}
+            onRunTool={handleOpenRunDialog}
+            onDeleteTool={(id) => {
+              setToolToDelete(id);
+              setIsDeleteDialogOpen(true);
+            }}
+            onToggleFavorite={handleToggleFavorite}
+          />
         </div>
       </div>
 
@@ -406,14 +282,11 @@ export default function ToolsPage() {
                   >
                     {isRunning ? (
                       <>
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        <span className="loading loading-spinner"></span>
                         Running...
                       </>
                     ) : (
-                      <>
-                        <Play className="h-4 w-4 mr-2" />
-                        Run Tool
-                      </>
+                      "Run Tool"
                     )}
                   </Button>
                 </div>
@@ -421,117 +294,11 @@ export default function ToolsPage() {
 
               <div className="space-y-4">
                 <h3 className="text-sm font-medium">Results</h3>
-
-                {!toolResult ? (
-                  <div className="border rounded-md p-8 flex items-center justify-center h-[300px]">
-                    <div className="text-center text-muted-foreground">
-                      {isRunning ? (
-                        <div className="space-y-2">
-                          <RefreshCw className="h-8 w-8 mx-auto animate-spin" />
-                          <p>Processing...</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <Play className="h-8 w-8 mx-auto" />
-                          <p>Run the tool to see results</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="border rounded-md p-4 space-y-4">
-                    <div className="flex justify-between items-center">
-                      <Badge
-                        variant="outline"
-                        className="text-green-500 border-green-500"
-                      >
-                        Completed
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        Duration: {(toolResult.duration / 1000).toFixed(2)}s
-                      </span>
-                    </div>
-
-                    <Separator />
-
-                    <div className="space-y-4">
-                      {selectedTool?.outputs.map((output) => {
-                        const value = toolResult.outputs[output.name];
-
-                        if (!value) return null;
-
-                        return (
-                          <div key={output.id} className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">
-                              {output.description}
-                            </Label>
-
-                            {output.type === "image" ? (
-                              <div className="border rounded-md p-2 flex justify-center">
-                                <Image
-                                  src={
-                                    typeof value === "string"
-                                      ? value
-                                      : "/placeholder.svg"
-                                  }
-                                  alt={output.name}
-                                  width={300}
-                                  height={200}
-                                  className="object-contain"
-                                />
-                              </div>
-                            ) : output.type === "table" ? (
-                              <div className="border rounded-md overflow-x-auto">
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      {Object.keys(value[0] || {}).map(
-                                        (key) => (
-                                          <TableHead key={key}>{key}</TableHead>
-                                        )
-                                      )}
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {(value as TableRow[]).map((row, i) => (
-                                      <TableRow key={i}>
-                                        {Object.values(row).map((cell, j) => (
-                                          <TableCell key={j}>
-                                            {cell?.toString()}
-                                          </TableCell>
-                                        ))}
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
-                              </div>
-                            ) : output.type === "chart" ? (
-                              <div className="border rounded-md p-2 flex justify-center">
-                                <Image
-                                  src={
-                                    typeof value === "string"
-                                      ? value
-                                      : "/placeholder.svg"
-                                  }
-                                  alt={output.name}
-                                  width={400}
-                                  height={200}
-                                  className="object-contain"
-                                />
-                              </div>
-                            ) : (
-                              <div className="p-2 bg-muted rounded-md">
-                                <span className="text-sm">
-                                  {value.toString()}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                <ToolResult
+                  tool={selectedTool}
+                  result={toolResult}
+                  isRunning={isRunning}
+                />
               </div>
             </div>
           </div>
@@ -546,246 +313,5 @@ export default function ToolsPage() {
 
       <Toaster />
     </AppLayout>
-  );
-}
-
-interface ToolCardProps {
-  tool: Tool;
-  onRun: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-  onToggleFavorite: () => void;
-}
-
-function ToolCard({
-  tool,
-  onRun,
-  onEdit,
-  onDelete,
-  onToggleFavorite,
-}: ToolCardProps) {
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <div className="flex items-start gap-2">
-            <div className="mt-0.5">{getCategoryIcon(tool.category)}</div>
-            <div>
-              <CardTitle className="text-lg">{tool.name}</CardTitle>
-              <CardDescription className="mt-1 line-clamp-2">
-                {tool.description}
-              </CardDescription>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleFavorite();
-            }}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <Star
-              className={`h-4 w-4 ${
-                tool.favorite ? "fill-yellow-400 text-yellow-400" : ""
-              }`}
-            />
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center text-sm text-muted-foreground">
-          {tool.lastUsed ? (
-            <>
-              <Clock className="h-4 w-4 mr-2" />
-              <span>
-                Last used: {format(parseISO(tool.lastUsed), "MMM d, yyyy")}
-              </span>
-            </>
-          ) : (
-            <>
-              <Clock className="h-4 w-4 mr-2" />
-              <span>Never used</span>
-            </>
-          )}
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-between">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={onEdit}>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {}}>
-              <History className="h-4 w-4 mr-2" />
-              View History
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {}}>
-              <Copy className="h-4 w-4 mr-2" />
-              Duplicate
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive" onClick={onDelete}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <Button onClick={onRun}>
-          <Play className="h-4 w-4 mr-2" />
-          Run
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-}
-
-function getCategoryIcon(category: string) {
-  switch (category) {
-    case "calculation":
-      return <Calculator className="h-4 w-4" />;
-    case "conversion":
-      return <ArrowLeftRight className="h-4 w-4" />;
-    case "planning":
-      return <Calendar className="h-4 w-4" />;
-    case "analysis":
-      return <BarChart className="h-4 w-4" />;
-    case "utility":
-      return <Wrench className="h-4 w-4" />;
-    default:
-      return <Wrench className="h-4 w-4" />;
-  }
-}
-
-interface ToolInputFieldProps {
-  input: ToolInput;
-  value: ToolInputValue;
-  onChange: (value: ToolInputValue) => void;
-}
-
-function ToolInputField({ input, value, onChange }: ToolInputFieldProps) {
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { type, value: inputValue } = e.target;
-
-    if (type === "number") {
-      onChange(inputValue === "" ? "" : Number(inputValue));
-    } else if (type === "checkbox") {
-      onChange(e.target.checked);
-    } else {
-      onChange(inputValue);
-    }
-  };
-
-  const renderInput = () => {
-    switch (input.type) {
-      case "text":
-        return (
-          <Input
-            id={input.id}
-            value={value || ""}
-            onChange={handleChange}
-            placeholder={input.description}
-            required={input.required}
-          />
-        );
-
-      case "number":
-        return (
-          <Input
-            id={input.id}
-            type="number"
-            value={value ?? ""}
-            onChange={handleChange}
-            placeholder={input.description}
-            required={input.required}
-            min={input.validation?.min}
-            max={input.validation?.max}
-          />
-        );
-
-      case "date":
-        return (
-          <Input
-            id={input.id}
-            type="date"
-            value={value || ""}
-            onChange={handleChange}
-            required={input.required}
-          />
-        );
-
-      case "time":
-        return (
-          <Input
-            id={input.id}
-            type="time"
-            value={value || ""}
-            onChange={handleChange}
-            required={input.required}
-          />
-        );
-
-      case "checkbox":
-        return (
-          <div className="flex items-center space-x-2">
-            <input
-              id={input.id}
-              type="checkbox"
-              checked={value || false}
-              onChange={handleChange}
-              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-            />
-            <Label htmlFor={input.id}>{input.description}</Label>
-          </div>
-        );
-
-      case "select":
-        return (
-          <Select value={value || ""} onValueChange={onChange}>
-            <SelectTrigger>
-              <SelectValue placeholder={input.description} />
-            </SelectTrigger>
-            <SelectContent>
-              {input.options?.map((option) => (
-                <SelectItem
-                  key={String(option.value)}
-                  value={String(option.value)}
-                >
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        );
-
-      default:
-        return (
-          <Input
-            id={input.id}
-            value={value || ""}
-            onChange={handleChange}
-            placeholder={input.description}
-            required={input.required}
-          />
-        );
-    }
-  };
-
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={input.id} className="flex items-center gap-1">
-        {input.description}
-        {input.required && <span className="text-red-500">*</span>}
-      </Label>
-      {renderInput()}
-    </div>
   );
 }

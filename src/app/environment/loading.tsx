@@ -1,26 +1,32 @@
-import { Skeleton } from "@/components/ui/skeleton";
 import { AppLayout } from "@/components/app-layout";
+import { AnimatedSkeleton, SkeletonContainer, SkeletonItem } from "@/components/ui/animated-skeleton";
 
 export default function EnvironmentLoading() {
   return (
     <AppLayout>
       <div className="flex-1 overflow-auto pb-16 md:pb-0">
-        <div className="container py-6 space-y-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <SkeletonContainer className="container py-6 space-y-6">
+          <SkeletonItem className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-4 w-64 mt-2" />
+              <AnimatedSkeleton className="h-8 w-48" shimmer />
+              <AnimatedSkeleton className="h-4 w-64 mt-2" shimmer />
             </div>
-            <Skeleton className="h-10 w-32" />
-          </div>
+            <AnimatedSkeleton className="h-10 w-32" shimmer />
+          </SkeletonItem>
 
-          <Skeleton className="h-10 w-full" />
+          <SkeletonItem>
+            <AnimatedSkeleton className="h-10 w-full" shimmer />
+          </SkeletonItem>
 
-          <div className="space-y-6">
-            <Skeleton className="h-[300px] w-full rounded-lg" />
-            <Skeleton className="h-[200px] w-full rounded-lg" />
-          </div>
-        </div>
+          <SkeletonContainer className="space-y-6">
+            <SkeletonItem>
+              <AnimatedSkeleton className="h-[300px] w-full rounded-lg" shimmer />
+            </SkeletonItem>
+            <SkeletonItem>
+              <AnimatedSkeleton className="h-[200px] w-full rounded-lg" shimmer />
+            </SkeletonItem>
+          </SkeletonContainer>
+        </SkeletonContainer>
       </div>
     </AppLayout>
   );

@@ -1,48 +1,15 @@
 "use client";
 
-import type React from "react";
-
-import { useState, useRef } from "react";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
-import {
-  Download,
-  Search,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  PauseCircle,
-  X,
-  Upload,
-  FileJson,
-  Trash2,
-  AlertTriangle,
-} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Trash2 } from "lucide-react";
 import { AppLayout } from "@/components/app-layout";
 import { useAppStore } from "@/store/store";
-import type { DownloadItem as DownloadItemType } from "@/types";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import type { Software, DownloadItem } from "@/types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,66 +21,21 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
-import { motion } from "framer-motion";
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3 },
-  },
-  hover: {
-    scale: 1.02,
-    transition: { duration: 0.2 },
-  },
-  tap: {
-    scale: 0.98,
-    transition: { duration: 0.1 },
-  },
-};
-
-const progressVariants = {
-  start: { width: "0%" },
-  animate: (progress: number) => ({
-    width: `${progress}%`,
-    transition: { duration: 0.5, ease: "easeInOut" },
-  }),
-};
-
-const downloadListVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      when: "beforeChildren",
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-interface AvailableSoftwareCardProps {
-  software: {
-    id: number;
-    name: string;
-    version: string;
-    description: string;
-    size: string;
-    icon: string;
-    category: string;
-    installed: boolean;
-  };
-  onDownload: () => void;
-}
+import {
+  DownloadItem as DownloadItemComponent,
+  AvailableSoftwareCard,
+  ImportDialog,
+  NoActiveDownloads,
+  NoDownloadHistory,
+  NoSearchResults,
+  downloadListVariants,
+  ImportableSoftware,
+} from "@/components/download";
 
 export default function DownloadPage() {
   const [activeTab, setActiveTab] = useState("active");
   const [searchQuery, setSearchQuery] = useState("");
-  const [isImporting, setIsImporting] = useState(false);
-  const [importData, setImportData] = useState("");
-  const [importError, setImportError] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     software,
@@ -140,7 +62,7 @@ export default function DownloadPage() {
     const softwareToDownload = software.find((s) => s.id === softwareId);
     if (!softwareToDownload) return;
 
-    const newDownload: DownloadItemType = {
+    const newDownload: DownloadItem = {
       id: Date.now(),
       name: softwareToDownload.name,
       version: softwareToDownload.version,
@@ -177,80 +99,20 @@ export default function DownloadPage() {
     }, 1000);
   };
 
-  // Handle import of software list
-  const handleImportSoftware = async () => {
-    try {
-      setImportError("");
-      setIsImporting(true);
+  // Transform ImportableSoftware to Software for the store
+  const handleImport = async (data: ImportableSoftware[]) => {
+    const transformedSoftware: Software[] = data.map((item) => ({
+      ...item,
+      id: 0, // Will be assigned by the store
+      actionLabel: "Download",
+      featured: false,
+      downloads: 0,
+      lastUpdated: new Date().toISOString(),
+      installed: false,
+      rating: item.rating || 0,
+    }));
 
-      // Parse the JSON data
-      const parsedData = JSON.parse(importData);
-
-      // Validate with the API
-      const response = await fetch("/api/software/import", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(parsedData),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to import software");
-      }
-
-      // Import the validated software
-      const importResult = await importSoftware(result.data);
-
-      if (importResult.success) {
-        // Reset the form
-        setImportData("");
-        setIsImporting(false);
-
-        toast.success("Import Successful", {
-          description: importResult.message,
-        });
-
-        return true;
-      } else {
-        throw new Error(importResult.message);
-      }
-    } catch (error) {
-      console.error("Error importing software:", error);
-      setImportError(
-        error instanceof Error ? error.message : "Failed to import software"
-      );
-      setIsImporting(false);
-
-      toast.info("Import Failed", {
-        description:
-          error instanceof Error ? error.message : "Failed to import software",
-      });
-
-      return false;
-    }
-  };
-
-  // Handle file upload
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const content = e.target?.result as string;
-        setImportData(content);
-      } catch {
-        setImportError("Failed to read file");
-        toast.error("File Read Error", {
-          description: "Failed to read the uploaded file.",
-        });
-      }
-    };
-    reader.readAsText(file);
+    return importSoftware(transformedSoftware);
   };
 
   return (
@@ -273,85 +135,7 @@ export default function DownloadPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="md:w-[300px]"
               />
-
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Import
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Import Software List</DialogTitle>
-                    <DialogDescription>
-                      Paste a JSON array of software to import or upload a JSON
-                      file. The system will check for duplicates and merge with
-                      existing software.
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="import-data">JSON Data</Label>
-                      <textarea
-                        id="import-data"
-                        className="w-full min-h-[200px] p-2 border rounded-md"
-                        placeholder='[{"name": "Example Software", "description": "Description", "category": "utilities", "version": "1.0.0"}]'
-                        value={importData}
-                        onChange={(e) => setImportData(e.target.value)}
-                      />
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-px bg-border"></div>
-                      <span className="text-xs text-muted-foreground">OR</span>
-                      <div className="flex-1 h-px bg-border"></div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="file-upload">Upload JSON File</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          ref={fileInputRef}
-                          id="file-upload"
-                          type="file"
-                          accept=".json"
-                          className="hidden"
-                          onChange={handleFileUpload}
-                        />
-                        <Button
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => fileInputRef.current?.click()}
-                        >
-                          <FileJson className="h-4 w-4 mr-2" />
-                          Choose File
-                        </Button>
-                      </div>
-                    </div>
-
-                    {importError && (
-                      <div className="flex items-center gap-2 p-2 text-sm text-destructive bg-destructive/10 rounded-md">
-                        <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-                        <p>{importError}</p>
-                      </div>
-                    )}
-                  </div>
-
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setImportData("")}>
-                      Clear
-                    </Button>
-                    <Button
-                      onClick={handleImportSoftware}
-                      disabled={isImporting || !importData.trim()}
-                    >
-                      {isImporting ? "Importing..." : "Import Software"}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+              <ImportDialog onImport={handleImport} />
             </div>
           </div>
 
@@ -364,21 +148,7 @@ export default function DownloadPage() {
 
             <TabsContent value="active" className="space-y-4 mt-6">
               {downloads.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <Download className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium">No Active Downloads</h3>
-                  <p className="text-muted-foreground mt-2">
-                    You don&apos;t have any active downloads. Browse available
-                    software to start downloading.
-                  </p>
-                  <Button
-                    variant="outline"
-                    className="mt-4"
-                    onClick={() => setActiveTab("available")}
-                  >
-                    Browse Available Software
-                  </Button>
-                </div>
+                <NoActiveDownloads onBrowse={() => setActiveTab("available")} />
               ) : (
                 <motion.div
                   initial="hidden"
@@ -387,19 +157,19 @@ export default function DownloadPage() {
                   className="space-y-4"
                 >
                   {downloads.map((download) => (
-                    <DownloadItem
+                    <DownloadItemComponent
                       key={download.id}
                       download={download}
                       onCancel={() => removeDownload(download.id)}
                       onPause={() =>
                         updateDownload(download.id, {
-                          status: "paused",
+                          status: "paused" as const,
                           speed: "0 MB/s",
                         })
                       }
                       onResume={() =>
                         updateDownload(download.id, {
-                          status: "downloading",
+                          status: "downloading" as const,
                           speed: "2.5 MB/s",
                           estimatedTimeRemaining: `${Math.ceil(
                             (100 - download.progress) / 20
@@ -414,14 +184,7 @@ export default function DownloadPage() {
 
             <TabsContent value="history" className="space-y-4 mt-6">
               {downloadHistory.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <Clock className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium">No Download History</h3>
-                  <p className="text-muted-foreground mt-2">
-                    Your download history will appear here once you&apos;ve
-                    completed some downloads.
-                  </p>
-                </div>
+                <NoDownloadHistory />
               ) : (
                 <>
                   <div className="flex justify-end">
@@ -438,8 +201,8 @@ export default function DownloadPage() {
                             Clear Download History
                           </AlertDialogTitle>
                           <AlertDialogDescription>
-                            Are you sure you want to clear your download
-                            history? This action cannot be undone.
+                            Are you sure you want to clear your download history?
+                            This action cannot be undone.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -459,7 +222,7 @@ export default function DownloadPage() {
                     className="space-y-4"
                   >
                     {downloadHistory.map((download) => (
-                      <DownloadItem key={download.id} download={download} />
+                      <DownloadItemComponent key={download.id} download={download} />
                     ))}
                   </motion.div>
                 </>
@@ -469,13 +232,8 @@ export default function DownloadPage() {
             <TabsContent value="available" className="mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredSoftware.length === 0 ? (
-                  <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
-                    <Search className="h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium">No Results Found</h3>
-                    <p className="text-muted-foreground mt-2">
-                      No software matches your search criteria. Try a different
-                      search term.
-                    </p>
+                  <div className="col-span-full">
+                    <NoSearchResults />
                   </div>
                 ) : (
                   filteredSoftware.map((software) => (
@@ -492,195 +250,5 @@ export default function DownloadPage() {
         </div>
       </div>
     </AppLayout>
-  );
-}
-
-interface DownloadItemProps {
-  download: DownloadItemType;
-  onCancel?: () => void;
-  onPause?: () => void;
-  onResume?: () => void;
-}
-
-function DownloadItem({
-  download,
-  onCancel,
-  onPause,
-  onResume,
-}: DownloadItemProps) {
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case "downloading":
-        return <Download className="h-5 w-5 text-blue-500" />;
-      case "paused":
-        return <PauseCircle className="h-5 w-5 text-amber-500" />;
-      case "error":
-        return <AlertCircle className="h-5 w-5 text-red-500" />;
-      default:
-        return null;
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "Completed";
-      case "downloading":
-        return "Downloading";
-      case "paused":
-        return "Paused";
-      case "error":
-        return "Failed";
-      default:
-        return status;
-    }
-  };
-
-  return (
-    <motion.div
-      initial="hidden"
-      animate="visible"
-      whileHover="hover"
-      whileTap="tap"
-      variants={cardVariants}
-    >
-      <Card>
-        <CardContent className="p-0">
-          <div className="flex items-center p-4">
-            <div className="mr-4">
-              <Image
-                src={download.icon || "/placeholder.svg"}
-                alt={download.name}
-                width={40}
-                height={40}
-                className="rounded"
-              />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">{download.name}</h3>
-                  <div className="text-sm text-muted-foreground">
-                    Version {download.version} • {download.size}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    {getStatusIcon(download.status)}
-                    {getStatusText(download.status)}
-                  </Badge>
-                  {download.status !== "completed" &&
-                    download.status !== "error" &&
-                    onCancel && (
-                      <Button variant="ghost" size="icon" onClick={onCancel}>
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                </div>
-              </div>
-
-              {download.status !== "completed" &&
-                download.status !== "error" && (
-                  <div className="mt-2 space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span>{download.progress.toFixed(0)}%</span>
-                      {download.status === "downloading" &&
-                        download.estimatedTimeRemaining && (
-                          <span>
-                            {download.estimatedTimeRemaining} remaining
-                          </span>
-                        )}
-                    </div>
-                    <motion.div
-                      initial="start"
-                      animate="animate"
-                      custom={download.progress}
-                      variants={progressVariants}
-                    >
-                      <Progress value={download.progress} />
-                    </motion.div>
-
-                    {(download.status === "downloading" ||
-                      download.status === "paused") && (
-                      <div className="flex justify-between items-center mt-2">
-                        <span className="text-xs text-muted-foreground">
-                          {download.speed}
-                        </span>
-                        <div>
-                          {download.status === "downloading" && onPause && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={onPause}
-                            >
-                              Pause
-                            </Button>
-                          )}
-                          {download.status === "paused" && onResume && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={onResume}
-                            >
-                              Resume
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-}
-
-function AvailableSoftwareCard({
-  software,
-  onDownload,
-}: AvailableSoftwareCardProps) {
-  return (
-    <motion.div
-      initial="hidden"
-      animate="visible"
-      whileHover="hover"
-      whileTap="tap"
-      variants={cardVariants}
-    >
-      <Card className="overflow-hidden">
-        <CardHeader className="p-4 flex flex-row items-center gap-4">
-          <Image
-            src={software.icon || "/placeholder.svg"}
-            alt={software.name}
-            width={40}
-            height={40}
-            className="rounded"
-          />
-          <div>
-            <CardTitle className="text-lg">{software.name}</CardTitle>
-            <div className="text-sm text-muted-foreground">
-              Version {software.version}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-4 pt-0">
-          <CardDescription className="line-clamp-2">
-            {software.description}
-          </CardDescription>
-        </CardContent>
-        <CardFooter className="p-4 flex justify-between items-center border-t">
-          <div className="text-sm text-muted-foreground">{software.size}</div>
-          <Button onClick={onDownload}>
-            <Download className="h-4 w-4 mr-2" />
-            Download
-          </Button>
-        </CardFooter>
-      </Card>
-    </motion.div>
   );
 }
