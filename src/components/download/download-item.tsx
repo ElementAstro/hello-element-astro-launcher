@@ -8,7 +8,7 @@ import {
   RefreshCw,
   CheckCircle,
   AlertTriangle,
-  Trash2
+  Trash2,
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,7 @@ import {
   progressVariants,
   iconVariants,
   slideOutVariants,
-  DURATION
+  DURATION,
 } from "./animation-variants";
 import {
   getStatusIcon,
@@ -67,54 +67,66 @@ export function DownloadItem({
   const [isExiting, setIsExiting] = useState(false);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
   const progressBarRef = useRef<HTMLDivElement>(null);
-  
-  // 处理错误信息显示
-  const errorMessage = "下载过程中出现错误";
-  
-  // 处理下载速度格式化
-  const formattedSpeed = download.speed 
-    ? (typeof download.speed === 'number' 
-        ? formatSpeed(download.speed)
-        : download.speed)
+
+  // Handle error message display
+  const errorMessage = "An error occurred during download";
+
+  // Handle download speed formatting
+  const formattedSpeed = download.speed
+    ? typeof download.speed === "number"
+      ? formatSpeed(download.speed)
+      : download.speed
     : "";
-    
-  // 处理剩余时间格式化
+
+  // Handle remaining time formatting
   const formattedTimeRemaining = download.estimatedTimeRemaining
-    ? (typeof download.estimatedTimeRemaining === 'number'
-        ? formatTimeRemaining(download.estimatedTimeRemaining)
-        : download.estimatedTimeRemaining)
+    ? typeof download.estimatedTimeRemaining === "number"
+      ? formatTimeRemaining(download.estimatedTimeRemaining)
+      : download.estimatedTimeRemaining
     : "";
-  
-  // 处理移除操作
+
+  // Handle remove operation
   const handleRemove = () => {
     if (onRemove) {
       setIsExiting(true);
-      // 给动画足够的时间执行
+      // Allow enough time for the animation to execute
       setTimeout(() => {
         onRemove();
       }, DURATION.normal * 1000);
     }
   };
-  
-  // 获取进度条动画类型
+
+  // Get progress bar animation type
   const getProgressVariant = () => {
-    if (download.status === 'paused') return 'paused';
-    if (download.status === 'error') return 'error';
-    if (download.status === 'waiting' || download.status === 'verification' || download.status === 'processing') {
-      return 'indeterminate';
+    if (download.status === "paused") return "paused";
+    if (download.status === "error") return "error";
+    if (
+      download.status === "waiting" ||
+      download.status === "verification" ||
+      download.status === "processing"
+    ) {
+      return "indeterminate";
     }
-    return 'animate';
+    return "animate";
   };
-  
-  // 是否为活跃下载状态
-  const isActiveDownload = ['downloading', 'paused', 'waiting', 'verification', 'processing'].includes(download.status);
-  
-  // 是否为可取消状态
-  const isCancellable = ['downloading', 'paused', 'waiting'].includes(download.status);
-  
-  // 根据下载状态获取合适的操作按钮
+
+  // Is it an active download status?
+  const isActiveDownload = [
+    "downloading",
+    "paused",
+    "waiting",
+    "verification",
+    "processing",
+  ].includes(download.status);
+
+  // Is it a cancellable status?
+  const isCancellable = ["downloading", "paused", "waiting"].includes(
+    download.status
+  );
+
+  // Get the appropriate action button based on download status
   const getActionButton = () => {
-    if (download.status === 'error') {
+    if (download.status === "error") {
       return (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -123,18 +135,18 @@ export function DownloadItem({
               size="sm"
               onClick={onRetry}
               className="flex items-center gap-1"
-              aria-label="重试下载"
+              aria-label="Retry download"
             >
               <RefreshCw className="h-3.5 w-3.5" />
-              <span>重试</span>
+              <span>Retry</span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>重试下载</TooltipContent>
+          <TooltipContent>Retry download</TooltipContent>
         </Tooltip>
       );
     }
-    
-    if (download.status === 'paused' && onResume) {
+
+    if (download.status === "paused" && onResume) {
       return (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -143,18 +155,18 @@ export function DownloadItem({
               size="sm"
               onClick={onResume}
               className="flex items-center gap-1"
-              aria-label="恢复下载"
+              aria-label="Resume download"
             >
               <Play className="h-3.5 w-3.5" />
-              <span>恢复</span>
+              <span>Resume</span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>恢复下载</TooltipContent>
+          <TooltipContent>Resume download</TooltipContent>
         </Tooltip>
       );
     }
-    
-    if (download.status === 'downloading' && onPause) {
+
+    if (download.status === "downloading" && onPause) {
       return (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -163,17 +175,17 @@ export function DownloadItem({
               size="sm"
               onClick={onPause}
               className="flex items-center gap-1"
-              aria-label="暂停下载"
+              aria-label="Pause download"
             >
               <Pause className="h-3.5 w-3.5" />
-              <span>暂停</span>
+              <span>Pause</span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>暂停下载</TooltipContent>
+          <TooltipContent>Pause download</TooltipContent>
         </Tooltip>
       );
     }
-    
+
     return null;
   };
 
@@ -189,10 +201,13 @@ export function DownloadItem({
           className="relative"
           layout
         >
-          <Card className={cn(
-            "overflow-hidden",
-            download.status === 'error' && "border-red-200 dark:border-red-800"
-          )}>
+          <Card
+            className={cn(
+              "overflow-hidden",
+              download.status === "error" &&
+                "border-red-200 dark:border-red-800"
+            )}
+          >
             <CardContent className="p-0">
               <div className="flex items-center p-4">
                 <div className="mr-4 relative">
@@ -203,8 +218,8 @@ export function DownloadItem({
                     height={40}
                     className="rounded"
                   />
-                  {download.status === 'completed' && (
-                    <motion.div 
+                  {download.status === "completed" && (
+                    <motion.div
                       initial={{ scale: 0, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ delay: 0.2 }}
@@ -219,7 +234,7 @@ export function DownloadItem({
                     <div>
                       <h3 className="font-medium">{download.name}</h3>
                       <div className="text-sm text-muted-foreground">
-                        版本 {download.version} • {download.size}
+                        Version {download.version} • {download.size}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -228,8 +243,8 @@ export function DownloadItem({
                         animate="animate"
                         variants={iconVariants}
                       >
-                        <Badge 
-                          variant="outline" 
+                        <Badge
+                          variant="outline"
                           className={cn(
                             "flex items-center gap-1",
                             getStatusClass(download.status)
@@ -239,36 +254,36 @@ export function DownloadItem({
                           {getStatusText(download.status)}
                         </Badge>
                       </motion.div>
-                      
+
                       {isCancellable && onCancel && (
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={onCancel}
-                              aria-label="取消下载"
+                              aria-label="Cancel download"
                             >
                               <X className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>取消下载</TooltipContent>
+                          <TooltipContent>Cancel download</TooltipContent>
                         </Tooltip>
                       )}
-                      
+
                       {!isCancellable && onRemove && (
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
+                            <Button
+                              variant="ghost"
                               size="icon"
                               onClick={() => setShowRemoveDialog(true)}
-                              aria-label="从列表中移除"
+                              aria-label="Remove from list"
                             >
                               <Trash2 className="h-4 w-4 text-muted-foreground" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>从列表中移除</TooltipContent>
+                          <TooltipContent>Remove from list</TooltipContent>
                         </Tooltip>
                       )}
                     </div>
@@ -278,15 +293,19 @@ export function DownloadItem({
                     <div className="mt-2 space-y-1">
                       <div className="flex justify-between text-xs">
                         <span>
-                          {download.progress !== undefined ? `${download.progress.toFixed(0)}%` : '等待中'}
+                          {download.progress !== undefined
+                            ? `${download.progress.toFixed(0)}%`
+                            : "Waiting"}
                         </span>
-                        {download.status === "downloading" && formattedTimeRemaining && (
-                          <span>
-                            剩余 {formattedTimeRemaining}
-                          </span>
-                        )}
+                        {download.status === "downloading" &&
+                          formattedTimeRemaining && (
+                            <span>{formattedTimeRemaining} remaining</span>
+                          )}
                       </div>
-                      <div ref={progressBarRef} className="relative h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        ref={progressBarRef}
+                        className="relative h-2 bg-muted rounded-full overflow-hidden"
+                      >
                         <motion.div
                           custom={download.progress || 0}
                           variants={progressVariants}
@@ -303,10 +322,10 @@ export function DownloadItem({
                             {formattedSpeed}
                           </span>
                         )}
-                        
+
                         <div className="flex gap-2">
                           {getActionButton()}
-                          
+
                           {onShowDetails && (
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -315,24 +334,24 @@ export function DownloadItem({
                                   size="sm"
                                   onClick={onShowDetails}
                                   className="h-8 w-8 p-0"
-                                  aria-label="查看详情"
+                                  aria-label="Show details"
                                 >
                                   <Info className="h-4 w-4" />
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>查看详情</TooltipContent>
+                              <TooltipContent>Show details</TooltipContent>
                             </Tooltip>
                           )}
                         </div>
                       </div>
                     </div>
                   )}
-                  
-                  {/* 错误状态显示 */}
-                  {download.status === 'error' && (
+
+                  {/* Error status display */}
+                  {download.status === "error" && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
+                      animate={{ opacity: 1, height: "auto" }}
                       transition={{ duration: DURATION.normal }}
                       className="mt-2 bg-red-50 dark:bg-red-900/20 rounded-md p-2 text-sm text-red-600 dark:text-red-400 flex items-start gap-2"
                     >
@@ -340,9 +359,9 @@ export function DownloadItem({
                       <span>{errorMessage}</span>
                     </motion.div>
                   )}
-                  
-                  {/* 完成状态额外信息 */}
-                  {download.status === 'completed' && onShowDetails && (
+
+                  {/* Completed status additional info */}
+                  {download.status === "completed" && onShowDetails && (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -355,7 +374,7 @@ export function DownloadItem({
                         className="text-xs flex items-center gap-1 h-7"
                       >
                         <Info className="h-3.5 w-3.5" />
-                        <span>查看详情</span>
+                        <span>Show details</span>
                       </Button>
                     </motion.div>
                   )}
@@ -363,19 +382,26 @@ export function DownloadItem({
               </div>
             </CardContent>
           </Card>
-          
-          {/* 移除确认对话框 */}
-          <AlertDialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
+
+          {/* Remove confirmation dialog */}
+          <AlertDialog
+            open={showRemoveDialog}
+            onOpenChange={setShowRemoveDialog}
+          >
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>移除下载记录</AlertDialogTitle>
+                <AlertDialogTitle>Remove Download Record</AlertDialogTitle>
                 <AlertDialogDescription>
-                  您确定要从下载列表中移除 &quot;{download.name}&quot; 吗？此操作不会删除已下载的文件。
+                  Are you sure you want to remove &quot;{download.name}&quot;
+                  from the download list? This action will not delete the
+                  downloaded file.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>取消</AlertDialogCancel>
-                <AlertDialogAction onClick={handleRemove}>移除</AlertDialogAction>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleRemove}>
+                  Remove
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
