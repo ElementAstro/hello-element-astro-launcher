@@ -6,6 +6,7 @@ export * from "./pagination-controls";
 export * from "./search-bar";
 export * from "./software-details-dialog";
 export * from "./software-item";
+export * from "./empty-error-states";
 
 // Export animation and constants
 export * from "./animation-constants";
