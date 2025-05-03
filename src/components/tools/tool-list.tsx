@@ -6,7 +6,7 @@ import {
   RefreshCcw,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,6 +49,25 @@ export function ToolList({
 }: ToolListProps) {
   const router = useRouter();
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const [columns, setColumns] = useState(3); // 默认列数
+
+  // 根据屏幕宽度调整布局列数
+  useEffect(() => {
+    const updateColumns = () => {
+      if (window.innerWidth < 640) {
+        setColumns(1); // 小屏幕设备
+      } else if (window.innerWidth < 1024) {
+        setColumns(2); // 平板设备
+      } else {
+        setColumns(3); // 桌面设备
+      }
+    };
+
+    updateColumns();
+    window.addEventListener("resize", updateColumns);
+
+    return () => window.removeEventListener("resize", updateColumns);
+  }, []);
 
   const handleDelete = async (id: string) => {
     try {
@@ -63,25 +82,34 @@ export function ToolList({
     }
   };
 
+  // 骨架屏加载状态
   if (isLoading) {
     return (
       <motion.div
         initial="hidden"
         animate="visible"
         variants={VARIANTS.fadeIn}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4"
       >
-        {Array.from({ length: 6 }).map((_, i) => (
+        {Array.from({ length: columns * 2 }).map((_, i) => (
           <motion.div key={i} variants={VARIANTS.listItem} custom={i}>
-            <Card className="h-full">
-              <CardHeader className="pb-2">
-                <Skeleton className="h-6 w-48" />
-                <Skeleton className="h-4 w-full mt-1" />
+            <Card className="h-full bg-card/50 border shadow-sm">
+              <CardHeader className="pb-2 space-y-2">
+                <div className="flex items-start justify-between">
+                  <div className="flex gap-2 items-start">
+                    <Skeleton className="h-8 w-8 rounded-md mt-1" />
+                    <div className="space-y-1">
+                      <Skeleton className="h-5 w-32 sm:w-36" />
+                      <Skeleton className="h-3 w-48 sm:w-56" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-8 w-8 rounded-md" />
+                </div>
               </CardHeader>
               <CardContent>
-                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-32 mt-2" />
               </CardContent>
-              <CardFooter className="flex justify-between">
+              <CardFooter className="flex justify-between pt-2">
                 <Skeleton className="h-9 w-9 rounded-md" />
                 <Skeleton className="h-9 w-20 rounded-md" />
               </CardFooter>
@@ -92,21 +120,29 @@ export function ToolList({
     );
   }
 
+  // 错误状态
   if (error) {
     return (
       <motion.div
         initial="hidden"
         animate="visible"
         variants={VARIANTS.fadeIn}
-        className="flex flex-col items-center justify-center py-12 text-center"
+        className="flex flex-col items-center justify-center py-8 md:py-12 text-center px-4"
       >
         <div className="rounded-full bg-red-100 dark:bg-red-900/20 p-3 mb-4">
           <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
         </div>
         <h3 className="text-lg font-medium">加载工具时出错</h3>
-        <p className="text-muted-foreground mt-2 mb-4 max-w-md">{error}</p>
+        <p className="text-muted-foreground mt-2 mb-4 max-w-md text-sm md:text-base">
+          {error}
+        </p>
         {onRetry && (
-          <Button onClick={onRetry} variant="outline">
+          <Button
+            onClick={onRetry}
+            variant="outline"
+            className="active:scale-95 transition-transform"
+            aria-label="重试加载工具"
+          >
             <RefreshCcw className="h-4 w-4 mr-2" />
             重试
           </Button>
@@ -115,13 +151,14 @@ export function ToolList({
     );
   }
 
+  // 空状态
   if (tools.length === 0) {
     return (
       <motion.div
         initial="hidden"
         animate="visible"
         variants={VARIANTS.fadeInUp}
-        className="flex flex-col items-center justify-center py-12 text-center"
+        className="flex flex-col items-center justify-center py-8 md:py-12 text-center px-4"
       >
         <motion.div
           className="rounded-full bg-muted p-3 mb-4"
@@ -131,13 +168,16 @@ export function ToolList({
           <Calculator className="h-6 w-6 text-muted-foreground" />
         </motion.div>
         <h3 className="text-lg font-medium">未找到工具</h3>
-        <p className="text-muted-foreground mt-2 mb-4 max-w-md">
+        <p className="text-muted-foreground mt-2 mb-4 max-w-md text-sm md:text-base">
           {searchQuery
             ? "没有找到符合搜索条件的工具。尝试使用不同的搜索词。"
             : "您尚未创建任何工具。创建您的第一个工具以帮助进行天文计算。"}
         </p>
         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Button onClick={() => router.push("/tools/create")}>
+          <Button
+            onClick={() => router.push("/tools/create")}
+            className="active:scale-95 transition-transform"
+          >
             <Plus className="h-4 w-4 mr-2" />
             创建工具
           </Button>
@@ -146,28 +186,31 @@ export function ToolList({
     );
   }
 
+  // 工具列表
   return (
     <motion.div
       initial="hidden"
       animate="visible"
       variants={VARIANTS.fadeIn}
-      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4"
     >
       <AnimatePresence mode="popLayout">
         {tools.map((tool, index) => (
           <motion.div
             key={tool.id}
             layout
+            layoutId={tool.id}
             exit={{
               opacity: 0,
               scale: 0.8,
               transition: { duration: 0.2 },
             }}
+            className="focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:rounded-lg"
           >
             <TooltipProvider>
-              <Tooltip>
+              <Tooltip delayDuration={300}>
                 <TooltipTrigger asChild>
-                  <div>
+                  <div className="h-full">
                     <ToolCard
                       tool={tool}
                       index={index}
@@ -179,7 +222,7 @@ export function ToolList({
                   </div>
                 </TooltipTrigger>
                 {deletingIds.has(tool.id) && (
-                  <TooltipContent>
+                  <TooltipContent side="top">
                     <div className="flex items-center">
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       <span>正在删除...</span>

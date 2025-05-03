@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { AlertCircle } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { AlertCircle, Info } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,7 +18,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { ToolInput, ToolInputValue } from "@/types/tool";
-import { VARIANTS } from "./animation-constants";
+import { VARIANTS, DURATION, EASE } from "./animation-constants";
 
 interface ToolInputFieldProps {
   input: ToolInput;
@@ -35,15 +35,10 @@ export function ToolInputField({
 }: ToolInputFieldProps) {
   const [localError, setLocalError] = useState<string | null>(null);
   const [touched, setTouched] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
-  // 处理表单失焦验证
-  const handleBlur = () => {
-    setTouched(true);
-    validate();
-  };
-
-  // 验证输入值
-  const validate = (): boolean => {
+  // 使用 useCallback 优化验证逻辑
+  const validate = useCallback((): boolean => {
     // 如果必填项为空
     if (
       input.required &&
@@ -78,7 +73,7 @@ export function ToolInputField({
       }
     }
 
-    // 自定义验证器（如果有）
+    // 自定义验证器
     if (input.validation?.customValidator && typeof window !== "undefined") {
       try {
         const validatorFunc = new Function(
@@ -99,10 +94,22 @@ export function ToolInputField({
 
     setLocalError(null);
     return true;
+  }, [input, value]);
+
+  // 处理表单获得焦点
+  const handleFocus = () => {
+    setIsFocused(true);
+  };
+
+  // 处理表单失焦验证
+  const handleBlur = () => {
+    setIsFocused(false);
+    setTouched(true);
+    validate();
   };
 
   // 处理输入变化
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { type, value: inputValue } = e.target;
     let newValue: ToolInputValue;
 
@@ -119,7 +126,7 @@ export function ToolInputField({
     if (touched) {
       setTimeout(() => validate(), 0);
     }
-  };
+  }, [onChange, touched, validate]);
 
   // 检查外部错误并更新本地错误状态
   useEffect(() => {
@@ -129,10 +136,13 @@ export function ToolInputField({
     }
   }, [error]);
 
+  // 渲染输入字段
   const renderInput = () => {
     // 确定错误状态
     const hasError = touched && (localError || error);
-    const errorClass = hasError ? "border-red-500 focus:ring-red-500" : "";
+    const inputClass = `${hasError ? "border-red-500 focus-visible:ring-red-500" : ""} 
+                        ${isFocused ? "border-primary" : ""}
+                        transition-all duration-200`;
 
     switch (input.type) {
       case "text":
@@ -146,12 +156,14 @@ export function ToolInputField({
               id={input.id}
               value={typeof value === "string" ? value : ""}
               onChange={handleChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               placeholder={input.description}
               required={input.required}
-              className={errorClass}
+              className={inputClass}
               aria-invalid={hasError ? "true" : "false"}
               aria-describedby={hasError ? `${input.id}-error` : undefined}
+              autoComplete={input.autocomplete || "off"}
             />
           </motion.div>
         );
@@ -168,13 +180,14 @@ export function ToolInputField({
               type="number"
               value={typeof value === "number" || value === "" ? value : ""}
               onChange={handleChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
-              placeholder={input.description}
+              placeholder={input.placeholder || input.description}
               required={input.required}
               min={input.validation?.min}
               max={input.validation?.max}
-              step="any"
-              className={errorClass}
+              step={input.step || "any"}
+              className={inputClass}
               aria-invalid={hasError ? "true" : "false"}
               aria-describedby={hasError ? `${input.id}-error` : undefined}
             />
@@ -193,9 +206,10 @@ export function ToolInputField({
               type="date"
               value={typeof value === "string" ? value : ""}
               onChange={handleChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               required={input.required}
-              className={errorClass}
+              className={inputClass}
               aria-invalid={hasError ? "true" : "false"}
               aria-describedby={hasError ? `${input.id}-error` : undefined}
             />
@@ -214,9 +228,10 @@ export function ToolInputField({
               type="time"
               value={typeof value === "string" ? value : ""}
               onChange={handleChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               required={input.required}
-              className={errorClass}
+              className={inputClass}
               aria-invalid={hasError ? "true" : "false"}
               aria-describedby={hasError ? `${input.id}-error` : undefined}
             />
@@ -230,20 +245,25 @@ export function ToolInputField({
             initial="hidden"
             animate="visible"
             variants={VARIANTS.fadeIn}
-            whileHover={{ scale: 1.02 }}
+            whileHover={{ scale: 1.01 }}
           >
             <Checkbox
               id={input.id}
               checked={Boolean(value)}
               onCheckedChange={(checked) => {
                 onChange(Boolean(checked));
+                setTouched(true);
+                setTimeout(() => validate(), 0);
               }}
+              className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+              onFocus={handleFocus}
+              onBlur={handleBlur}
               aria-invalid={hasError ? "true" : "false"}
               aria-describedby={hasError ? `${input.id}-error` : undefined}
             />
             <Label
               htmlFor={input.id}
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer select-none"
             >
               {input.description}
             </Label>
@@ -256,6 +276,7 @@ export function ToolInputField({
             initial="hidden"
             animate="visible"
             variants={VARIANTS.fadeIn}
+            className="w-full"
           >
             <Select
               value={
@@ -273,15 +294,22 @@ export function ToolInputField({
                 setTouched(true);
                 setTimeout(() => validate(), 0);
               }}
+              onOpenChange={(open) => {
+                setIsFocused(open);
+                if (!open) {
+                  setTouched(true);
+                  validate();
+                }
+              }}
             >
               <SelectTrigger
-                className={errorClass}
+                className={`w-full ${inputClass}`}
                 aria-invalid={hasError ? "true" : "false"}
                 aria-describedby={hasError ? `${input.id}-error` : undefined}
               >
-                <SelectValue placeholder={input.description} />
+                <SelectValue placeholder={input.placeholder || input.description} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-[280px]">
                 {input.options?.map((option) => (
                   <SelectItem
                     key={String(option.value)}
@@ -310,9 +338,11 @@ export function ToolInputField({
                 onChange(file?.name || "");
                 if (touched) setTimeout(() => validate(), 0);
               }}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               required={input.required}
-              className={errorClass}
+              className={`cursor-pointer ${inputClass}`}
+              accept={input.accept || "*/*"}
               aria-invalid={hasError ? "true" : "false"}
               aria-describedby={hasError ? `${input.id}-error` : undefined}
             />
@@ -330,10 +360,11 @@ export function ToolInputField({
               id={input.id}
               value={typeof value === "string" ? value : ""}
               onChange={handleChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
-              placeholder={input.description}
+              placeholder={input.placeholder || input.description}
               required={input.required}
-              className={errorClass}
+              className={inputClass}
               aria-invalid={hasError ? "true" : "false"}
               aria-describedby={hasError ? `${input.id}-error` : undefined}
             />
@@ -342,46 +373,54 @@ export function ToolInputField({
     }
   };
 
+  // 显示错误信息
   const displayError = (touched && localError) || error;
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1.5">
         <Label
           htmlFor={input.id}
-          className={`text-sm ${displayError ? "text-red-500" : ""}`}
+          className={`text-sm font-medium ${displayError ? "text-red-500" : ""} ${isFocused ? "text-primary" : ""} transition-colors`}
         >
           {input.description}
           {input.required && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="text-red-500 ml-1">*</span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>此字段为必填项</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <span className="text-red-500 ml-0.5">*</span>
           )}
         </Label>
+        
+        {input.help && (
+          <TooltipProvider>
+            <Tooltip delayDuration={200}>
+              <TooltipTrigger type="button" className="inline-flex">
+                <Info className="h-3.5 w-3.5 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent side="top" align="center" className="max-w-xs text-xs">
+                <p>{input.help}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
       </div>
 
       {renderInput()}
 
-      {displayError && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.2 }}
-          className="flex items-center text-red-500 text-sm mt-1"
-          id={`${input.id}-error`}
-        >
-          <AlertCircle className="h-3 w-3 mr-1" />
-          <span>{displayError}</span>
-        </motion.div>
-      )}
+      <AnimatePresence>
+        {displayError && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: DURATION.fast, ease: EASE.smooth }}
+            className="flex items-center text-red-500 text-xs mt-1"
+            id={`${input.id}-error`}
+            role="alert"
+          >
+            <AlertCircle className="h-3 w-3 mr-1.5 flex-shrink-0" />
+            <span>{displayError}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

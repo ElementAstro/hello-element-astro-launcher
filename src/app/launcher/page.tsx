@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -26,7 +26,7 @@ import {
 export default function LauncherPage() {
   const searchParams = useSearchParams();
 
-  // Get state from Zustand store
+  // 使用解构赋值获取状态和动作，避免频繁从store对象访问属性
   const {
     software,
     currentTab,
@@ -67,19 +67,21 @@ export default function LauncherPage() {
 
   const autoScrollTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize state from URL parameters
+  // 从URL参数初始化状态
   useEffect(() => {
     const category = searchParams.get("category");
     if (category) {
       const normalizedCategory = category.toLowerCase() as Category;
-      if (normalizedCategory === "all" ||
-          normalizedCategory === "deepspace" ||
-          normalizedCategory === "planets" ||
-          normalizedCategory === "guiding" ||
-          normalizedCategory === "analysis" ||
-          normalizedCategory === "drivers" ||
-          normalizedCategory === "vendor" ||
-          normalizedCategory === "utilities") {
+      if (
+        normalizedCategory === "all" ||
+        normalizedCategory === "deepspace" ||
+        normalizedCategory === "planets" ||
+        normalizedCategory === "guiding" ||
+        normalizedCategory === "analysis" ||
+        normalizedCategory === "drivers" ||
+        normalizedCategory === "vendor" ||
+        normalizedCategory === "utilities"
+      ) {
         setCurrentTab(normalizedCategory);
       }
     }
@@ -90,45 +92,65 @@ export default function LauncherPage() {
     }
   }, [searchParams, setCurrentTab, setSearchQuery]);
 
-  // Filter and sort software items
-  const filteredSoftware = software
-    .filter(
-      (item) =>
-        (currentTab === "all" || item.category === currentTab) &&
-        (item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.description.toLowerCase().includes(searchQuery.toLowerCase())) &&
-        (!filterFeatured || item.featured) &&
-        (!filterInstalled || item.installed)
-    )
-    .sort((a, b) => {
-      if (sortBy === "name") {
-        return sortDirection === "asc"
-          ? a.name.localeCompare(b.name)
-          : b.name.localeCompare(a.name);
-      } else if (sortBy === "downloads") {
-        return sortDirection === "asc"
-          ? a.downloads - b.downloads
-          : b.downloads - a.downloads;
-      } else {
-        return sortDirection === "asc"
-          ? new Date(a.lastUpdated).getTime() -
-              new Date(b.lastUpdated).getTime()
-          : new Date(b.lastUpdated).getTime() -
-              new Date(a.lastUpdated).getTime();
-      }
-    });
+  // 使用useMemo优化软件筛选和排序
+  const filteredSoftware = useMemo(() => {
+    return software
+      .filter(
+        (item) =>
+          (currentTab === "all" || item.category === currentTab) &&
+          (item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.description
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase())) &&
+          (!filterFeatured || item.featured) &&
+          (!filterInstalled || item.installed)
+      )
+      .sort((a, b) => {
+        if (sortBy === "name") {
+          return sortDirection === "asc"
+            ? a.name.localeCompare(b.name)
+            : b.name.localeCompare(a.name);
+        } else if (sortBy === "downloads") {
+          return sortDirection === "asc"
+            ? a.downloads - b.downloads
+            : b.downloads - a.downloads;
+        } else {
+          return sortDirection === "asc"
+            ? new Date(a.lastUpdated).getTime() -
+                new Date(b.lastUpdated).getTime()
+            : new Date(b.lastUpdated).getTime() -
+                new Date(a.lastUpdated).getTime();
+        }
+      });
+  }, [
+    software,
+    currentTab,
+    searchQuery,
+    filterFeatured,
+    filterInstalled,
+    sortBy,
+    sortDirection,
+  ]);
 
-  // Pagination
-  const totalPages = Math.ceil(filteredSoftware.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedSoftware = filteredSoftware.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
+  // 使用useMemo计算分页信息
+  const { totalPages, paginatedSoftware, startIndex } = useMemo(() => {
+    const totalPages = Math.ceil(filteredSoftware.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedSoftware = filteredSoftware.slice(
+      startIndex,
+      startIndex + itemsPerPage
+    );
+    return { totalPages, paginatedSoftware, startIndex };
+  }, [filteredSoftware, currentPage, itemsPerPage]);
 
-  // Auto-scroll functionality
+  // 自动滚动功能
   useEffect(() => {
     if (autoScroll) {
+      // 清除之前的计时器以防止内存泄漏
+      if (autoScrollTimerRef.current) {
+        clearInterval(autoScrollTimerRef.current);
+      }
+
       autoScrollTimerRef.current = setInterval(() => {
         const nextPage = currentPage < totalPages ? currentPage + 1 : 1;
         setCurrentPage(nextPage);
@@ -144,7 +166,7 @@ export default function LauncherPage() {
     };
   }, [autoScroll, scrollSpeed, totalPages, setCurrentPage, currentPage]);
 
-  // Reset to page 1 when filters change
+  // 当筛选条件更改时重置到第1页
   useEffect(() => {
     setCurrentPage(1);
   }, [
@@ -158,28 +180,48 @@ export default function LauncherPage() {
     setCurrentPage,
   ]);
 
-  // Handle keyboard shortcuts
+  // 键盘快捷键处理
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Arrow left/right for pagination
+      // 左右箭头键用于分页
       if (e.key === "ArrowLeft" && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       } else if (e.key === "ArrowRight" && currentPage < totalPages) {
         setCurrentPage(currentPage + 1);
       }
 
-      // Ctrl+F for search focus
+      // Ctrl+F 聚焦搜索框
       if (e.ctrlKey && e.key === "f") {
         e.preventDefault();
-        document.getElementById("search-input")?.focus();
+        // 如果搜索栏未显示，则先切换搜索栏可见性
+        if (!searchVisible) {
+          setSearchVisible(true);
+        }
+        // 使用requestAnimationFrame确保DOM已更新
+        requestAnimationFrame(() => {
+          document.getElementById("search-input")?.focus();
+        });
+      }
+
+      // ESC键关闭详情对话框
+      if (e.key === "Escape" && selectedSoftware) {
+        setSelectedSoftware(null);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentPage, totalPages, setCurrentPage]);
+  }, [
+    currentPage,
+    totalPages,
+    setCurrentPage,
+    searchVisible,
+    setSearchVisible,
+    selectedSoftware,
+    setSelectedSoftware,
+  ]);
 
-  // Handle installation simulation
+  // 安装模拟
   useEffect(() => {
     if (isInstalling) {
       const interval = setInterval(() => {
@@ -189,8 +231,8 @@ export default function LauncherPage() {
           clearInterval(interval);
           completeInstallation();
 
-          toast.success("Installation Complete", {
-            description: `${selectedSoftware?.name} has been installed successfully.`,
+          toast.success("安装完成", {
+            description: `${selectedSoftware?.name} 已成功安装。`,
           });
         }
       }, 300);
@@ -205,67 +247,81 @@ export default function LauncherPage() {
     selectedSoftware,
   ]);
 
-  // Handle software action (install or launch)
-  const handleSoftwareAction = async (software: Software) => {
-    if (software.actionLabel === "Install") {
-      startInstallation(software.id);
-    } else {
-      try {
-        const response = await fetch("/api/software/launch", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ id: software.id }),
-        });
+  // 软件操作处理（安装或启动）
+  const handleSoftwareAction = useCallback(
+    async (software: Software) => {
+      if (software.actionLabel === "Install") {
+        startInstallation(software.id);
+      } else {
+        try {
+          const response = await fetch("/api/software/launch", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ id: software.id }),
+          });
 
-        const data = await response.json();
+          const data = await response.json();
 
-        if (!response.ok) {
-          throw new Error(data.error || "Failed to launch software");
+          if (!response.ok) {
+            throw new Error(data.error || "无法启动软件");
+          }
+
+          toast.success("软件已启动", {
+            description: `${software.name} 已成功启动。`,
+          });
+
+          setSelectedSoftware(null);
+        } catch (error) {
+          console.error(`启动 ${software.name} 时出错:`, error);
+
+          toast.error("启动失败", {
+            description:
+              error instanceof Error ? error.message : "无法启动软件",
+          });
         }
-
-        toast.success("Software Launched", {
-          description: `${software.name} has been launched successfully.`,
-        });
-
-        setSelectedSoftware(null);
-      } catch (error) {
-        console.error(`Error launching ${software.name}:`, error);
-
-        toast.error("Launch Failed", {
-          description:
-            error instanceof Error
-              ? error.message
-              : "Failed to launch software",
-        });
       }
-    }
-  };
+    },
+    [startInstallation, setSelectedSoftware]
+  );
 
-  // Handle refresh
-  const handleRefresh = async () => {
+  // 刷新处理
+  const handleRefresh = useCallback(async () => {
     try {
       await refreshSystemInfo();
 
-      toast.success("Refreshed", {
-        description: "Software list has been refreshed.",
+      toast.success("已刷新", {
+        description: "软件列表已刷新。",
       });
     } catch (error) {
-      console.error("Error refreshing software list:", error);
+      console.error("刷新软件列表时出错:", error);
 
-      toast.error("Refresh Failed", {
+      toast.error("刷新失败", {
         description:
-          error instanceof Error
-            ? error.message
-            : "Failed to refresh software list.",
+          error instanceof Error ? error.message : "无法刷新软件列表。",
       });
     }
-  };
+  }, [refreshSystemInfo]);
+
+  // 计算过滤器数量
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filterFeatured) count++;
+    if (filterInstalled) count++;
+    return count;
+  }, [filterFeatured, filterInstalled]);
+
+  // 当前排序设置
+  const currentSort = useMemo(
+    () => ({ field: sortBy, direction: sortDirection }),
+    [sortBy, sortDirection]
+  );
 
   return (
     <AppLayout>
-      <div className="flex-1 flex flex-col overflow-hidden pb-16 md:pb-0">
+      <div className="flex-1 flex flex-col overflow-hidden pb-12 sm:pb-0">
+        {/* 搜索栏组件 */}
         <SearchBar
           searchQuery={searchQuery}
           searchVisible={searchVisible}
@@ -274,6 +330,7 @@ export default function LauncherPage() {
           onRefresh={handleRefresh}
         />
 
+        {/* 过滤控件组件 - 仅在搜索可见时显示 */}
         {searchVisible && (
           <FilterControls
             currentTab={currentTab as Category}
@@ -288,14 +345,18 @@ export default function LauncherPage() {
               setSortBy(by);
               setSortDirection(direction);
             }}
+            currentSort={currentSort}
+            activeFiltersCount={activeFiltersCount}
           />
         )}
 
-        <CategoryTabs 
-          currentTab={currentTab as Category} 
-          onTabChange={setCurrentTab} 
+        {/* 分类标签组件 */}
+        <CategoryTabs
+          currentTab={currentTab as Category}
+          onTabChange={setCurrentTab}
         />
 
+        {/* 自动滚动控件组件 */}
         <AutoScrollControls
           autoScroll={autoScroll}
           scrollSpeed={scrollSpeed}
@@ -305,40 +366,42 @@ export default function LauncherPage() {
           onItemsPerPageChange={setItemsPerPage}
         />
 
-        {/* Software List */}
-        <div className="flex-1 overflow-y-auto p-4">
+        {/* 软件列表 */}
+        <div className="flex-1 overflow-y-auto p-2 sm:p-3">
           {filteredSoftware.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
-              <p>No software found matching your criteria</p>
+              <p className="text-sm">没有找到符合条件的软件</p>
               <Button
                 variant="link"
+                size="sm"
+                className="text-xs mt-2"
                 onClick={() => {
                   setSearchQuery("");
                   setFilterFeatured(false);
                   setFilterInstalled(false);
                 }}
               >
-                Clear filters
+                清除筛选条件
               </Button>
             </div>
           ) : (
             <>
-              {/* Results summary */}
-              <div className="text-sm text-muted-foreground mb-4">
-                Showing {startIndex + 1}-
-                {Math.min(startIndex + itemsPerPage, filteredSoftware.length)} of{" "}
-                {filteredSoftware.length} results
+              {/* 结果摘要 */}
+              <div className="text-xs text-muted-foreground mb-3">
+                显示 {startIndex + 1}-
+                {Math.min(startIndex + itemsPerPage, filteredSoftware.length)}/{" "}
+                {filteredSoftware.length} 个结果
               </div>
 
-              {/* Software items */}
+              {/* 软件项目列表 */}
               <motion.div
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
                 className={`${
                   viewMode === "grid"
-                    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-                    : "space-y-4"
+                    ? "grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"
+                    : "space-y-3"
                 }`}
               >
                 {paginatedSoftware.map((software) => (
@@ -362,12 +425,16 @@ export default function LauncherPage() {
           )}
         </div>
 
+        {/* 分页控件 */}
         <PaginationControls
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={filteredSoftware.length}
         />
 
+        {/* 软件详情对话框 */}
         <SoftwareDetailsDialog
           software={selectedSoftware}
           isOpen={!!selectedSoftware}

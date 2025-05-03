@@ -24,6 +24,16 @@ export interface ToolInput {
     pattern?: string;
     customValidator?: string;
   };
+  autocomplete?: string;
+  placeholder?: string;
+  step?: string | number;
+  help?: string;
+  accept?: string;
+}
+
+export interface InputOption {
+  label: string;
+  value: unknown;
 }
 
 export interface ToolOutput {

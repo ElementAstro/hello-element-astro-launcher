@@ -48,14 +48,15 @@ export function SearchBar({
   // 当搜索栏变为可见时，聚焦搜索输入框
   useEffect(() => {
     if (searchVisible && inputRef.current) {
-      setTimeout(() => {
+      // 使用requestAnimationFrame来确保DOM更新后再聚焦
+      requestAnimationFrame(() => {
         inputRef.current?.focus();
-      }, ANIMATION_DURATION.normal * 1000);
+      });
     }
   }, [searchVisible]);
 
   const renderSearchBar = () => (
-    <div className="flex flex-col md:flex-row gap-4">
+    <div className="flex flex-col sm:flex-row w-full gap-2 sm:gap-4">
       <div
         className={cn(
           "relative flex-1 transition-all",
@@ -66,7 +67,7 @@ export function SearchBar({
           id="search-input"
           ref={inputRef}
           placeholder="搜索软件..."
-          className="pl-10 pr-10 py-2"
+          className="pl-8 pr-8 h-9 py-1"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           onFocus={() => setIsFocused(true)}
@@ -74,7 +75,7 @@ export function SearchBar({
           onKeyDown={handleKeyDown}
           aria-label="搜索软件"
         />
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
         <AnimatePresence>
           {searchQuery && (
             <motion.div
@@ -87,11 +88,11 @@ export function SearchBar({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-6 w-6"
+                className="h-5 w-5"
                 onClick={handleClear}
                 aria-label="清除搜索"
               >
-                <X className="h-4 w-4" />
+                <X className="h-3 w-3" />
               </Button>
             </motion.div>
           )}
@@ -102,14 +103,20 @@ export function SearchBar({
           <TooltipTrigger asChild>
             <Button
               variant="outline"
-              className="flex-1 md:flex-none"
+              size="sm"
+              className="flex-1 sm:flex-none"
               onClick={onRefresh}
               disabled={isRefreshing}
             >
               <RefreshCw
-                className={cn("h-4 w-4 mr-2", isRefreshing && "animate-spin")}
+                className={cn(
+                  "h-3.5 w-3.5 mr-1.5",
+                  isRefreshing && "animate-spin"
+                )}
               />
-              {isRefreshing ? "刷新中..." : "刷新"}
+              <span className="text-xs">
+                {isRefreshing ? "刷新中" : "刷新"}
+              </span>
             </Button>
           </TooltipTrigger>
           <TooltipContent>刷新软件列表</TooltipContent>
@@ -119,18 +126,19 @@ export function SearchBar({
           <TooltipTrigger asChild>
             <Button
               variant="outline"
-              className="flex-1 md:flex-none"
+              size="sm"
+              className="flex-1 sm:flex-none"
               onClick={onSearchVisibilityToggle}
             >
               {searchVisible ? (
                 <>
-                  <EyeOff className="h-4 w-4 mr-2" />
-                  隐藏搜索
+                  <EyeOff className="h-3.5 w-3.5 mr-1.5" />
+                  <span className="text-xs">隐藏</span>
                 </>
               ) : (
                 <>
-                  <Eye className="h-4 w-4 mr-2" />
-                  显示搜索
+                  <Eye className="h-3.5 w-3.5 mr-1.5" />
+                  <span className="text-xs">搜索</span>
                 </>
               )}
             </Button>
@@ -147,7 +155,7 @@ export function SearchBar({
     <AnimatePresence mode="wait">
       {searchVisible && (
         <motion.div
-          className="p-4 border-b"
+          className="p-2 sm:p-3 border-b"
           variants={searchBarVariants}
           initial="hidden"
           animate="visible"

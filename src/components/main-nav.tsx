@@ -12,6 +12,8 @@ import {
   PenToolIcon as Tool,
   Settings,
   Power,
+  Users,
+  Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -176,7 +178,7 @@ export function MainNav() {
           <TooltipTrigger asChild>
             <Link href="/proxy" className="w-full">
               <NavItem
-                icon={<Box className="h-5 w-5" />}
+                icon={<Globe className="h-5 w-5" />}
                 label="Proxy"
                 active={pathname === "/proxy"}
                 showText={isExpanded}
@@ -203,6 +205,24 @@ export function MainNav() {
           </TooltipTrigger>
           <TooltipContent side="right" className={isExpanded ? "hidden" : ""}>
             Tools
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link href="/agents" className="w-full">
+              <NavItem
+                icon={<Users className="h-5 w-5" />}
+                label="Agents"
+                active={pathname === "/agents"}
+                showText={isExpanded}
+              />
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="right" className={isExpanded ? "hidden" : ""}>
+            Agents
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { Tool } from "@/types/tool";
 import { getCategoryIcon } from "./utils";
-import { VARIANTS } from "./animation-constants";
+import { VARIANTS, EASE } from "./animation-constants";
 
 interface ToolCardProps {
   tool: Tool;
@@ -58,18 +58,29 @@ export function ToolCard({
   const [isHovering, setIsHovering] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isPressing, setIsPressing] = useState(false);
 
-  const handleRun = async () => {
+  // 使用 useCallback 优化事件处理
+  const handleRun = useCallback(async () => {
     try {
       setIsRunning(true);
       setError(null);
       await onRun();
     } catch (err) {
-      setError(typeof err === "string" ? err : "Failed to run tool");
+      setError(typeof err === "string" ? err : "运行工具失败");
     } finally {
       setIsRunning(false);
     }
-  };
+  }, [onRun]);
+
+  // 处理触摸事件的特定回调
+  const handleTouchStart = useCallback(() => {
+    setIsPressing(true);
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    setIsPressing(false);
+  }, []);
 
   return (
     <motion.div
@@ -78,36 +89,44 @@ export function ToolCard({
       variants={VARIANTS.listItem}
       custom={index}
       whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
       transition={{ duration: 0.2 }}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
-      className="focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 rounded-lg"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      className="h-full"
+      style={{ touchAction: "manipulation" }}
     >
       <Card
-        className={`h-full transition-shadow duration-300 ${
-          isHovering ? "shadow-md" : ""
-        }`}
+        className={`h-full transition-all duration-300 ${
+          isHovering || isPressing ? "shadow-md bg-card/90" : "bg-card/70"
+        } border ${isPressing ? "border-primary/50" : ""}`}
       >
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-2 space-y-0">
           <div className="flex justify-between items-start">
             <div className="flex items-start gap-2">
               <div className="mt-0.5">
                 <motion.div
                   whileHover={{ rotate: 10, scale: 1.1 }}
-                  transition={{ duration: 0.2 }}
+                  whileTap={{ rotate: -5, scale: 0.95 }}
+                  transition={{ duration: 0.2, ease: EASE.bounce }}
+                  className="bg-secondary/30 p-1.5 rounded-md"
                 >
                   {getCategoryIcon(tool.category)}
                 </motion.div>
               </div>
               <div>
-                <CardTitle className="text-lg">{tool.name}</CardTitle>
-                <CardDescription className="mt-1 line-clamp-2">
+                <CardTitle className="text-base sm:text-lg line-clamp-1">
+                  {tool.name}
+                </CardTitle>
+                <CardDescription className="mt-1 line-clamp-2 text-xs sm:text-sm">
                   {tool.description}
                 </CardDescription>
               </div>
             </div>
             <TooltipProvider>
-              <Tooltip>
+              <Tooltip delayDuration={200}>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
@@ -116,16 +135,17 @@ export function ToolCard({
                       e.stopPropagation();
                       onToggleFavorite();
                     }}
-                    className="text-muted-foreground hover:text-foreground"
-                    aria-label={
-                      tool.favorite
-                        ? "Remove from favorites"
-                        : "Add to favorites"
-                    }
+                    className="text-muted-foreground hover:text-foreground h-8 w-8"
+                    aria-label={tool.favorite ? "从收藏中移除" : "添加到收藏"}
                   >
                     <motion.div
                       whileHover={{ scale: 1.2 }}
                       whileTap={{ scale: 0.9 }}
+                      animate={tool.favorite ? { scale: [1, 1.2, 1] } : {}}
+                      transition={{
+                        duration: tool.favorite ? 0.3 : 0.1,
+                        ease: EASE.bounce,
+                      }}
                     >
                       <Star
                         className={`h-4 w-4 ${
@@ -135,26 +155,26 @@ export function ToolCard({
                     </motion.div>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  {tool.favorite ? "Remove from favorites" : "Add to favorites"}
+                <TooltipContent side="top" align="end">
+                  {tool.favorite ? "从收藏中移除" : "添加到收藏"}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center text-sm text-muted-foreground">
+        <CardContent className="pb-3">
+          <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
             {tool.lastUsed ? (
               <>
-                <Clock className="h-4 w-4 mr-2" />
+                <Clock className="h-3.5 w-3.5 mr-1.5" />
                 <span>
-                  Last used: {format(parseISO(tool.lastUsed), "MMM d, yyyy")}
+                  最近使用: {format(parseISO(tool.lastUsed), "yyyy-MM-dd")}
                 </span>
               </>
             ) : (
               <>
-                <Clock className="h-4 w-4 mr-2" />
-                <span>Never used</span>
+                <Clock className="h-3.5 w-3.5 mr-1.5" />
+                <span>从未使用</span>
               </>
             )}
           </div>
@@ -163,48 +183,69 @@ export function ToolCard({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="mt-2 flex items-center text-sm text-red-500"
+              className="mt-2 flex items-center text-xs sm:text-sm text-red-500"
             >
-              <AlertCircle className="h-4 w-4 mr-2" />
+              <AlertCircle className="h-3.5 w-3.5 mr-1.5" />
               <span>{error}</span>
             </motion.div>
           )}
         </CardContent>
-        <CardFooter className="flex justify-between">
+        <CardFooter className="flex justify-between pt-0">
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Tool options">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem onClick={onEdit}>
+            <TooltipProvider>
+              <Tooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="工具选项"
+                      className="h-8 w-8 rounded-md hover:bg-secondary/50 transition-colors"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" align="start">
+                  <p>更多选项</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuItem
+                onClick={onEdit}
+                className="flex items-center cursor-pointer"
+              >
                 <Edit className="h-4 w-4 mr-2" />
-                <span>Edit</span>
+                <span>编辑</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {}}>
+              <DropdownMenuItem
+                onClick={() => {}}
+                className="flex items-center cursor-pointer"
+              >
                 <History className="h-4 w-4 mr-2" />
-                <span>View History</span>
+                <span>查看历史</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {}}>
+              <DropdownMenuItem
+                onClick={() => {}}
+                className="flex items-center cursor-pointer"
+              >
                 <Copy className="h-4 w-4 mr-2" />
-                <span>Duplicate</span>
+                <span>复制</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      `Are you sure you want to delete "${tool.name}"?`
-                    )
-                  ) {
-                    onDelete();
-                  }
+                className="text-destructive focus:text-destructive flex items-center cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const confirmed = window.confirm(
+                    `确定要删除"${tool.name}"吗？`
+                  );
+                  if (confirmed) onDelete();
                 }}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                <span>Delete</span>
+                <span>删除</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -212,12 +253,15 @@ export function ToolCard({
           <Button
             onClick={handleRun}
             disabled={isRunning}
-            className="relative overflow-hidden"
+            size="sm"
+            className={`relative overflow-hidden transition-all ${
+              isRunning ? "bg-primary/90" : ""
+            }`}
           >
             {isRunning ? (
               <>
                 <motion.div
-                  className="absolute bottom-0 left-0 h-1 bg-white/20"
+                  className="absolute bottom-0 left-0 h-1 bg-white/30"
                   initial="initial"
                   animate="animate"
                   variants={VARIANTS.progressBar}
@@ -231,14 +275,14 @@ export function ToolCard({
                     repeat: Infinity,
                   }}
                 >
-                  <Play className="h-4 w-4 mr-2" />
+                  <Play className="h-3.5 w-3.5 mr-1.5" />
                 </motion.div>
-                <span>Running...</span>
+                <span className="text-xs sm:text-sm">运行中...</span>
               </>
             ) : (
               <>
-                <Play className="h-4 w-4 mr-2" />
-                <span>Run</span>
+                <Play className="h-3.5 w-3.5 mr-1.5" />
+                <span className="text-xs sm:text-sm">运行</span>
               </>
             )}
           </Button>

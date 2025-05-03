@@ -19,6 +19,7 @@ import { ITEMS_PER_PAGE_OPTIONS } from "./constants";
 import { ANIMATION_DURATION } from "./animation-constants";
 import type { ChangeHandler } from "./types";
 import { cn } from "@/lib/utils";
+import { useCallback } from "react";
 
 interface AutoScrollControlsProps {
   autoScroll: boolean;
@@ -40,18 +41,18 @@ export function AutoScrollControls({
   isLoading = false,
 }: AutoScrollControlsProps) {
   // 速度描述文本
-  const getSpeedLabel = (speed: number) => {
+  const getSpeedLabel = useCallback((speed: number) => {
     if (speed <= 2) return "很快";
     if (speed <= 5) return "中等";
     if (speed <= 8) return "较慢";
     return "很慢";
-  };
+  }, []);
 
   const speedLabel = getSpeedLabel(scrollSpeed);
 
   return (
     <motion.div
-      className="px-4 py-2 border-b flex flex-wrap items-center gap-4"
+      className="px-2 py-1.5 sm:px-3 sm:py-2 border-b flex flex-wrap items-center justify-between gap-2"
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: ANIMATION_DURATION.normal }}
@@ -69,7 +70,10 @@ export function AutoScrollControls({
                 size="sm"
                 onClick={onAutoScrollToggle}
                 disabled={isLoading}
-                className={cn(isLoading && "opacity-70 cursor-not-allowed")}
+                className={cn(
+                  "h-7 px-2 text-xs",
+                  isLoading && "opacity-70 cursor-not-allowed"
+                )}
                 aria-label={autoScroll ? "暂停自动滚动" : "开始自动滚动"}
               >
                 <AnimatePresence mode="wait" initial={false}>
@@ -82,7 +86,7 @@ export function AutoScrollControls({
                       exit={{ opacity: 0, scale: 0.8 }}
                       transition={{ duration: ANIMATION_DURATION.fast }}
                     >
-                      <Pause className="h-4 w-4 mr-2" />
+                      <Pause className="h-3 w-3 mr-1.5" />
                       暂停
                     </motion.div>
                   ) : (
@@ -94,15 +98,15 @@ export function AutoScrollControls({
                       exit={{ opacity: 0, scale: 0.8 }}
                       transition={{ duration: ANIMATION_DURATION.fast }}
                     >
-                      <Play className="h-4 w-4 mr-2" />
-                      自动滚动
+                      <Play className="h-3 w-3 mr-1.5" />
+                      自动
                     </motion.div>
                   )}
                 </AnimatePresence>
               </Button>
             </motion.div>
           </TooltipTrigger>
-          <TooltipContent>
+          <TooltipContent side="bottom" className="text-xs">
             {autoScroll ? "停止自动滚动页面" : "启用自动滚动页面"}
           </TooltipContent>
         </Tooltip>
@@ -110,7 +114,7 @@ export function AutoScrollControls({
         <AnimatePresence>
           {autoScroll && (
             <motion.div
-              className="flex items-center gap-2 ml-2"
+              className="flex items-center gap-1.5"
               initial={{ opacity: 0, width: 0, overflow: "hidden" }}
               animate={{ opacity: 1, width: "auto", overflow: "visible" }}
               exit={{ opacity: 0, width: 0, overflow: "hidden" }}
@@ -118,39 +122,41 @@ export function AutoScrollControls({
             >
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="h-3 w-3 text-muted-foreground hidden xs:block" />
                     <Slider
                       value={[scrollSpeed]}
                       min={1}
                       max={10}
                       step={1}
-                      className="w-24"
+                      className="w-16 xs:w-20"
                       onValueChange={(value) => onScrollSpeedChange(value[0])}
                       disabled={isLoading}
                       aria-label="自动滚动速度"
                       aria-valuetext={`${scrollSpeed}秒，${speedLabel}`}
                     />
-                    <div className="flex flex-col text-xs min-w-[40px]">
+                    <div className="flex flex-row xs:flex-col text-[10px] xs:text-xs min-w-[40px]">
                       <span className="text-muted-foreground whitespace-nowrap">
                         {scrollSpeed}秒
                       </span>
-                      <span className="text-muted-foreground/70 text-[10px]">
+                      <span className="text-muted-foreground/70 text-[10px] hidden xs:block">
                         {speedLabel}
                       </span>
                     </div>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent>调整自动滚动速度（秒/页）</TooltipContent>
+                <TooltipContent side="bottom" className="text-xs">
+                  调整自动滚动速度（秒/页）
+                </TooltipContent>
               </Tooltip>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      <div className="flex items-center gap-2 ml-auto">
-        <Label htmlFor="items-per-page" className="text-sm whitespace-nowrap">
-          每页项目:
+      <div className="flex items-center gap-1.5">
+        <Label htmlFor="items-per-page" className="text-xs whitespace-nowrap">
+          每页:
         </Label>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -162,7 +168,7 @@ export function AutoScrollControls({
               <SelectTrigger
                 id="items-per-page"
                 className={cn(
-                  "w-16",
+                  "w-12 h-7 text-xs",
                   isLoading && "opacity-70 cursor-not-allowed"
                 )}
                 aria-label="设置每页显示的项目数"
@@ -176,7 +182,11 @@ export function AutoScrollControls({
                   transition={{ duration: ANIMATION_DURATION.fast }}
                 >
                   {ITEMS_PER_PAGE_OPTIONS.map((option) => (
-                    <SelectItem key={option} value={option.toString()}>
+                    <SelectItem
+                      key={option}
+                      value={option.toString()}
+                      className="text-xs"
+                    >
                       {option}
                     </SelectItem>
                   ))}
@@ -184,7 +194,9 @@ export function AutoScrollControls({
               </SelectContent>
             </Select>
           </TooltipTrigger>
-          <TooltipContent>设置每页显示的软件数量</TooltipContent>
+          <TooltipContent side="bottom" className="text-xs">
+            设置每页显示的软件数量
+          </TooltipContent>
         </Tooltip>
       </div>
     </motion.div>

@@ -14,6 +14,7 @@ import {
 import { ANIMATION_DURATION } from "./animation-constants";
 import type { ChangeHandler } from "./types";
 import { cn } from "@/lib/utils";
+import { useMemo, useCallback, useState, useEffect } from "react";
 
 interface PaginationControlsProps {
   currentPage: number;
@@ -32,19 +33,44 @@ export function PaginationControls({
   itemsPerPage,
   totalItems,
 }: PaginationControlsProps) {
-  const renderPageButtons = () => {
+  const handlePageChange = useCallback(
+    (page: number) => {
+      if (isLoading || page < 1 || page > totalPages || page === currentPage)
+        return;
+      onPageChange(page);
+
+      // 滚动到页面顶部 (可选)
+      // window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    [isLoading, totalPages, currentPage, onPageChange]
+  );
+
+  // 使用useMemo优化页码按钮计算
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth < 640 : false
+  );
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const pageButtons = useMemo(() => {
     const buttons = [];
-    const totalShown = Math.min(5, totalPages);
+    // 在小屏幕上显示更少的页码按钮
+    const maxButtons = isMobile ? 3 : 5;
+    const totalShown = Math.min(maxButtons, totalPages);
 
     let startPage;
-    if (totalPages <= 5) {
+    if (totalPages <= maxButtons) {
       startPage = 1;
-    } else if (currentPage <= 3) {
+    } else if (currentPage <= Math.ceil(maxButtons / 2)) {
       startPage = 1;
-    } else if (currentPage >= totalPages - 2) {
-      startPage = totalPages - 4;
+    } else if (currentPage >= totalPages - Math.floor(maxButtons / 2)) {
+      startPage = totalPages - maxButtons + 1;
     } else {
-      startPage = currentPage - 2;
+      startPage = currentPage - Math.floor(maxButtons / 2);
     }
 
     for (let i = 0; i < totalShown; i++) {
@@ -62,10 +88,10 @@ export function PaginationControls({
                 <Button
                   variant={currentPage === pageNumber ? "default" : "outline"}
                   size="icon"
-                  onClick={() => onPageChange(pageNumber)}
+                  onClick={() => handlePageChange(pageNumber)}
                   disabled={isLoading}
                   className={cn(
-                    "w-8 h-8",
+                    "w-7 h-7 text-xs",
                     currentPage === pageNumber && "pointer-events-none"
                   )}
                   aria-label={`第 ${pageNumber} 页`}
@@ -74,7 +100,9 @@ export function PaginationControls({
                   {pageNumber}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>跳转到第 {pageNumber} 页</TooltipContent>
+              <TooltipContent side="top" className="text-xs">
+                跳转到第 {pageNumber} 页
+              </TooltipContent>
             </Tooltip>
           </motion.div>
         );
@@ -82,48 +110,45 @@ export function PaginationControls({
     }
 
     return buttons;
-  };
-
-  const handlePageChange = (page: number) => {
-    if (isLoading || page < 1 || page > totalPages || page === currentPage)
-      return;
-    onPageChange(page);
-  };
+  }, [isMobile, totalPages, currentPage, isLoading, handlePageChange]);
 
   // 计算当前显示的项目范围
-  const calculateRange = () => {
+  const rangeInfo = useMemo(() => {
     if (!itemsPerPage || !totalItems) return null;
 
     const start = (currentPage - 1) * itemsPerPage + 1;
     const end = Math.min(currentPage * itemsPerPage, totalItems);
     return `${start}-${end} / ${totalItems}`;
-  };
-
-  // 项目范围显示
-  const rangeInfo = calculateRange();
+  }, [currentPage, itemsPerPage, totalItems]);
 
   return (
     <div
-      className="p-4 border-t flex flex-col sm:flex-row items-center justify-between gap-4"
+      className="px-2 py-3 sm:px-4 sm:py-3 border-t flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3"
       role="navigation"
       aria-label="分页导航"
     >
-      <div className="flex items-center gap-2">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(1)}
-              disabled={currentPage === 1 || isLoading}
-              aria-label="第一页"
-            >
-              <ChevronsLeft className="h-4 w-4 mr-2" />
-              首页
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>跳转到第一页</TooltipContent>
-        </Tooltip>
+      <div className="flex items-center gap-1 sm:gap-2">
+        {/* 移动端隐藏首页/尾页按钮，只保留箭头按钮 */}
+        <div className="hidden sm:block">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(1)}
+                disabled={currentPage === 1 || isLoading}
+                aria-label="第一页"
+                className="h-7 text-xs px-2"
+              >
+                <ChevronsLeft className="h-3.5 w-3.5 mr-1" />
+                首页
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs">
+              跳转到第一页
+            </TooltipContent>
+          </Tooltip>
+        </div>
 
         <Tooltip>
           <TooltipTrigger asChild>
@@ -133,11 +158,14 @@ export function PaginationControls({
               onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
               disabled={currentPage === 1 || isLoading}
               aria-label="上一页"
+              className="w-7 h-7"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-3.5 w-3.5" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>上一页</TooltipContent>
+          <TooltipContent side="top" className="text-xs">
+            上一页
+          </TooltipContent>
         </Tooltip>
 
         <div className="flex items-center gap-1">
@@ -150,7 +178,7 @@ export function PaginationControls({
               exit={{ opacity: 0, x: 5 }}
               transition={{ duration: ANIMATION_DURATION.fast }}
             >
-              {renderPageButtons()}
+              {pageButtons}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -165,47 +193,55 @@ export function PaginationControls({
               }
               disabled={currentPage === totalPages || isLoading}
               aria-label="下一页"
+              className="w-7 h-7"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-3.5 w-3.5" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>下一页</TooltipContent>
+          <TooltipContent side="top" className="text-xs">
+            下一页
+          </TooltipContent>
         </Tooltip>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(totalPages)}
-              disabled={currentPage === totalPages || isLoading}
-              aria-label="最后一页"
-            >
-              <ChevronsRight className="h-4 w-4 mr-2" />
-              末页
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>跳转到最后一页</TooltipContent>
-        </Tooltip>
+        <div className="hidden sm:block">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(totalPages)}
+                disabled={currentPage === totalPages || isLoading}
+                aria-label="最后一页"
+                className="h-7 text-xs px-2"
+              >
+                <ChevronsRight className="h-3.5 w-3.5 mr-1" />
+                末页
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs">
+              跳转到最后一页
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center text-center">
         {/* 加载指示器 */}
         {isLoading && (
           <div className="flex items-center">
-            <div className="h-3 w-3 border-2 border-r-transparent rounded-full animate-spin mr-2" />
-            <span className="text-sm text-muted-foreground">加载中...</span>
+            <div className="h-3 w-3 border-2 border-r-transparent rounded-full animate-spin mr-1.5" />
+            <span className="text-xs text-muted-foreground">加载中...</span>
           </div>
         )}
 
         {/* 显示项目范围信息 */}
-        {rangeInfo && (
-          <div className="text-sm text-muted-foreground">显示 {rangeInfo}</div>
+        {!isLoading && rangeInfo && (
+          <div className="text-xs text-muted-foreground">{rangeInfo}</div>
         )}
 
-        {!rangeInfo && (
-          <div className="text-sm text-muted-foreground">
-            第 {currentPage} 页，共 {totalPages} 页
+        {!isLoading && !rangeInfo && (
+          <div className="text-xs text-muted-foreground whitespace-nowrap">
+            {currentPage} / {totalPages} 页
           </div>
         )}
       </div>
