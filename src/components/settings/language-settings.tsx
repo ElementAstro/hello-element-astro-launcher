@@ -1,121 +1,186 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
-import { Languages, Check, CalendarDays, Clock, Thermometer, Ruler } from "lucide-react"
-import { type SettingsSectionProps, type DateFormat, type TimeFormat, type TemperatureUnit, type DistanceUnit, type Settings } from "./types"
-import { AnimatedCard, LoadingIndicator, ErrorState } from "./ui-components"
-import { slideUp, staggeredContainer, TRANSITION_DURATION } from "./animation-constants"
-import { toast } from "sonner"
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import {
+  Languages,
+  Check,
+  CalendarDays,
+  Clock,
+  Thermometer,
+  Ruler,
+} from "lucide-react";
+import {
+  type SettingsSectionProps,
+  type DateFormat,
+  type TimeFormat,
+  type TemperatureUnit,
+  type DistanceUnit,
+  type Settings,
+} from "./types";
+import { AnimatedCard, LoadingIndicator, ErrorState } from "./ui-components";
+import {
+  slideUp,
+  staggeredContainer,
+  TRANSITION_DURATION,
+} from "./animation-constants";
+import { toast } from "sonner";
+// 导入 API 服务
+import { languageApi } from "./settings-api";
 
-export function LanguageSettings({ settings, onSettingChange }: SettingsSectionProps) {
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [isApplying, setIsApplying] = useState(false)
-  const [showSuccess, setShowSuccess] = useState(false)
-  
-  // Current date and time for preview
-  const currentDate = new Date()
-  
-  // Simulate initial loading
+export function LanguageSettings({
+  settings,
+  onSettingChange,
+}: SettingsSectionProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isApplying, setIsApplying] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [availableLanguages, setAvailableLanguages] = useState<
+    { code: string; name: string }[]
+  >([]);
+
+  // 当前日期和时间预览
+  const currentDate = new Date();
+
+  // 从 API 加载语言设置和可用语言列表
   useEffect(() => {
-    setIsLoading(true)
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 700)
-    return () => clearTimeout(timer)
-  }, [])
+    const fetchLanguageSettings = async () => {
+      setIsLoading(true);
+      try {
+        // 获取语言设置
+        const languageData = await languageApi.getLanguageSettings();
 
-  // Format examples based on selected formats
+        // 更新父组件中的设置
+        Object.entries(languageData).forEach(([key, value]) => {
+          onSettingChange(
+            "language",
+            key as keyof Settings["language"],
+            value as Settings["language"][keyof Settings["language"]]
+          );
+        });
+
+        // 获取可用语言列表
+        const languages = await languageApi.getAvailableLanguages();
+        setAvailableLanguages(languages);
+      } catch (err) {
+        console.error("Error loading language settings:", err);
+        setError("无法加载语言设置，请稍后重试。");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLanguageSettings();
+  }, [onSettingChange]);
+
+  // 基于选定格式的格式示例
   const getDateFormatExample = (format: DateFormat): string => {
-    const day = currentDate.getDate().toString().padStart(2, '0')
-    const month = (currentDate.getMonth() + 1).toString().padStart(2, '0')
-    const year = currentDate.getFullYear()
-    
+    const day = currentDate.getDate().toString().padStart(2, "0");
+    const month = (currentDate.getMonth() + 1).toString().padStart(2, "0");
+    const year = currentDate.getFullYear();
+
     switch (format) {
       case "mdy":
-        return `${month}/${day}/${year}`
+        return `${month}/${day}/${year}`;
       case "dmy":
-        return `${day}/${month}/${year}`
+        return `${day}/${month}/${year}`;
       case "ymd":
-        return `${year}/${month}/${day}`
+        return `${year}/${month}/${day}`;
     }
-  }
-  
-  const getTimeFormatExample = (format: TimeFormat): string => {
-    let hours = currentDate.getHours()
-    const minutes = currentDate.getMinutes().toString().padStart(2, '0')
-    
-    if (format === "12h") {
-      const period = hours >= 12 ? "PM" : "AM"
-      hours = hours % 12 || 12
-      return `${hours}:${minutes} ${period}`
-    } else {
-      return `${hours.toString().padStart(2, '0')}:${minutes}`
-    }
-  }
-  
-  const getTemperatureExample = (unit: TemperatureUnit): string => {
-    // Sample temperature of 22°C / 71.6°F
-    return unit === "celsius" ? "22°C" : "71.6°F"
-  }
-  
-  const getDistanceExample = (unit: DistanceUnit): string => {
-    // Example distance
-    return unit === "metric" ? "10 km / 100 m" : "6.2 mi / 328 ft"
-  }
+  };
 
-  // Handle language setting change
-  const handleSettingChange = <K extends keyof Settings["language"]>(
+  const getTimeFormatExample = (format: TimeFormat): string => {
+    let hours = currentDate.getHours();
+    const minutes = currentDate.getMinutes().toString().padStart(2, "0");
+
+    if (format === "12h") {
+      const period = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12 || 12;
+      return `${hours}:${minutes} ${period}`;
+    } else {
+      return `${hours.toString().padStart(2, "0")}:${minutes}`;
+    }
+  };
+
+  const getTemperatureExample = (unit: TemperatureUnit): string => {
+    // 示例温度 22°C / 71.6°F
+    return unit === "celsius" ? "22°C" : "71.6°F";
+  };
+
+  const getDistanceExample = (unit: DistanceUnit): string => {
+    // 示例距离
+    return unit === "metric" ? "10 km / 100 m" : "6.2 mi / 328 ft";
+  };
+
+  // 处理语言设置更改
+  const handleSettingChange = async <K extends keyof Settings["language"]>(
     setting: K,
     value: Settings["language"][K]
   ) => {
     try {
-      onSettingChange("language", setting, value)
-      
-      // Show preview toast when changing language
+      // 更新本地状态
+      onSettingChange("language", setting, value);
+
+      // 将更改发送到 API
+      await languageApi.updateLanguageSettings({
+        ...settings.language,
+        [setting]: value,
+      });
+
+      // 更改语言时显示预览提示
       if (setting === "appLanguage") {
         const languageNames: Record<string, string> = {
-          "en": "英语",
-          "fr": "法语",
-          "de": "德语",
-          "es": "西班牙语",
-          "it": "意大利语",
-          "zh": "中文",
-          "ja": "日语",
-        }
-        
-        // Use toast(title, options) format
+          en: "英语",
+          fr: "法语",
+          de: "德语",
+          es: "西班牙语",
+          it: "意大利语",
+          zh: "中文",
+          ja: "日语",
+        };
+
         toast(`语言已更改为${languageNames[value as string] || value}`, {
           description: "需要重新启动应用程序以应用所有更改。",
-        })
+        });
       }
-    } catch { 
-      setError(`更改${setting}设置时出错`)
-      // Use toast.error(title, options) format for errors
+    } catch {
+      setError(`更改${setting}设置时出错`);
       toast.error("设置更新失败", {
         description: `无法更改${setting}设置，请重试。`,
-      })
+      });
     }
-  }
+  };
 
-  // Apply all language settings
+  // 应用所有语言设置
   const applySettings = async () => {
-    setIsApplying(true)
-    
+    setIsApplying(true);
+
     try {
-      // Simulate API call to apply settings
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      setShowSuccess(true)
-      setTimeout(() => setShowSuccess(false), 2000)
-      
-      // Use toast(title, options) format
+      // 将所有语言设置保存到 API
+      await languageApi.updateLanguageSettings(settings.language);
+
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
+
       toast("语言设置已应用", {
         description: "您的语言和本地化偏好已更新。",
         action: (
@@ -126,32 +191,36 @@ export function LanguageSettings({ settings, onSettingChange }: SettingsSectionP
             <Check className="h-5 w-5 text-green-500" />
           </motion.div>
         ),
-      })
-    } catch { 
-      setError("应用语言设置时出错")
-      // Use toast.error(title, options) format for errors
+      });
+    } catch {
+      setError("应用语言设置时出错");
       toast.error("设置应用失败", {
         description: "无法应用语言设置，请重试。",
-      })
+      });
     } finally {
-      setIsApplying(false)
+      setIsApplying(false);
     }
-  }
+  };
 
   if (isLoading) {
-    return <LoadingIndicator message="加载语言设置..." />
+    return <LoadingIndicator message="加载语言设置..." />;
   }
 
   if (error && !settings) {
-    // Assuming ErrorState component accepts a title prop
-    return <ErrorState title="加载错误" message={error} onRetry={() => setError(null)} />
+    return (
+      <ErrorState
+        title="加载错误"
+        message={error}
+        onRetry={() => setError(null)}
+      />
+    );
   }
 
   return (
     <AnimatedCard>
       <Card>
         <CardHeader>
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
@@ -174,33 +243,58 @@ export function LanguageSettings({ settings, onSettingChange }: SettingsSectionP
             <motion.div variants={slideUp} className="space-y-2">
               <div className="flex justify-between items-center">
                 <Label htmlFor="app-language">应用程序语言</Label>
-                <div className="text-sm text-muted-foreground">{
-                  settings.language.appLanguage === "en" ? "English" :
-                  settings.language.appLanguage === "fr" ? "Français" :
-                  settings.language.appLanguage === "de" ? "Deutsch" :
-                  settings.language.appLanguage === "es" ? "Español" :
-                  settings.language.appLanguage === "it" ? "Italiano" :
-                  settings.language.appLanguage === "zh" ? "中文" :
-                  settings.language.appLanguage === "ja" ? "日本語" :
-                  settings.language.appLanguage
-                }</div>
+                <div className="text-sm text-muted-foreground">
+                  {settings.language.appLanguage === "en"
+                    ? "English"
+                    : settings.language.appLanguage === "fr"
+                    ? "Français"
+                    : settings.language.appLanguage === "de"
+                    ? "Deutsch"
+                    : settings.language.appLanguage === "es"
+                    ? "Español"
+                    : settings.language.appLanguage === "it"
+                    ? "Italiano"
+                    : settings.language.appLanguage === "zh"
+                    ? "中文"
+                    : settings.language.appLanguage === "ja"
+                    ? "日本語"
+                    : settings.language.appLanguage}
+                </div>
               </div>
-              <motion.div whileHover={{ scale: 1.01 }} transition={{ duration: TRANSITION_DURATION.fast }}>
+              <motion.div
+                whileHover={{ scale: 1.01 }}
+                transition={{ duration: TRANSITION_DURATION.fast }}
+              >
                 <Select
                   value={settings.language.appLanguage}
-                  onValueChange={(value) => handleSettingChange("appLanguage", value)}
+                  onValueChange={(value) =>
+                    handleSettingChange("appLanguage", value)
+                  }
                 >
-                  <SelectTrigger id="app-language" aria-label="选择应用程序语言">
+                  <SelectTrigger
+                    id="app-language"
+                    aria-label="选择应用程序语言"
+                  >
                     <SelectValue placeholder="选择语言" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="fr">Français</SelectItem>
-                    <SelectItem value="de">Deutsch</SelectItem>
-                    <SelectItem value="es">Español</SelectItem>
-                    <SelectItem value="it">Italiano</SelectItem>
-                    <SelectItem value="zh">中文</SelectItem>
-                    <SelectItem value="ja">日本語</SelectItem>
+                    {availableLanguages.length > 0 ? (
+                      availableLanguages.map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          {lang.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <>
+                        <SelectItem value="en">English</SelectItem>
+                        <SelectItem value="fr">Français</SelectItem>
+                        <SelectItem value="de">Deutsch</SelectItem>
+                        <SelectItem value="es">Español</SelectItem>
+                        <SelectItem value="it">Italiano</SelectItem>
+                        <SelectItem value="zh">中文</SelectItem>
+                        <SelectItem value="ja">日本語</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </motion.div>
@@ -220,10 +314,15 @@ export function LanguageSettings({ settings, onSettingChange }: SettingsSectionP
                   {getDateFormatExample(settings.language.dateFormat)}
                 </div>
               </div>
-              <motion.div whileHover={{ scale: 1.01 }} transition={{ duration: TRANSITION_DURATION.fast }}>
+              <motion.div
+                whileHover={{ scale: 1.01 }}
+                transition={{ duration: TRANSITION_DURATION.fast }}
+              >
                 <Select
                   value={settings.language.dateFormat}
-                  onValueChange={(value: DateFormat) => handleSettingChange("dateFormat", value)}
+                  onValueChange={(value: DateFormat) =>
+                    handleSettingChange("dateFormat", value)
+                  }
                 >
                   <SelectTrigger id="date-format" aria-label="选择日期格式">
                     <SelectValue placeholder="选择日期格式" />
@@ -251,10 +350,15 @@ export function LanguageSettings({ settings, onSettingChange }: SettingsSectionP
                   {getTimeFormatExample(settings.language.timeFormat)}
                 </div>
               </div>
-              <motion.div whileHover={{ scale: 1.01 }} transition={{ duration: TRANSITION_DURATION.fast }}>
+              <motion.div
+                whileHover={{ scale: 1.01 }}
+                transition={{ duration: TRANSITION_DURATION.fast }}
+              >
                 <Select
                   value={settings.language.timeFormat}
-                  onValueChange={(value: TimeFormat) => handleSettingChange("timeFormat", value)}
+                  onValueChange={(value: TimeFormat) =>
+                    handleSettingChange("timeFormat", value)
+                  }
                 >
                   <SelectTrigger id="time-format" aria-label="选择时间格式">
                     <SelectValue placeholder="选择时间格式" />
@@ -281,12 +385,20 @@ export function LanguageSettings({ settings, onSettingChange }: SettingsSectionP
                   {getTemperatureExample(settings.language.temperatureUnit)}
                 </div>
               </div>
-              <motion.div whileHover={{ scale: 1.01 }} transition={{ duration: TRANSITION_DURATION.fast }}>
+              <motion.div
+                whileHover={{ scale: 1.01 }}
+                transition={{ duration: TRANSITION_DURATION.fast }}
+              >
                 <Select
                   value={settings.language.temperatureUnit}
-                  onValueChange={(value: TemperatureUnit) => handleSettingChange("temperatureUnit", value)}
+                  onValueChange={(value: TemperatureUnit) =>
+                    handleSettingChange("temperatureUnit", value)
+                  }
                 >
-                  <SelectTrigger id="temperature-unit" aria-label="选择温度单位">
+                  <SelectTrigger
+                    id="temperature-unit"
+                    aria-label="选择温度单位"
+                  >
                     <SelectValue placeholder="选择温度单位" />
                   </SelectTrigger>
                   <SelectContent>
@@ -311,10 +423,15 @@ export function LanguageSettings({ settings, onSettingChange }: SettingsSectionP
                   {getDistanceExample(settings.language.distanceUnit)}
                 </div>
               </div>
-              <motion.div whileHover={{ scale: 1.01 }} transition={{ duration: TRANSITION_DURATION.fast }}>
+              <motion.div
+                whileHover={{ scale: 1.01 }}
+                transition={{ duration: TRANSITION_DURATION.fast }}
+              >
                 <Select
                   value={settings.language.distanceUnit}
-                  onValueChange={(value: DistanceUnit) => handleSettingChange("distanceUnit", value)}
+                  onValueChange={(value: DistanceUnit) =>
+                    handleSettingChange("distanceUnit", value)
+                  }
                 >
                   <SelectTrigger id="distance-unit" aria-label="选择距离单位">
                     <SelectValue placeholder="选择距离单位" />
@@ -325,7 +442,7 @@ export function LanguageSettings({ settings, onSettingChange }: SettingsSectionP
                   </SelectContent>
                 </Select>
               </motion.div>
-              
+
               <div className="mt-4 rounded-md bg-blue-50 dark:bg-blue-900/30 p-3 text-sm text-blue-700 dark:text-blue-300">
                 <p>某些设置可能需要重新启动应用程序才能完全生效。</p>
               </div>
@@ -341,19 +458,19 @@ export function LanguageSettings({ settings, onSettingChange }: SettingsSectionP
             <Button
               onClick={applySettings}
               disabled={isApplying}
-              className="relative min-w-[150px]" // Added min-width for consistency
+              className="relative min-w-[150px]"
             >
               {isApplying ? (
                 <motion.span
                   className="absolute inset-0 flex items-center justify-center"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }} // Added exit animation
+                  exit={{ opacity: 0 }}
                 >
                   <Languages className="h-4 w-4 animate-pulse" />
                 </motion.span>
               ) : showSuccess ? (
-                 <motion.span // Added motion for checkmark
+                <motion.span
                   className="absolute inset-0 flex items-center justify-center"
                   initial={{ opacity: 0, scale: 0.5 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -363,9 +480,9 @@ export function LanguageSettings({ settings, onSettingChange }: SettingsSectionP
               ) : (
                 <Languages className="h-4 w-4 mr-2" />
               )}
-              <motion.span // Added motion for text
+              <motion.span
                 initial={false}
-                animate={{ opacity: (isApplying || showSuccess) ? 0 : 1 }}
+                animate={{ opacity: isApplying || showSuccess ? 0 : 1 }}
                 transition={{ duration: 0.1 }}
               >
                 应用语言设置
@@ -375,5 +492,5 @@ export function LanguageSettings({ settings, onSettingChange }: SettingsSectionP
         </CardFooter>
       </Card>
     </AnimatedCard>
-  )
+  );
 }

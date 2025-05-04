@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +25,17 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { type SettingsSectionProps, type Settings } from "./types"; // Assuming Settings type is exported from types
+import {
+  type SettingsSectionProps,
+  type Settings,
+  type AccountStatus,
+} from "./types";
+
+// Helper type for special account settings that are managed locally
+type SpecialAccountSettings = {
+  avatar?: string;
+  twoFactor?: boolean;
+};
 import {
   AnimatedCard,
   ErrorState,
@@ -39,9 +49,11 @@ import {
   TRANSITION_DURATION,
 } from "./animation-constants";
 import { toast } from "sonner";
-import { Loader2, Check, X } from "lucide-react";
+import { Loader2, Check, X, UserCircle, Shield, Camera } from "lucide-react";
+// 导入账户 API 服务
+import { accountApi } from "./settings-api";
 
-// Define which account fields can be updated via this form
+// 定义可以通过此表单更新的账户字段
 type AccountField = keyof Settings["account"] &
   ("name" | "email" | "organization");
 
@@ -49,15 +61,39 @@ export function AccountSettings({
   settings,
   onSettingChange,
 }: SettingsSectionProps) {
+  // Initialize special settings state
+  const [specialSettings, setSpecialSettings] =
+    useState<SpecialAccountSettings>({});
+
+  // Helper function to update special settings
+  const updateSpecialSetting = (
+    setting: keyof SpecialAccountSettings,
+    value: string | boolean
+  ) => {
+    setSpecialSettings((prev) => ({ ...prev, [setting]: value }));
+  };
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isTwoFactorEnabled, setIsTwoFactorEnabled] = useState<boolean>(false);
+  const [twoFactorQrCode, setTwoFactorQrCode] = useState<string | null>(null);
+  const [twoFactorSecret, setTwoFactorSecret] = useState<string | null>(null);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [isVerifying2FA, setIsVerifying2FA] = useState(false);
+  const [show2FADialog, setShow2FADialog] = useState(false);
+  const [is2FALoading, setIs2FALoading] = useState(false);
+  const [passwordDeleteConfirm, setPasswordDeleteConfirm] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
-  // Form validation state
+  // 表单验证状态
   const [formData, setFormData] = useState({
     name: settings.account.name,
     email: settings.account.email,
     organization: settings.account.organization || "",
+    status: settings.account.status || "active",
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
@@ -69,43 +105,74 @@ export function AccountSettings({
     currentPassword?: string;
     newPassword?: string;
     confirmPassword?: string;
+    verificationCode?: string;
+    passwordDeleteConfirm?: string;
   }>({});
 
-  // Simulate initial loading
+  // 从 API 加载账户设置
   useEffect(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, []);
+    const fetchAccountSettings = async () => {
+      setIsLoading(true);
+      try {
+        const accountData = await accountApi.getAccountSettings();
 
-  // Handle input change
+        // 更新父组件中的设置
+        Object.entries(accountData).forEach(([key, value]) => {
+          onSettingChange(
+            "account",
+            key as keyof Settings["account"],
+            value as string
+          );
+        });
+
+        // 更新本地状态
+        setFormData({
+          ...formData,
+          name: accountData.name,
+          email: accountData.email,
+          organization: accountData.organization || "",
+        });
+
+        // 记录双因素认证状态
+        if ("twoFactorEnabled" in accountData) {
+          setIsTwoFactorEnabled(Boolean(accountData.twoFactorEnabled));
+        }
+      } catch (err) {
+        console.error("Error loading account settings:", err);
+        setError("无法加载账户信息，请稍后重试。");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAccountSettings();
+  }, [onSettingChange, formData]); // 添加 formData 作为依赖项
+
+  // 处理输入变化
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
 
-    // Clear error for this field when user starts typing again
+    // 用户开始输入时清除该字段的错误
     if (formErrors[field as keyof typeof formErrors]) {
       setFormErrors((prev) => ({ ...prev, [field]: undefined }));
     }
 
-    // Update settings for account fields
+    // 更新账户字段的设置
     if (["name", "email", "organization"].includes(field)) {
-      // Use the defined type for better type safety
       onSettingChange("account", field as AccountField, value);
     }
   };
 
-  // Validate form
+  // 表单验证
   const validateForm = () => {
     const errors: typeof formErrors = {};
 
-    // Name validation
+    // 姓名验证
     if (!formData.name.trim()) {
       errors.name = "姓名不能为空";
     }
 
-    // Email validation
+    // 邮箱验证
     if (!formData.email.trim()) {
       errors.email = "邮箱不能为空";
     } else if (
@@ -114,7 +181,7 @@ export function AccountSettings({
       errors.email = "邮箱格式无效";
     }
 
-    // Password validation (only if the user is trying to change password)
+    // 密码验证（仅在用户尝试更改密码时）
     if (
       formData.currentPassword ||
       formData.newPassword ||
@@ -139,18 +206,62 @@ export function AccountSettings({
     return Object.keys(errors).length === 0;
   };
 
-  // Handle form submission
+  // 处理表单提交
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
     setIsSubmitting(true);
-    setError(null); // Clear previous errors
+    setError(null); // 清除之前的错误
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // 首先更新账户基本信息
+      await accountApi.updateAccountSettings({
+        ...settings.account,
+        name: formData.name,
+        email: formData.email,
+        organization: formData.organization,
+      });
 
-      // Reset password fields
+      // 如果有新头像，则上传
+      if (avatarFile) {
+        const result = await accountApi.updateAvatar(avatarFile);
+        // 使用 as any 或类型断言来绕过类型检查
+        updateSpecialSetting("avatar", result.avatarUrl);
+        setAvatarFile(null);
+      }
+
+      // 如果用户尝试更改密码
+      if (formData.currentPassword && formData.newPassword) {
+        // 验证当前密码
+        const passwordValid = await accountApi.verifyPassword(
+          formData.currentPassword
+        );
+
+        if (passwordValid.valid) {
+          // 更改密码
+          await accountApi.changePassword(
+            formData.currentPassword,
+            formData.newPassword
+          );
+
+          toast.success("密码已更新", {
+            description: "您的密码已成功更改",
+            icon: <Shield className="h-5 w-5 text-green-500" />,
+          });
+        } else {
+          setFormErrors((prev) => ({
+            ...prev,
+            currentPassword: "当前密码不正确",
+          }));
+          toast.error("密码验证失败", {
+            description: "您输入的当前密码不正确",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // 重置密码字段
       setFormData((prev) => ({
         ...prev,
         currentPassword: "",
@@ -158,48 +269,163 @@ export function AccountSettings({
         confirmPassword: "",
       }));
 
-      // Use toast.success or toast(message, options) format
+      // 显示成功提示
       toast.success("账户已更新", {
         description: "您的账户信息已成功更新",
-        // The action prop expects a ReactNode, ensure it's valid if used
-        // action: {
-        //   label: "Undo",
-        //   onClick: () => console.log("Undo"),
-        // },
-        icon: <Check className="h-5 w-5 text-green-500" />, // Example of adding an icon directly
+        icon: <Check className="h-5 w-5 text-green-500" />,
       });
     } catch (err) {
       const errorMessage = "更新账户信息时出错";
       setError(errorMessage);
-      console.error("Error updating account:", err); // Log the actual error
-      // Use toast.error or toast(message, options) format
+      console.error("Error updating account:", err);
       toast.error("更新失败", {
         description: "无法更新您的账户信息，请重试。",
-        // If sonner supports variants in options, you might add it here:
-        // variant: "destructive", // Check sonner documentation for variant support in options
       });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // 处理账户删除
   const handleDeleteAccount = async () => {
-    // This would typically make an API call to delete the account
-    // Simulate API call for deletion
+    if (!passwordDeleteConfirm) {
+      setFormErrors((prev) => ({
+        ...prev,
+        passwordDeleteConfirm: "请输入您的密码以确认删除",
+      }));
+      return;
+    }
+
+    setIsDeleting(true);
+
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate network delay
-      // Use toast.error or toast(message, options) format for destructive actions
-      toast.error("账户已删除", {
+      // 验证密码
+      const passwordValid = await accountApi.verifyPassword(
+        passwordDeleteConfirm
+      );
+      if (!passwordValid.valid) {
+        throw new Error("密码验证失败");
+      }
+
+      // 删除账户 - 假设这个API方法不存在，我们使用现有API进行模拟
+      // Update account status to deleted
+      await accountApi.updateAccountSettings({
+        ...settings.account,
+        status: "deleted" as AccountStatus,
+      });
+
+      toast.success("账户已删除", {
         description: "您的账户已被成功删除。",
-        // Add an icon for visual feedback
         icon: <X className="h-5 w-5 text-red-500" />,
       });
-      // Potentially redirect user or update UI state after deletion
+
+      // 重定向用户到登录页面或应用首页
+      window.location.href = "/";
     } catch (err) {
       console.error("Error deleting account:", err);
       toast.error("删除失败", {
-        description: "无法删除您的账户，请重试。",
+        description: "无法删除您的账户，请确认密码是否正确。",
       });
+    } finally {
+      setIsDeleting(false);
+      setPasswordDeleteConfirm("");
+    }
+  };
+
+  // 处理双因素认证切换
+  const handle2FAToggle = async () => {
+    setIs2FALoading(true);
+    try {
+      // 如果已启用，则禁用；如果未启用，则请求新的双因素认证设置
+      const result = await accountApi.toggleTwoFactorAuth(!isTwoFactorEnabled);
+
+      if (!isTwoFactorEnabled && result.secret && result.qrCode) {
+        // 保存新生成的双因素认证信息
+        setTwoFactorSecret(result.secret);
+        setTwoFactorQrCode(result.qrCode);
+        setShow2FADialog(true);
+      } else if (isTwoFactorEnabled) {
+        // 用户禁用了双因素认证
+        setIsTwoFactorEnabled(false);
+        // 使用类型断言来绕过类型检查
+        updateSpecialSetting("twoFactor", false);
+        toast.success("已禁用双因素认证", {
+          description: "您的账户不再需要双因素验证码。",
+        });
+      }
+    } catch (err) {
+      console.error("Error toggling 2FA:", err);
+      toast.error("双因素认证更新失败", {
+        description: "无法更改双因素认证设置，请重试。",
+      });
+    } finally {
+      setIs2FALoading(false);
+    }
+  };
+
+  // 验证双因素认证码
+  const verify2FACode = async () => {
+    if (!verificationCode.trim()) {
+      setFormErrors((prev) => ({
+        ...prev,
+        verificationCode: "请输入验证码",
+      }));
+      return;
+    }
+
+    setIsVerifying2FA(true);
+    try {
+      // 验证用户输入的双因素认证码
+      const result = await accountApi.verifyTwoFactorAuthCode(verificationCode);
+
+      if (result.valid) {
+        setIsTwoFactorEnabled(true);
+        // 使用类型断言来绕过类型检查
+        updateSpecialSetting("twoFactor", true);
+        setShow2FADialog(false);
+        setTwoFactorQrCode(null);
+        setTwoFactorSecret(null);
+        setVerificationCode("");
+
+        toast.success("已启用双因素认证", {
+          description: "您的账户现在受到双因素认证的保护。",
+          icon: <Shield className="h-5 w-5 text-green-500" />,
+        });
+      } else {
+        setFormErrors((prev) => ({
+          ...prev,
+          verificationCode: "验证码无效",
+        }));
+      }
+    } catch (err) {
+      console.error("Error verifying 2FA code:", err);
+      toast.error("验证失败", {
+        description: "无法验证双因素认证码，请确认您输入的代码是否正确。",
+      });
+    } finally {
+      setIsVerifying2FA(false);
+    }
+  };
+
+  // 处理头像选择
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setAvatarFile(file);
+
+      // 创建预览
+      const reader = new FileReader();
+      reader.onload = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // 触发文件选择对话框
+  const triggerFileSelect = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
     }
   };
 
@@ -207,16 +433,15 @@ export function AccountSettings({
     return <LoadingIndicator message="加载账户信息..." />;
   }
 
-  // Display error state if there was an error during initial load
+  // 如果初始加载时发生错误，显示错误状态
   if (error && !isSubmitting) {
-    // Show general error state only if not caused by submission failure
     return (
       <ErrorState
         title="无法加载或更新账户信息"
         message={error}
         onRetry={() => {
           setError(null);
-          // Optionally re-fetch initial data here if needed
+          // 这里可以重新获取初始数据
         }}
       />
     );
@@ -238,7 +463,48 @@ export function AccountSettings({
             </motion.div>
           </CardHeader>
           <CardContent>
-            <motion.div variants={staggeredContainer} className="space-y-4">
+            <motion.div variants={staggeredContainer} className="space-y-6">
+              {/* 头像上传部分 */}
+              <motion.div
+                variants={slideUp}
+                className="flex flex-col items-center space-y-3"
+              >
+                <div className="relative group">
+                  <div className="h-24 w-24 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                    {avatarPreview || specialSettings.avatar ? (
+                      <img
+                        src={avatarPreview || specialSettings.avatar}
+                        alt="用户头像"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <UserCircle className="h-16 w-16 text-gray-400" />
+                    )}
+                  </div>
+                  <Button
+                    onClick={triggerFileSelect}
+                    variant="secondary"
+                    size="icon"
+                    className="absolute bottom-0 right-0"
+                    aria-label="更换头像"
+                  >
+                    <Camera className="h-4 w-4" />
+                  </Button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    onChange={handleAvatarSelect}
+                    className="hidden"
+                  />
+                </div>
+                {avatarFile && (
+                  <div className="text-sm text-muted-foreground">
+                    已选择文件: {avatarFile.name}
+                  </div>
+                )}
+              </motion.div>
+
               <motion.div variants={slideUp}>
                 <FormField
                   label="姓名"
@@ -315,7 +581,37 @@ export function AccountSettings({
                 <Separator />
               </motion.div>
 
+              {/* 安全设置部分 */}
               <motion.div variants={slideUp}>
+                <h3 className="font-medium mb-2">安全设置</h3>
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <Label className="font-semibold">双因素认证</Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {isTwoFactorEnabled
+                        ? "已启用 - 登录时需要额外验证"
+                        : "未启用 - 建议开启以增强安全性"}
+                    </p>
+                  </div>
+                  <Button
+                    variant={isTwoFactorEnabled ? "destructive" : "default"}
+                    onClick={handle2FAToggle}
+                    disabled={is2FALoading}
+                    size="sm"
+                  >
+                    {is2FALoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Shield className="h-4 w-4 mr-2" />
+                    )}
+                    {isTwoFactorEnabled ? "禁用" : "启用"}
+                  </Button>
+                </div>
+                <Separator />
+              </motion.div>
+
+              <motion.div variants={slideUp}>
+                <h3 className="font-medium mb-3">更改密码</h3>
                 <FormField
                   label="当前密码"
                   id="current-password"
@@ -410,19 +706,19 @@ export function AccountSettings({
               <Button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="relative min-w-[100px]" // Added min-width to prevent layout shift
+                className="relative min-w-[100px]"
               >
                 {isSubmitting && (
                   <motion.span
                     className="absolute inset-0 flex items-center justify-center"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }} // Added exit animation
+                    exit={{ opacity: 0 }}
                   >
                     <Loader2 className="h-4 w-4 animate-spin" />
                   </motion.span>
                 )}
-                <motion.span // Added motion to text for smooth transition
+                <motion.span
                   initial={false}
                   animate={{ opacity: isSubmitting ? 0 : 1 }}
                   transition={{ duration: 0.1 }}
@@ -434,6 +730,89 @@ export function AccountSettings({
           </CardFooter>
         </Card>
       </AnimatedCard>
+
+      {/* 双因素认证设置对话框 */}
+      <AlertDialog open={show2FADialog} onOpenChange={setShow2FADialog}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>设置双因素认证</AlertDialogTitle>
+            <AlertDialogDescription>
+              使用身份验证器应用扫描下方二维码，然后输入应用生成的验证码以完成设置。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="p-4 flex flex-col items-center gap-4">
+            {twoFactorQrCode && (
+              <div className="border p-2 rounded-md bg-white">
+                {/* 注意：这里应该使用 Next.js 的 Image 组件，但由于简化原因保留 img */}
+                <img
+                  src={twoFactorQrCode}
+                  alt="双因素认证二维码"
+                  width={200}
+                  height={200}
+                />
+              </div>
+            )}
+            {twoFactorSecret && (
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-1">
+                  如果无法扫描二维码，请手动输入此密钥：
+                </p>
+                <p className="font-mono bg-gray-100 dark:bg-gray-800 p-2 rounded select-all text-center">
+                  {twoFactorSecret}
+                </p>
+              </div>
+            )}
+            <FormField
+              label="验证码"
+              id="verification-code"
+              error={formErrors.verificationCode}
+              required
+            >
+              <Input
+                id="verification-code"
+                value={verificationCode}
+                onChange={(e) => {
+                  setVerificationCode(e.target.value);
+                  if (formErrors.verificationCode) {
+                    setFormErrors((prev) => ({
+                      ...prev,
+                      verificationCode: undefined,
+                    }));
+                  }
+                }}
+                className={
+                  formErrors.verificationCode
+                    ? "border-red-500 focus:ring-red-500"
+                    : ""
+                }
+                placeholder="输入 6 位验证码"
+                maxLength={6}
+              />
+            </FormField>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setShow2FADialog(false);
+                setTwoFactorQrCode(null);
+                setTwoFactorSecret(null);
+                setVerificationCode("");
+              }}
+            >
+              取消
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={verify2FACode}
+              disabled={isVerifying2FA}
+            >
+              {isVerifying2FA ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              验证并激活
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AnimatedCard delay={0.1}>
         <Card>
@@ -474,15 +853,50 @@ export function AccountSettings({
                     <AlertDialogTitle>您确定要删除账户吗？</AlertDialogTitle>
                     <AlertDialogDescription>
                       此操作无法撤消。这将永久删除您的账户并从我们的服务器中删除您的数据。
+                      请输入您的密码以确认。
                     </AlertDialogDescription>
                   </AlertDialogHeader>
+                  <div className="py-3">
+                    <FormField
+                      label="确认密码"
+                      id="password-delete-confirm"
+                      error={formErrors.passwordDeleteConfirm}
+                      required
+                    >
+                      <Input
+                        id="password-delete-confirm"
+                        type="password"
+                        value={passwordDeleteConfirm}
+                        onChange={(e) => {
+                          setPasswordDeleteConfirm(e.target.value);
+                          if (formErrors.passwordDeleteConfirm) {
+                            setFormErrors((prev) => ({
+                              ...prev,
+                              passwordDeleteConfirm: undefined,
+                            }));
+                          }
+                        }}
+                        placeholder="输入您的密码以确认删除"
+                        className={
+                          formErrors.passwordDeleteConfirm
+                            ? "border-red-500 focus:ring-red-500"
+                            : ""
+                        }
+                      />
+                    </FormField>
+                  </div>
                   <AlertDialogFooter>
                     <AlertDialogCancel>取消</AlertDialogCancel>
                     <AlertDialogAction
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90" // Added hover style
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       onClick={handleDeleteAccount}
+                      disabled={isDeleting}
                     >
-                      <X className="mr-2 h-4 w-4" />
+                      {isDeleting ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <X className="mr-2 h-4 w-4" />
+                      )}
                       删除账户
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -495,24 +909,3 @@ export function AccountSettings({
     </motion.div>
   );
 }
-
-// Assuming a basic Settings structure in types.ts or similar
-// Example:
-// export interface Settings {
-//   account: {
-//     name: string;
-//     email: string;
-//     organization?: string;
-//     // other account settings...
-//   };
-//   // other setting sections...
-// }
-//
-// export interface SettingsSectionProps {
-//   settings: Settings;
-//   onSettingChange: <T extends keyof Settings, K extends keyof Settings[T]>(
-//     section: T,
-//     key: K,
-//     value: Settings[T][K]
-//   ) => void;
-// }

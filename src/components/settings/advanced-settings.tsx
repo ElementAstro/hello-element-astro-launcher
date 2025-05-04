@@ -35,6 +35,8 @@ import {
   AlertTriangle,
   RefreshCw,
   Info,
+  Download,
+  Upload,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -48,7 +50,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { type SettingsSectionProps, type LogLevel } from "./types";
 import { AnimatedCard, LoadingIndicator, ErrorState } from "./ui-components";
-// Removed unused fadeIn import
 import {
   slideUp,
   staggeredContainer,
@@ -56,6 +57,8 @@ import {
   TRANSITION_DURATION,
 } from "./animation-constants";
 import { toast } from "sonner";
+// 导入 API 服务
+import { advancedApi } from "./settings-api";
 
 export function AdvancedSettings({
   settings,
@@ -72,68 +75,117 @@ export function AdvancedSettings({
   const [newEndpointName, setNewEndpointName] = useState("");
   const [newEndpointUrl, setNewEndpointUrl] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [systemLogs, setSystemLogs] = useState<
+    { timestamp: string; level: string; message: string }[]
+  >([]);
+  const [importFile, setImportFile] = useState<File | null>(null);
 
-  // Deep copy of API endpoints for local editing
+  // API 端点的本地副本，用于编辑
   const [localEndpoints, setLocalEndpoints] = useState<Record<string, string>>(
     JSON.parse(JSON.stringify(settings.advanced.apiEndpoints || {}))
   );
 
-  // Simulate loading
+  // 从 API 加载高级设置
   useEffect(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, []);
+    const fetchAdvancedSettings = async () => {
+      setIsLoading(true);
+      try {
+        // 获取高级设置
+        const advancedData = await advancedApi.getAdvancedSettings();
 
-  // Reset local endpoints when settings change
+        // 更新父组件中的设置
+        Object.entries(advancedData).forEach(([key, value]) => {
+          const settingKey = key as keyof typeof settings.advanced;
+          // Type guard to ensure value matches expected types
+          if (
+            typeof value === "boolean" ||
+            (typeof value === "object" && value !== null) ||
+            ["error", "warning", "info", "debug", "verbose"].includes(
+              value as string
+            )
+          ) {
+            onSettingChange(
+              "advanced",
+              settingKey,
+              value as boolean | Record<string, string> | LogLevel
+            );
+          }
+        });
+
+        // 获取系统日志
+        const logs = await advancedApi.getSystemLogs(
+          settings.advanced.logLevel
+        );
+        setSystemLogs(logs);
+      } catch (err) {
+        console.error("Error loading advanced settings:", err);
+        setError("无法加载高级设置，请稍后重试。");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAdvancedSettings();
+  }, [onSettingChange, settings, settings.advanced.logLevel]);
+
+  // 当设置变更时重置本地端点
   useEffect(() => {
     setLocalEndpoints(
       JSON.parse(JSON.stringify(settings.advanced.apiEndpoints || {}))
     );
   }, [settings.advanced.apiEndpoints]);
 
-  // Handle advanced setting change
-  // Removed unnecessary 'extends unknown'
-  const handleSettingChange = <
+  // 处理高级设置变更
+  const handleSettingChange = async <
     T extends boolean | Record<string, string> | LogLevel
   >(
     setting: keyof typeof settings.advanced,
     value: T
   ) => {
     try {
-      // Removed 'as any' assertion
+      // 更新本地状态
       onSettingChange("advanced", setting, value);
 
+      // 发送更新到 API
+      await advancedApi.updateAdvancedSettings({
+        ...settings.advanced,
+        [setting]: value,
+      });
+
       if (setting === "debugMode") {
-        // Fixed toast call format
         toast(value ? "已启用调试模式" : "已禁用调试模式", {
           description: value
             ? "现在将显示详细的调试信息。这可能会影响性能。"
             : "不再显示详细的调试信息。",
         });
       } else if (setting === "experimentalFeatures") {
-        // Fixed toast call format
         toast(value ? "已启用实验性功能" : "已禁用实验性功能", {
           description: value
             ? "已启用实验性功能。这些功能可能不稳定。"
             : "已禁用实验性功能。",
         });
       }
-    } catch {
-      // Renamed unused variable
+
+      // 如果日志级别改变，重新获取日志
+      if (setting === "logLevel") {
+        try {
+          const logs = await advancedApi.getSystemLogs(value as LogLevel);
+          setSystemLogs(logs);
+        } catch (err) {
+          console.error("Error fetching logs:", err);
+        }
+      }
+    } catch (error) {
+      console.error("Error updating setting:", error);
       const errorMessage = `更改${setting}设置时出错`;
       setError(errorMessage);
-      // Fixed toast call format
-      toast("设置更新失败", {
-        // Removed unsupported 'variant' property from options object
+      toast.error("设置更新失败", {
         description: `无法更改${setting}设置，请重试。`,
       });
     }
   };
 
-  // Handle endpoint change
+  // 处理端点变更
   const handleEndpointChange = (key: string, value: string) => {
     setLocalEndpoints((prev) => ({
       ...prev,
@@ -141,90 +193,120 @@ export function AdvancedSettings({
     }));
   };
 
-  // Add new endpoint
-  const addEndpoint = () => {
+  // 添加新端点
+  const addEndpoint = async () => {
     if (!newEndpointName.trim()) {
-      // Fixed toast call format
-      toast("无效的端点名称", {
-        // Removed unsupported 'variant' property from options object
+      toast.error("无效的端点名称", {
         description: "请输入有效的端点名称。",
       });
       return;
     }
 
     if (!newEndpointUrl.trim()) {
-      // Fixed toast call format
-      toast("无效的端点 URL", {
-        // Removed unsupported 'variant' property from options object
+      toast.error("无效的端点 URL", {
         description: "请输入有效的端点 URL。",
       });
       return;
     }
 
-    // Check for duplicates
+    // 检查是否有重复
     if (localEndpoints[newEndpointName]) {
-      // Fixed toast call format
-      toast("端点已存在", {
-        // Removed unsupported 'variant' property from options object
+      toast.error("端点已存在", {
         description: "具有该名称的端点已存在。请使用不同的名称。",
       });
       return;
     }
 
-    // Add new endpoint to local state
+    // 添加新端点到本地状态
     const updatedEndpoints = {
       ...localEndpoints,
       [newEndpointName]: newEndpointUrl,
     };
 
     setLocalEndpoints(updatedEndpoints);
-    setNewEndpointName("");
-    setNewEndpointUrl("");
-    setShowAddForm(false);
 
-    // Fixed toast call format
-    toast("已添加新端点", {
-      description: `已添加端点: ${newEndpointName}`,
-    });
+    try {
+      // 发送更新到 API
+      await advancedApi.updateAdvancedSettings({
+        ...settings.advanced,
+        apiEndpoints: updatedEndpoints,
+      });
+
+      // 更新父组件中的设置
+      onSettingChange("advanced", "apiEndpoints", updatedEndpoints);
+
+      setNewEndpointName("");
+      setNewEndpointUrl("");
+      setShowAddForm(false);
+
+      toast.success("已添加新端点", {
+        description: `已添加端点: ${newEndpointName}`,
+      });
+    } catch (err) {
+      console.error("Error adding endpoint:", err);
+      toast.error("添加端点失败", {
+        description: "无法添加新端点，请重试。",
+      });
+    }
   };
 
-  // Delete endpoint
+  // 删除端点
   const confirmDeleteEndpoint = (key: string) => {
     setEndpointToDelete(key);
     setShowDeleteConfirm(true);
   };
 
-  const deleteEndpoint = () => {
+  const deleteEndpoint = async () => {
     if (!endpointToDelete) return;
 
-    const rest = Object.fromEntries(
+    const updatedEndpoints = Object.fromEntries(
       Object.entries(localEndpoints).filter(([key]) => key !== endpointToDelete)
     );
-    setLocalEndpoints(rest);
-    setShowDeleteConfirm(false);
-    setEndpointToDelete(null);
 
-    // Fixed toast call format
-    toast("已删除端点", {
-      description: `端点 ${endpointToDelete} 已成功删除。`,
-    });
+    try {
+      // 发送更新到 API
+      await advancedApi.updateAdvancedSettings({
+        ...settings.advanced,
+        apiEndpoints: updatedEndpoints,
+      });
+
+      // 更新本地状态
+      setLocalEndpoints(updatedEndpoints);
+
+      // 更新父组件中的设置
+      onSettingChange("advanced", "apiEndpoints", updatedEndpoints);
+
+      setShowDeleteConfirm(false);
+      setEndpointToDelete(null);
+
+      toast.success("已删除端点", {
+        description: `端点 ${endpointToDelete} 已成功删除。`,
+      });
+    } catch (err) {
+      console.error("Error deleting endpoint:", err);
+      toast.error("删除端点失败", {
+        description: "无法删除端点，请重试。",
+      });
+    }
   };
 
-  // Apply advanced settings
+  // 应用高级设置
   const applySettings = async () => {
     setIsApplying(true);
 
     try {
-      // Apply API endpoints
-      onSettingChange("advanced", "apiEndpoints", localEndpoints);
+      // 应用所有高级设置，包括 API 端点
+      await advancedApi.updateAdvancedSettings({
+        ...settings.advanced,
+        apiEndpoints: localEndpoints,
+      });
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+      // 更新父组件中的设置
+      onSettingChange("advanced", "apiEndpoints", localEndpoints);
 
       setShowSuccess(true);
 
-      // Fixed toast call format
-      toast("已应用高级设置", {
+      toast.success("已应用高级设置", {
         description: "您的高级设置已成功更新。",
         action: (
           <motion.div
@@ -236,7 +318,7 @@ export function AdvancedSettings({
         ),
       });
 
-      // Reset success state after a delay
+      // 一段时间后重置成功状态
       setTimeout(() => {
         setShowSuccess(false);
       }, 2000);
@@ -245,9 +327,7 @@ export function AdvancedSettings({
         "应用高级设置时出错: " +
         (error instanceof Error ? error.message : "未知错误");
       setError(errorMessage);
-      // Fixed toast call format
-      toast("设置应用失败", {
-        // Removed unsupported 'variant' property from options object
+      toast.error("设置应用失败", {
         description: "无法应用高级设置，请重试。",
       });
     } finally {
@@ -255,36 +335,29 @@ export function AdvancedSettings({
     }
   };
 
-  // Reset to defaults
+  // 重置为默认值
   const resetToDefaults = async () => {
     setIsResetting(true);
 
     try {
-      // Simulate reset
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // 调用 API 重置所有设置
+      const defaultSettings = await advancedApi.resetToDefaults();
 
-      // Reset debug mode
-      onSettingChange("advanced", "debugMode", false);
+      // 更新父组件中的高级设置
+      Object.entries(defaultSettings.advanced).forEach(([key, value]) => {
+        onSettingChange(
+          "advanced",
+          key as keyof typeof settings.advanced,
+          value
+        );
+      });
 
-      // Reset log level
-      onSettingChange("advanced", "logLevel", "info");
-
-      // Reset experimental features
-      onSettingChange("advanced", "experimentalFeatures", false);
-
-      // Reset API endpoints to defaults
-      const defaultEndpoints = {
-        main: "https://api.example.com/v1",
-        backup: "https://backup-api.example.com/v1",
-      };
-
-      onSettingChange("advanced", "apiEndpoints", defaultEndpoints);
-      setLocalEndpoints(defaultEndpoints);
+      // 更新本地端点
+      setLocalEndpoints(defaultSettings.advanced.apiEndpoints || {});
 
       setShowResetConfirm(false);
 
-      // Fixed toast call format
-      toast("已重置为默认设置", {
+      toast.success("已重置为默认设置", {
         description: "所有高级设置已重置为默认值。",
       });
     } catch (error: unknown) {
@@ -292,9 +365,7 @@ export function AdvancedSettings({
         "重置设置时出错: " +
         (error instanceof Error ? error.message : "未知错误");
       setError(errorMessage);
-      // Fixed toast call format
-      toast("重置失败", {
-        // Removed unsupported 'variant' property from options object
+      toast.error("重置失败", {
         description: "无法重置为默认设置，请重试。",
       });
     } finally {
@@ -302,7 +373,105 @@ export function AdvancedSettings({
     }
   };
 
-  // Get human-readable log level
+  // 导出设置
+  const exportSettings = async () => {
+    try {
+      const blob = await advancedApi.exportSettings();
+
+      // 创建下载链接
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `launcher-settings-${
+        new Date().toISOString().split("T")[0]
+      }.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success("设置已导出", {
+        description: "您的设置已成功导出为 JSON 文件。",
+      });
+    } catch (err) {
+      console.error("Error exporting settings:", err);
+      toast.error("导出设置失败", {
+        description: "无法导出您的设置，请重试。",
+      });
+    }
+  };
+
+  // 处理文件选择
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setImportFile(e.target.files[0]);
+    }
+  };
+
+  // 导入设置
+  const importSettings = async () => {
+    if (!importFile) {
+      toast.error("未选择文件", {
+        description: "请选择有效的设置文件进行导入。",
+      });
+      return;
+    }
+
+    try {
+      const importedSettings = await advancedApi.importSettings(importFile);
+
+      // 更新父组件中的所有设置
+      Object.entries(importedSettings).forEach(([section, sectionSettings]) => {
+        if (section === "advanced") {
+          // Handle advanced settings with known types
+          Object.entries(sectionSettings as Record<string, unknown>).forEach(
+            ([key, value]) => {
+              const settingKey = key as keyof typeof settings.advanced;
+              if (
+                typeof value === "boolean" ||
+                (typeof value === "object" && value !== null) ||
+                ["error", "warning", "info", "debug", "verbose"].includes(
+                  value as string
+                )
+              ) {
+                onSettingChange(
+                  "advanced",
+                  settingKey,
+                  value as boolean | Record<string, string> | LogLevel
+                );
+              }
+            }
+          );
+        }
+      });
+
+      // 更新本地端点，确保类型安全
+      const apiEndpoints = importedSettings.advanced?.apiEndpoints;
+      if (apiEndpoints && typeof apiEndpoints === "object") {
+        setLocalEndpoints(apiEndpoints as Record<string, string>);
+      } else {
+        setLocalEndpoints({});
+      }
+
+      // 重置文件选择
+      setImportFile(null);
+      const fileInput = document.getElementById(
+        "settings-import-file"
+      ) as HTMLInputElement;
+      if (fileInput) fileInput.value = "";
+
+      toast.success("设置已导入", {
+        description: "您的设置已成功导入并应用。",
+      });
+    } catch (err) {
+      console.error("Error importing settings:", err);
+      toast.error("导入设置失败", {
+        description: "无法导入设置，请确保文件格式正确。",
+      });
+    }
+  };
+
+  // 获取日志级别的可读名称
   const getLogLevelText = (level: LogLevel): string => {
     const names: Record<LogLevel, string> = {
       error: "错误",
@@ -319,7 +488,6 @@ export function AdvancedSettings({
   }
 
   if (error && !settings) {
-    // Pass title to ErrorState if needed, or adjust ErrorState component
     return (
       <ErrorState
         title="加载错误"
@@ -396,7 +564,6 @@ export function AdvancedSettings({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Terminal className="h-4 w-4 text-muted-foreground" />
-                    {/* Label now correctly points to SelectTrigger via id */}
                     <Label htmlFor="log-level">日志级别</Label>
                   </div>
                   <span className="text-sm text-muted-foreground">
@@ -407,14 +574,12 @@ export function AdvancedSettings({
                   whileHover={{ scale: 1.01 }}
                   transition={{ duration: TRANSITION_DURATION.fast }}
                 >
-                  {/* Removed id from Select component */}
                   <Select
                     value={settings.advanced.logLevel}
                     onValueChange={(value: LogLevel) =>
                       handleSettingChange("logLevel", value)
                     }
                   >
-                    {/* Added id to SelectTrigger for Label association */}
                     <SelectTrigger id="log-level" aria-label="选择日志级别">
                       <SelectValue placeholder="选择日志级别" />
                     </SelectTrigger>
@@ -444,6 +609,37 @@ export function AdvancedSettings({
                     </div>
                   </motion.div>
                 ) : null}
+
+                {/* 显示系统日志预览 */}
+                {systemLogs.length > 0 && (
+                  <div className="mt-3 border rounded-md p-2">
+                    <Label className="text-xs mb-1 block">最近的系统日志</Label>
+                    <div className="bg-gray-50 dark:bg-gray-900 rounded p-2 max-h-[150px] overflow-y-auto text-xs font-mono">
+                      {systemLogs.slice(0, 5).map((log, index) => (
+                        <div
+                          key={index}
+                          className={`mb-1 ${
+                            log.level === "error"
+                              ? "text-red-500"
+                              : log.level === "warning"
+                              ? "text-amber-500"
+                              : log.level === "debug"
+                              ? "text-blue-500"
+                              : "text-gray-700 dark:text-gray-300"
+                          }`}
+                        >
+                          [{log.timestamp}] [{log.level.toUpperCase()}]{" "}
+                          {log.message}
+                        </div>
+                      ))}
+                      {systemLogs.length > 5 && (
+                        <div className="text-center text-gray-500 mt-1">
+                          ...还有 {systemLogs.length - 5} 条日志
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </motion.div>
 
               <motion.div variants={slideUp}>
@@ -563,7 +759,7 @@ export function AdvancedSettings({
                           key={key}
                           className="flex gap-2 items-center"
                           variants={slideUp}
-                          custom={index + 3} // Adjust custom prop if needed based on slideUp definition
+                          custom={index + 3}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.05 }}
@@ -598,6 +794,65 @@ export function AdvancedSettings({
                 </div>
               </motion.div>
 
+              {/* 导入/导出设置 */}
+              <motion.div variants={slideUp}>
+                <Separator />
+              </motion.div>
+
+              <motion.div variants={slideUp} className="space-y-2">
+                <Label>导入/导出设置</Label>
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={exportSettings}
+                    className="flex items-center"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    导出设置
+                  </Button>
+
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <Input
+                        id="settings-import-file"
+                        type="file"
+                        accept=".json"
+                        onChange={handleFileSelect}
+                        className="absolute inset-0 opacity-0 w-full cursor-pointer"
+                        aria-label="选择设置文件导入"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center"
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        选择文件
+                      </Button>
+                    </div>
+
+                    <Button
+                      size="sm"
+                      disabled={!importFile}
+                      onClick={importSettings}
+                    >
+                      导入
+                    </Button>
+                  </div>
+                </div>
+
+                {importFile && (
+                  <div className="text-sm text-muted-foreground">
+                    已选择文件: {importFile.name}
+                  </div>
+                )}
+
+                <div className="text-xs text-muted-foreground mt-1">
+                  导出设置以备份或在另一台设备上导入。导入设置将覆盖所有现有设置。
+                </div>
+              </motion.div>
+
               {settings.advanced.experimentalFeatures && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
@@ -628,7 +883,7 @@ export function AdvancedSettings({
                 variant="outline"
                 onClick={() => setShowResetConfirm(true)}
                 disabled={isResetting}
-                className="relative min-w-[130px]" // Added min-width
+                className="relative min-w-[130px]"
               >
                 {isResetting ? (
                   <motion.span
@@ -642,7 +897,7 @@ export function AdvancedSettings({
                 ) : (
                   <RotateCcw className="h-4 w-4 mr-2" />
                 )}
-                <motion.span // Added motion span
+                <motion.span
                   initial={false}
                   animate={{ opacity: isResetting ? 0 : 1 }}
                   transition={{ duration: 0.1 }}
@@ -660,7 +915,7 @@ export function AdvancedSettings({
               <Button
                 onClick={applySettings}
                 disabled={isApplying}
-                className="relative min-w-[160px]" // Added min-width
+                className="relative min-w-[160px]"
               >
                 {isApplying ? (
                   <motion.span
@@ -676,7 +931,7 @@ export function AdvancedSettings({
                 ) : (
                   <Settings2 className="h-4 w-4 mr-2" />
                 )}
-                <motion.span // Added motion span
+                <motion.span
                   initial={false}
                   animate={{ opacity: isApplying ? 0 : 1 }}
                   transition={{ duration: 0.1 }}
@@ -714,7 +969,6 @@ export function AdvancedSettings({
           <AlertDialogHeader>
             <AlertDialogTitle>确认删除端点</AlertDialogTitle>
             <AlertDialogDescription>
-              {/* Escaped quotes */}
               您确定要删除端点 &quot;{endpointToDelete}&quot;
               吗？此操作无法撤销。
             </AlertDialogDescription>

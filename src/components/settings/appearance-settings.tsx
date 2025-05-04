@@ -16,7 +16,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Sun, Moon, Palette, Check } from "lucide-react";
-import { type SettingsSectionProps, type Theme, type Settings } from "./types"; // Assuming Settings type is also in types
+import { type SettingsSectionProps, type Theme, type Settings } from "./types";
 import {
   AnimatedCard,
   LoadingIndicator,
@@ -30,6 +30,7 @@ import {
   TRANSITION_DURATION,
 } from "./animation-constants";
 import { toast } from "sonner";
+import { appearanceApi } from "./settings-api";
 
 export function AppearanceSettings({
   settings,
@@ -41,44 +42,82 @@ export function AppearanceSettings({
     "idle" | "saving" | "success" | "error"
   >("idle");
 
-  // Simulate initial loading
+  // 从后端 API 加载外观设置
   useEffect(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 600);
-    return () => clearTimeout(timer);
-  }, []);
+    const fetchAppearanceSettings = async () => {
+      setIsLoading(true);
+      try {
+        const appearanceData = await appearanceApi.getAppearanceSettings();
 
-  const handleThemeChange = (value: Theme) => {
+        // 更新父组件中的设置，添加类型验证
+        Object.entries(appearanceData).forEach(([key, value]) => {
+          const settingKey = key as keyof Settings["appearance"];
+
+          // Validate value type based on the setting
+          switch (settingKey) {
+            case "theme":
+              if (
+                typeof value === "string" &&
+                ["light", "dark", "system", "red-night"].includes(value)
+              ) {
+                onSettingChange("appearance", settingKey, value as Theme);
+              }
+              break;
+            case "fontSize":
+              if (typeof value === "number") {
+                onSettingChange("appearance", settingKey, value);
+              }
+              break;
+            case "redNightMode":
+            case "compactView":
+            case "showStatusBar":
+            case "animationsEnabled":
+              if (typeof value === "boolean") {
+                onSettingChange("appearance", settingKey, value);
+              }
+              break;
+          }
+        });
+      } catch (err) {
+        console.error("Error loading appearance settings:", err);
+        setError("无法加载外观设置，请稍后重试。");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAppearanceSettings();
+  }, [onSettingChange]);
+
+  const handleThemeChange = async (value: Theme) => {
     try {
       setSaveStatus("saving");
+      // 更新本地状态
       onSettingChange("appearance", "theme", value);
 
-      // Simulate successful save with delay
-      setTimeout(() => {
-        setSaveStatus("success");
-        // Use toast(title, options) format
-        toast("主题已更新", {
-          description: "您的显示主题已成功更改。",
-        });
-        // Reset status after showing success
-        setTimeout(() => setSaveStatus("idle"), 2000);
-      }, 500);
+      // 发送更新到 API
+      await appearanceApi.updateAppearanceSettings({
+        ...settings.appearance,
+        theme: value,
+      });
+
+      setSaveStatus("success");
+      toast("主题已更新", {
+        description: "您的显示主题已成功更改。",
+      });
+
+      // 重置状态
+      setTimeout(() => setSaveStatus("idle"), 2000);
     } catch {
-      // Use _err as err is not used
       setSaveStatus("error");
       setError("更改主题时出错");
-      // Use toast.error(title, options) format for errors
       toast.error("设置更新失败", {
         description: "无法更改主题，请重试。",
-        // Removed unsupported 'variant' property
       });
     }
   };
 
-  // Removed unnecessary 'extends unknown'
-  const handleSettingChange = <
+  const handleSettingChange = async <
     T extends Settings["appearance"][K],
     K extends keyof Settings["appearance"]
   >(
@@ -87,22 +126,24 @@ export function AppearanceSettings({
   ) => {
     try {
       setSaveStatus("saving");
-      // Removed 'as any' assertion - ensure onSettingChange type is correct
+      // 更新本地状态
       onSettingChange("appearance", setting, value);
 
-      setTimeout(() => {
-        setSaveStatus("success");
-        // Reset status after showing success
-        setTimeout(() => setSaveStatus("idle"), 2000);
-      }, 300);
-    } catch {
-      // Use _err as err is not used
+      // 发送更新到 API
+      await appearanceApi.updateAppearanceSettings({
+        ...settings.appearance,
+        [setting]: value,
+      });
+
+      setSaveStatus("success");
+      // 重置状态
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    } catch (err: unknown) {
+      console.error(`Error updating setting ${String(setting)}:`, err);
       setSaveStatus("error");
       setError(`更改${setting}设置时出错`);
-      // Use toast.error(title, options) format for errors
       toast.error("设置更新失败", {
         description: `无法更新${setting}设置，请重试。`,
-        // Removed unsupported 'variant' property
       });
     }
   };
@@ -112,12 +153,14 @@ export function AppearanceSettings({
   }
 
   if (error && !settings) {
-    // Pass title to ErrorState if needed, or adjust ErrorState component
     return (
       <ErrorState
         title="加载错误"
         message={error}
-        onRetry={() => setError(null)}
+        onRetry={() => {
+          setError(null);
+          window.location.reload(); // Refresh the page to retry loading
+        }}
       />
     );
   }
@@ -220,7 +263,6 @@ export function AppearanceSettings({
               </div>
             </motion.div>
 
-            {/* Wrap Separator in motion.div instead of using component prop */}
             <motion.div variants={slideUp}>
               <Separator />
             </motion.div>
@@ -263,7 +305,6 @@ export function AppearanceSettings({
               </div>
             </motion.div>
 
-            {/* Wrap Separator in motion.div */}
             <motion.div variants={slideUp}>
               <Separator />
             </motion.div>
@@ -297,7 +338,6 @@ export function AppearanceSettings({
               </motion.div>
             </motion.div>
 
-            {/* Wrap Separator in motion.div */}
             <motion.div variants={slideUp}>
               <Separator />
             </motion.div>
@@ -331,7 +371,6 @@ export function AppearanceSettings({
               </motion.div>
             </motion.div>
 
-            {/* Wrap Separator in motion.div */}
             <motion.div variants={slideUp}>
               <Separator />
             </motion.div>
@@ -365,7 +404,6 @@ export function AppearanceSettings({
               </motion.div>
             </motion.div>
 
-            {/* Wrap Separator in motion.div */}
             <motion.div variants={slideUp}>
               <Separator />
             </motion.div>

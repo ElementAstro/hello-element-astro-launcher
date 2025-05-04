@@ -31,10 +31,13 @@ export interface IAppearanceSettings {
   animationsEnabled: boolean
 }
 
+export type AccountStatus = "active" | "deleted" | "suspended"
+
 export interface IAccountSettings {
   name: string
   email: string
   organization?: string
+  status: AccountStatus
 }
 
 export interface INotificationSettings {
