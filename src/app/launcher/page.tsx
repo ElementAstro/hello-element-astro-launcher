@@ -22,11 +22,12 @@ import {
   type SortDirection,
   type Software,
 } from "@/components/launcher";
+import * as launcherApi from "@/components/launcher/launcher-api";
 
 export default function LauncherPage() {
   const searchParams = useSearchParams();
 
-  // 使用解构赋值获取状态和动作，避免频繁从store对象访问属性
+  // Use destructuring assignment to get state and actions, avoiding frequent access to properties from the store object
   const {
     software,
     currentTab,
@@ -67,7 +68,7 @@ export default function LauncherPage() {
 
   const autoScrollTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 从URL参数初始化状态
+  // Initialize state from URL parameters
   useEffect(() => {
     const category = searchParams.get("category");
     if (category) {
@@ -92,7 +93,7 @@ export default function LauncherPage() {
     }
   }, [searchParams, setCurrentTab, setSearchQuery]);
 
-  // 使用useMemo优化软件筛选和排序
+  // Optimize software filtering and sorting using useMemo
   const filteredSoftware = useMemo(() => {
     return software
       .filter(
@@ -132,7 +133,7 @@ export default function LauncherPage() {
     sortDirection,
   ]);
 
-  // 使用useMemo计算分页信息
+  // Calculate pagination information using useMemo
   const { totalPages, paginatedSoftware, startIndex } = useMemo(() => {
     const totalPages = Math.ceil(filteredSoftware.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -143,10 +144,10 @@ export default function LauncherPage() {
     return { totalPages, paginatedSoftware, startIndex };
   }, [filteredSoftware, currentPage, itemsPerPage]);
 
-  // 自动滚动功能
+  // Auto-scroll functionality
   useEffect(() => {
     if (autoScroll) {
-      // 清除之前的计时器以防止内存泄漏
+      // Clear previous timer to prevent memory leaks
       if (autoScrollTimerRef.current) {
         clearInterval(autoScrollTimerRef.current);
       }
@@ -166,7 +167,7 @@ export default function LauncherPage() {
     };
   }, [autoScroll, scrollSpeed, totalPages, setCurrentPage, currentPage]);
 
-  // 当筛选条件更改时重置到第1页
+  // Reset to page 1 when filter conditions change
   useEffect(() => {
     setCurrentPage(1);
   }, [
@@ -180,30 +181,30 @@ export default function LauncherPage() {
     setCurrentPage,
   ]);
 
-  // 键盘快捷键处理
+  // Keyboard shortcut handling
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // 左右箭头键用于分页
+      // Left/Right arrow keys for pagination
       if (e.key === "ArrowLeft" && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       } else if (e.key === "ArrowRight" && currentPage < totalPages) {
         setCurrentPage(currentPage + 1);
       }
 
-      // Ctrl+F 聚焦搜索框
+      // Ctrl+F to focus search input
       if (e.ctrlKey && e.key === "f") {
         e.preventDefault();
-        // 如果搜索栏未显示，则先切换搜索栏可见性
+        // If search bar is not visible, toggle its visibility first
         if (!searchVisible) {
           setSearchVisible(true);
         }
-        // 使用requestAnimationFrame确保DOM已更新
+        // Use requestAnimationFrame to ensure DOM is updated
         requestAnimationFrame(() => {
           document.getElementById("search-input")?.focus();
         });
       }
 
-      // ESC键关闭详情对话框
+      // ESC key to close details dialog
       if (e.key === "Escape" && selectedSoftware) {
         setSelectedSoftware(null);
       }
@@ -221,7 +222,7 @@ export default function LauncherPage() {
     setSelectedSoftware,
   ]);
 
-  // 安装模拟
+  // Installation simulation
   useEffect(() => {
     if (isInstalling) {
       const interval = setInterval(() => {
@@ -231,8 +232,8 @@ export default function LauncherPage() {
           clearInterval(interval);
           completeInstallation();
 
-          toast.success("安装完成", {
-            description: `${selectedSoftware?.name} 已成功安装。`,
+          toast.success("Installation Complete", {
+            description: `${selectedSoftware?.name} has been installed successfully.`,
           });
         }
       }, 300);
@@ -247,64 +248,145 @@ export default function LauncherPage() {
     selectedSoftware,
   ]);
 
-  // 软件操作处理（安装或启动）
+  // Software action handling (install or launch)
   const handleSoftwareAction = useCallback(
     async (software: Software) => {
       if (software.actionLabel === "Install") {
-        startInstallation(software.id);
-      } else {
         try {
-          const response = await fetch("/api/software/launch", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ id: software.id }),
+          // Start installation state
+          startInstallation(software.id);
+
+          // Use API call to install software
+          const { installationId } = await launcherApi.installSoftware(
+            software.id.toString()
+          );
+
+          // Set up a poller to check installation progress
+          const progressChecker = setInterval(async () => {
+            try {
+              const status = await launcherApi.getInstallationStatus(
+                installationId
+              );
+              updateInstallProgress(status.progress);
+
+              // Handle errors
+              if (status.error) {
+                clearInterval(progressChecker);
+                toast.error("Installation Failed", {
+                  description: status.error,
+                });
+                completeInstallation(); // Reset installation state
+              }
+
+              // Installation complete
+              if (status.status === "completed" && status.progress >= 100) {
+                clearInterval(progressChecker);
+                completeInstallation();
+
+                // Get updated software information (removed unused variable)
+                // const updatedSoftware = await launcherApi.getSoftwareDetails(software.id.toString());
+
+                // Update software information in the store
+                const updatedSoftwareList = await launcherApi.getAllSoftware();
+                useAppStore.getState().setSoftware(updatedSoftwareList);
+
+                toast.success("Installation Complete", {
+                  description: `${software.name} has been installed successfully.`,
+                });
+              }
+            } catch (error) {
+              clearInterval(progressChecker);
+              console.error(
+                `Error checking installation progress for ${software.name}:`,
+                error
+              );
+
+              toast.error("Installation Progress Check Failed", {
+                description:
+                  error instanceof Error
+                    ? error.message
+                    : "Could not get installation progress",
+              });
+
+              completeInstallation(); // Reset installation state
+            }
+          }, 1000);
+
+          // Clear progress checker if component unmounts
+          return () => clearInterval(progressChecker);
+        } catch (error) {
+          console.error(`Error installing ${software.name}:`, error);
+
+          toast.error("Installation Start Failed", {
+            description:
+              error instanceof Error
+                ? error.message
+                : "Could not start the installation process",
           });
 
-          const data = await response.json();
+          completeInstallation(); // Reset installation state
+        }
+      } else {
+        try {
+          // Use the encapsulated API instead of direct fetch
+          const result = await launcherApi.launchSoftware(
+            software.id.toString()
+          );
 
-          if (!response.ok) {
-            throw new Error(data.error || "无法启动软件");
+          if (!result.success) {
+            throw new Error("Could not launch software");
           }
 
-          toast.success("软件已启动", {
-            description: `${software.name} 已成功启动。`,
+          toast.success("Software Launched", {
+            description: `${software.name} has been launched successfully.`,
           });
 
           setSelectedSoftware(null);
         } catch (error) {
-          console.error(`启动 ${software.name} 时出错:`, error);
+          console.error(`Error launching ${software.name}:`, error);
 
-          toast.error("启动失败", {
+          toast.error("Launch Failed", {
             description:
-              error instanceof Error ? error.message : "无法启动软件",
+              error instanceof Error
+                ? error.message
+                : "Could not launch software",
           });
         }
       }
     },
-    [startInstallation, setSelectedSoftware]
+    [
+      startInstallation,
+      updateInstallProgress,
+      completeInstallation,
+      setSelectedSoftware,
+    ]
   );
 
-  // 刷新处理
+  // Refresh handling
   const handleRefresh = useCallback(async () => {
     try {
+      // Use API to get the latest software list
+      const softwareList = await launcherApi.getAllSoftware();
+      // Update the store with the fetched list
+      useAppStore.getState().setSoftware(softwareList);
       await refreshSystemInfo();
 
-      toast.success("已刷新", {
-        description: "软件列表已刷新。",
+      toast.success("Refreshed", {
+        description: "Software list has been refreshed.",
       });
     } catch (error) {
-      console.error("刷新软件列表时出错:", error);
+      console.error("Error refreshing software list:", error);
 
-      toast.error("刷新失败", {
+      toast.error("Refresh Failed", {
         description:
-          error instanceof Error ? error.message : "无法刷新软件列表。",
+          error instanceof Error
+            ? error.message
+            : "Could not refresh software list.",
       });
     }
   }, [refreshSystemInfo]);
 
-  // 计算过滤器数量
+  // Calculate filter count
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (filterFeatured) count++;
@@ -312,7 +394,7 @@ export default function LauncherPage() {
     return count;
   }, [filterFeatured, filterInstalled]);
 
-  // 当前排序设置
+  // Current sort settings
   const currentSort = useMemo(
     () => ({ field: sortBy, direction: sortDirection }),
     [sortBy, sortDirection]
@@ -321,7 +403,7 @@ export default function LauncherPage() {
   return (
     <AppLayout>
       <div className="flex-1 flex flex-col overflow-hidden pb-12 sm:pb-0">
-        {/* 搜索栏组件 */}
+        {/* Search Bar Component */}
         <SearchBar
           searchQuery={searchQuery}
           searchVisible={searchVisible}
@@ -330,7 +412,7 @@ export default function LauncherPage() {
           onRefresh={handleRefresh}
         />
 
-        {/* 过滤控件组件 - 仅在搜索可见时显示 */}
+        {/* Filter Controls Component - Only shown when search is visible */}
         {searchVisible && (
           <FilterControls
             currentTab={currentTab as Category}
@@ -350,13 +432,13 @@ export default function LauncherPage() {
           />
         )}
 
-        {/* 分类标签组件 */}
+        {/* Category Tabs Component */}
         <CategoryTabs
           currentTab={currentTab as Category}
           onTabChange={setCurrentTab}
         />
 
-        {/* 自动滚动控件组件 */}
+        {/* Auto Scroll Controls Component */}
         <AutoScrollControls
           autoScroll={autoScroll}
           scrollSpeed={scrollSpeed}
@@ -366,11 +448,11 @@ export default function LauncherPage() {
           onItemsPerPageChange={setItemsPerPage}
         />
 
-        {/* 软件列表 */}
+        {/* Software List */}
         <div className="flex-1 overflow-y-auto p-2 sm:p-3">
           {filteredSoftware.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
-              <p className="text-sm">没有找到符合条件的软件</p>
+              <p className="text-sm">No software found matching the criteria</p>
               <Button
                 variant="link"
                 size="sm"
@@ -381,19 +463,19 @@ export default function LauncherPage() {
                   setFilterInstalled(false);
                 }}
               >
-                清除筛选条件
+                Clear filters
               </Button>
             </div>
           ) : (
             <>
-              {/* 结果摘要 */}
+              {/* Results Summary */}
               <div className="text-xs text-muted-foreground mb-3">
-                显示 {startIndex + 1}-
-                {Math.min(startIndex + itemsPerPage, filteredSoftware.length)}/{" "}
-                {filteredSoftware.length} 个结果
+                Showing {startIndex + 1}-
+                {Math.min(startIndex + itemsPerPage, filteredSoftware.length)}{" "}
+                of {filteredSoftware.length} results
               </div>
 
-              {/* 软件项目列表 */}
+              {/* Software Items List */}
               <motion.div
                 variants={containerVariants}
                 initial="hidden"
@@ -425,7 +507,7 @@ export default function LauncherPage() {
           )}
         </div>
 
-        {/* 分页控件 */}
+        {/* Pagination Controls */}
         <PaginationControls
           currentPage={currentPage}
           totalPages={totalPages}
@@ -434,7 +516,7 @@ export default function LauncherPage() {
           totalItems={filteredSoftware.length}
         />
 
-        {/* 软件详情对话框 */}
+        {/* Software Details Dialog */}
         <SoftwareDetailsDialog
           software={selectedSoftware}
           isOpen={!!selectedSoftware}

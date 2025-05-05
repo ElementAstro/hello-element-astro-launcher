@@ -1,4 +1,4 @@
-import { AlertCircle, Check, FileText, XCircle } from "lucide-react";
+import { RefreshCw, ScrollText, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,218 +8,267 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { LogEntry } from "./types";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  fadeIn,
-  fadeInScale,
-  expandContent,
-  skeletonPulse,
-  DURATION,
-} from "./animation-constants";
-import { useState } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ConnectionLogEntry } from "./types";
+import { motion } from "framer-motion";
+import { fadeIn, skeletonPulse } from "./animation-constants";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { shouldReduceMotion } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { connectionApi } from "./connection-api";
 
 interface ConnectionLogsCardProps {
-  logs: LogEntry[];
+  logs?: ConnectionLogEntry[];
   isLoading?: boolean;
 }
 
 export function ConnectionLogsCard({
-  logs,
+  logs: initialLogs,
   isLoading = false,
 }: ConnectionLogsCardProps) {
-  const [expandedLog, setExpandedLog] = useState<number | null>(null);
-  const [filter, setFilter] = useState<"all" | "success" | "error">("all");
+  const [logs, setLogs] = useState<ConnectionLogEntry[]>(initialLogs || []);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [liveMode, setLiveMode] = useState(false);
+  const [liveInterval, setLiveIntervalRef] = useState<number | null>(null);
 
-  const filteredLogs = logs.filter((log) => {
-    if (filter === "all") return true;
-    return log.type === filter;
-  });
+  // 当props更新时更新内部状态
+  useEffect(() => {
+    if (initialLogs) {
+      setLogs(initialLogs);
+    }
+  }, [initialLogs]);
 
-  const toggleExpand = (index: number) => {
-    setExpandedLog(expandedLog === index ? null : index);
+  // 处理组件卸载时的清理工作
+  useEffect(() => {
+    return () => {
+      if (liveInterval) {
+        window.clearInterval(liveInterval);
+      }
+    };
+  }, [liveInterval]);
+
+  // 刷新连接日志
+  const handleRefresh = async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    setError(null);
+
+    try {
+      const newLogs = await connectionApi.getConnectionLogs();
+      setLogs(newLogs);
+    } catch (err) {
+      console.error("获取连接日志失败:", err);
+      setError("无法获取连接日志");
+      toast.error("获取连接日志失败");
+    } finally {
+      setRefreshing(false);
+    }
   };
 
-  // 没有日志时的空状态
-  if (!isLoading && logs.length === 0) {
+  // 清除日志
+  const handleClearLogs = async () => {
+    try {
+      await connectionApi.clearConnectionLogs();
+      setLogs([]);
+      toast.success("连接日志已清除");
+    } catch (err) {
+      console.error("清除连接日志失败:", err);
+      toast.error("清除连接日志失败");
+    }
+  };
+
+  // 切换实时模式
+  const toggleLiveMode = () => {
+    if (liveMode && liveInterval) {
+      window.clearInterval(liveInterval);
+      setLiveIntervalRef(null);
+      setLiveMode(false);
+      toast.info("已关闭实时监控");
+    } else {
+      const interval = window.setInterval(async () => {
+        try {
+          const newLogs = await connectionApi.getConnectionLogs();
+          setLogs(newLogs);
+        } catch (err) {
+          console.error("自动获取连接日志失败:", err);
+        }
+      }, 3000);
+      setLiveIntervalRef(interval);
+      setLiveMode(true);
+      toast.info("已开启实时监控（每3秒更新一次）");
+    }
+  };
+
+  // 获取日志项级别对应的颜色
+  const getLogLevelColor = (level: string) => {
+    switch (level.toLowerCase()) {
+      case "error":
+        return "bg-destructive hover:bg-destructive/90";
+      case "warning":
+        return "bg-warning hover:bg-warning/90 text-black";
+      case "info":
+        return "bg-info hover:bg-info/90";
+      case "debug":
+        return "bg-secondary hover:bg-secondary/90";
+      default:
+        return "bg-primary hover:bg-primary/90";
+    }
+  };
+
+  // 渲染加载状态
+  if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <AlertCircle className="h-5 w-5 mr-2" />
-            连接日志
-          </CardTitle>
-          <CardDescription>最近的连接事件和错误</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: DURATION.normal }}
-          >
-            <FileText className="h-16 w-16 text-muted-foreground mb-4 opacity-50" />
-            <h3 className="text-lg font-medium mb-2">无连接日志</h3>
-            <p className="text-sm text-muted-foreground">
-              尚未记录任何连接活动。连接设备后，相关日志将显示在此处。
-            </p>
-          </motion.div>
-        </CardContent>
-      </Card>
+      <motion.div variants={fadeIn} className="w-full">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center">
+                <ScrollText className="h-5 w-5 mr-2" />
+                连接日志
+              </div>
+              <div className="h-9 w-9 bg-muted/40 rounded animate-pulse" />
+            </CardTitle>
+            <CardDescription>显示最近的连接日志信息</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <motion.div
+                  key={i}
+                  variants={skeletonPulse}
+                  className="h-10 bg-muted/40 rounded"
+                />
+              ))}
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <motion.div
+              variants={skeletonPulse}
+              className="h-9 w-24 bg-muted/40 rounded"
+            />
+            <motion.div
+              variants={skeletonPulse}
+              className="h-9 w-24 bg-muted/40 rounded"
+            />
+          </CardFooter>
+        </Card>
+      </motion.div>
     );
   }
 
   return (
-    <motion.div variants={fadeIn} initial="initial" animate="animate">
+    <motion.div variants={fadeIn} className="w-full">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center">
-              <AlertCircle className="h-5 w-5 mr-2" />
+              <ScrollText className="h-5 w-5 mr-2" />
               连接日志
+              {liveMode && (
+                <Badge className="ml-2 bg-success animate-pulse">实时</Badge>
+              )}
             </div>
-            <div className="flex gap-1">
-              <Badge
-                variant={filter === "all" ? "default" : "outline"}
-                className="cursor-pointer hover:bg-primary/10"
-                onClick={() => setFilter("all")}
-              >
-                全部
-              </Badge>
-              <Badge
-                variant={filter === "success" ? "default" : "outline"}
-                className="cursor-pointer hover:bg-primary/10"
-                onClick={() => setFilter("success")}
-              >
-                成功
-              </Badge>
-              <Badge
-                variant={filter === "error" ? "default" : "outline"}
-                className="cursor-pointer hover:bg-primary/10"
-                onClick={() => setFilter("error")}
-              >
-                错误
-              </Badge>
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={handleRefresh}
+              disabled={refreshing || liveMode}
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+              />
+              <span className="sr-only">刷新</span>
+            </Button>
           </CardTitle>
-          <CardDescription>最近的连接事件和错误</CardDescription>
+          <CardDescription>显示最近的连接日志信息</CardDescription>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="max-h-[300px] pr-3">
-            <div className="space-y-2 text-sm">
-              <AnimatePresence>
-                {isLoading ? (
-                  // 加载状态
-                  Array.from({ length: 3 }).map((_, index) => (
-                    <motion.div
-                      key={`skeleton-${index}`}
-                      variants={skeletonPulse}
-                      initial="initial"
-                      animate="animate"
-                      className="h-14 rounded-lg bg-muted/50"
-                    />
-                  ))
-                ) : filteredLogs.length > 0 ? (
-                  // 日志列表
-                  filteredLogs.map((log, index) => (
-                    <motion.div
-                      key={index}
-                      layout
-                      variants={fadeInScale}
-                      initial="initial"
-                      animate="animate"
-                      exit="exit"
-                      className={`flex items-start gap-2 p-3 rounded-lg ${
-                        expandedLog === index ? "bg-muted" : "bg-muted/50"
-                      } hover:bg-muted cursor-pointer transition-colors`}
-                      onClick={() => toggleExpand(index)}
-                      whileHover={{ scale: shouldReduceMotion() ? 1 : 1.01 }}
-                      whileTap={{ scale: shouldReduceMotion() ? 1 : 0.99 }}
-                    >
-                      <div className="pt-0.5">
-                        {log.type === "success" ? (
-                          <Check className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-red-500" />
-                        )}
-                      </div>
-
-                      <div className="flex-1">
-                        <div className="font-medium">{log.title}</div>
-                        <div className="text-muted-foreground text-xs">
-                          {log.timestamp}
-                        </div>
-
-                        <AnimatePresence>
-                          {expandedLog === index && log.errorMessage && (
-                            <motion.div
-                              variants={expandContent}
-                              initial="initial"
-                              animate="animate"
-                              exit="exit"
-                              className="mt-2 text-xs bg-red-50 dark:bg-red-950/50 p-2 rounded text-red-500 font-mono"
-                            >
-                              {log.errorMessage}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-
-                      {log.errorMessage && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="text-red-500 text-xs font-medium flex items-center gap-1 select-none">
-                              <span>详情</span>
-                              <motion.span
-                                animate={{ y: [0, 2, 0] }}
-                                transition={{
-                                  repeat: Infinity,
-                                  repeatDelay: 1,
-                                  duration: 0.5,
-                                }}
-                                className="inline-block"
-                              >
-                                ↓
-                              </motion.span>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>点击查看错误详情</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                    </motion.div>
-                  ))
-                ) : (
-                  // 无符合筛选条件的日志
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="p-4 text-center text-muted-foreground"
+          {logs && logs.length > 0 ? (
+            <ScrollArea className="h-[300px] pr-4">
+              <div className="space-y-2">
+                {logs.map((log) => (
+                  <div
+                    key={`${log.timestamp}-${log.message.substring(0, 10)}`}
+                    className="p-3 text-sm rounded-md border"
                   >
-                    没有符合当前筛选条件的日志
-                  </motion.div>
+                    <div className="flex justify-between items-start">
+                      <Badge
+                        className={`${getLogLevelColor(log.level)} mb-2`}
+                        variant="secondary"
+                      >
+                        {log.level}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(log.timestamp).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="mt-1">{log.message}</div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          ) : error ? (
+            <div className="py-8 text-center">
+              <X className="h-12 w-12 mx-auto text-destructive/60" />
+              <p className="mt-4 text-muted-foreground">{error}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-4"
+                onClick={handleRefresh}
+                disabled={refreshing}
+              >
+                {refreshing ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    加载中...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    重试
+                  </>
                 )}
-              </AnimatePresence>
+              </Button>
             </div>
-          </ScrollArea>
+          ) : (
+            <div className="py-8 text-center">
+              <ScrollText className="h-12 w-12 mx-auto text-muted-foreground/60" />
+              <p className="mt-4 text-muted-foreground">暂无连接日志</p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-4"
+                onClick={handleRefresh}
+                disabled={refreshing}
+              >
+                {refreshing ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    加载中...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    加载日志
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button variant="outline">查看完整日志</Button>
+          <Button variant="outline" onClick={toggleLiveMode}>
+            {liveMode ? "停止实时监控" : "实时监控"}
+          </Button>
           <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setFilter("all")}
-            className={filter !== "all" ? "visible" : "invisible"}
+            variant="destructive"
+            onClick={handleClearLogs}
+            disabled={!logs || logs.length === 0}
           >
-            清除筛选
+            清除日志
           </Button>
         </CardFooter>
       </Card>

@@ -20,8 +20,9 @@ import {
   ANIMATION_DURATION,
 } from "./animation-constants";
 import type { Software, ActionHandler } from "./types";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import * as launcherApi from "./launcher-api";
 
 interface SoftwareDetailsDialogProps {
   software: Software | null;
@@ -31,6 +32,7 @@ interface SoftwareDetailsDialogProps {
   onOpenChange: (open: boolean) => void;
   onAction: ActionHandler;
   error?: string | null;
+  onInstallComplete?: (software: Software) => void;
 }
 
 export function SoftwareDetailsDialog({
@@ -41,8 +43,80 @@ export function SoftwareDetailsDialog({
   onOpenChange,
   onAction,
   error = null,
+  onInstallComplete,
 }: SoftwareDetailsDialogProps) {
   const [imageError, setImageError] = useState(false);
+  const [activeInstallId, setActiveInstallId] = useState<string | null>(null);
+  const [localInstallProgress, setLocalInstallProgress] = useState(0);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [isLocalInstalling, setIsLocalInstalling] = useState(false);
+
+  // Fetch latest software details when the dialog opens and if a valid software ID exists
+  useEffect(() => {
+    if (isOpen && software && !isInstalling) {
+      const fetchLatestInfo = async () => {
+        try {
+          const latestInfo = await launcherApi.getSoftwareDetails(
+            software.id.toString()
+          );
+          // Update software info in the parent component via onAction
+          if (JSON.stringify(latestInfo) !== JSON.stringify(software)) {
+            onAction({ ...latestInfo, actionType: "update-info" });
+          }
+        } catch (err) {
+          console.error("Failed to fetch software details:", err);
+          // No need to set an error, as we still have local software info to display
+        }
+      };
+      fetchLatestInfo();
+    }
+  }, [isOpen, software, isInstalling, onAction]);
+
+  // Handle installation progress polling
+  useEffect(() => {
+    if (!isLocalInstalling || !activeInstallId) return;
+
+    const progressInterval = setInterval(async () => {
+      try {
+        const progress = await launcherApi.getInstallationStatus(
+          activeInstallId
+        );
+        setLocalInstallProgress(progress.progress);
+
+        if (progress.error) {
+          setLocalError(progress.error);
+          setIsLocalInstalling(false);
+          clearInterval(progressInterval);
+        }
+
+        if (progress.status === "completed" && progress.progress >= 100) {
+          setIsLocalInstalling(false);
+          clearInterval(progressInterval);
+
+          // Fetch updated software info after installation completes
+          if (software) {
+            try {
+              const updatedSoftware = await launcherApi.getSoftwareDetails(
+                software.id.toString()
+              );
+              if (onInstallComplete) {
+                onInstallComplete(updatedSoftware);
+              }
+            } catch (err) {
+              console.error("Failed to fetch updated software info:", err);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch installation progress:", err);
+        setLocalError("Unable to fetch installation progress information");
+        setIsLocalInstalling(false);
+        clearInterval(progressInterval);
+      }
+    }, 1000);
+
+    return () => clearInterval(progressInterval);
+  }, [isLocalInstalling, activeInstallId, software, onInstallComplete]);
 
   if (!software) return null;
 
@@ -56,24 +130,76 @@ export function SoftwareDetailsDialog({
     setImageError(true);
   };
 
-  const handleAction = () => {
-    if (isInstalling) return;
-    onAction(software);
+  // Handle software actions (install, launch)
+  const handleAction = async () => {
+    if (isInstalling || isLocalInstalling) return;
+
+    // Prioritize local state
+    const currentError = localError || error;
+    if (currentError) {
+      setLocalError(null); // Clear the error
+      return;
+    }
+
+    // Launch software
+    if (software.actionLabel === "Launch") {
+      try {
+        const result = await launcherApi.launchSoftware(software.id.toString());
+        if (result.success) {
+          // Notify parent component that software has launched
+          onAction({ ...software, actionType: "launched" });
+        } else {
+          setLocalError("Failed to launch software");
+        }
+      } catch (err) {
+        console.error("Failed to launch software:", err);
+        setLocalError("An error occurred while launching the software");
+      }
+    }
+    // Install software
+    else if (software.actionLabel === "Install") {
+      try {
+        setIsLocalInstalling(true);
+        const result = await launcherApi.installSoftware(
+          software.id.toString()
+        );
+        if (result.installationId) {
+          setActiveInstallId(result.installationId);
+          // Notify parent component that installation has started
+          onAction({ ...software, actionType: "installing" });
+        } else {
+          setLocalError("Failed to install software");
+          setIsLocalInstalling(false);
+        }
+      } catch (err) {
+        console.error("Failed to install software:", err);
+        setLocalError("An error occurred while installing the software");
+        setIsLocalInstalling(false);
+      }
+    }
   };
 
-  const isActionDisabled = isInstalling || Boolean(error);
+  const isActionDisabled =
+    isInstalling || isLocalInstalling || Boolean(error || localError);
+
+  // Use local state or parent component state
+  const displayedInstallProgress = isLocalInstalling
+    ? localInstallProgress
+    : installProgress;
+  const displayedIsInstalling = isInstalling || isLocalInstalling;
+  const displayedError = localError || error;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent
         className="sm:max-w-[500px]"
         onInteractOutside={(e) => {
-          if (isInstalling) {
+          if (displayedIsInstalling) {
             e.preventDefault();
           }
         }}
         onEscapeKeyDown={(e) => {
-          if (isInstalling) {
+          if (displayedIsInstalling) {
             e.preventDefault();
           }
         }}
@@ -107,7 +233,7 @@ export function SoftwareDetailsDialog({
 
           <div className="grid gap-4 py-4">
             <AnimatePresence mode="wait">
-              {error && (
+              {displayedError && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -117,7 +243,7 @@ export function SoftwareDetailsDialog({
                   <Alert variant="destructive">
                     <AlertTriangle className="h-4 w-4" />
                     <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
+                    <AlertDescription>{displayedError}</AlertDescription>
                   </Alert>
                 </motion.div>
               )}
@@ -170,7 +296,7 @@ export function SoftwareDetailsDialog({
             </div>
 
             <AnimatePresence>
-              {isInstalling && software.actionLabel === "Install" && (
+              {displayedIsInstalling && software.actionLabel === "Install" && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
@@ -180,15 +306,18 @@ export function SoftwareDetailsDialog({
                 >
                   <div className="flex justify-between text-sm">
                     <span>Installing...</span>
-                    <span>{installProgress}%</span>
+                    <span>{displayedInstallProgress}%</span>
                   </div>
                   <motion.div
                     initial="initial"
                     animate="animate"
-                    custom={installProgress}
+                    custom={displayedInstallProgress}
                     variants={progressVariants}
                   >
-                    <Progress value={installProgress} className="h-2" />
+                    <Progress
+                      value={displayedInstallProgress}
+                      className="h-2"
+                    />
                   </motion.div>
                 </motion.div>
               )}
@@ -216,7 +345,7 @@ export function SoftwareDetailsDialog({
                 variant="outline"
                 className="mr-auto"
                 onClick={handleWebsiteClick}
-                disabled={isInstalling}
+                disabled={displayedIsInstalling}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Visit Website
@@ -226,9 +355,11 @@ export function SoftwareDetailsDialog({
             <Button
               onClick={handleAction}
               disabled={isActionDisabled}
-              className={cn(isInstalling && "opacity-80 cursor-not-allowed")}
+              className={cn(
+                displayedIsInstalling && "opacity-80 cursor-not-allowed"
+              )}
             >
-              {isInstalling ? (
+              {displayedIsInstalling ? (
                 <>
                   <div className="mr-2 h-4 w-4 border-2 border-r-transparent rounded-full animate-spin"></div>
                   Installing...
