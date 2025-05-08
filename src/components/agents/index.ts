@@ -6,3 +6,4 @@ export * from "./agent-search-and-filter";
 export * from "./agent-status-badge";
 export * from "./delete-agent-dialog";
 export * from "./constants";
+export * from "./agents-api";

@@ -38,12 +38,13 @@ import {
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { AgentStatusBadge } from "./agent-status-badge";
+import { agentsApi } from "./agents-api";
 import type { Agent } from "@/types/agent";
 
 interface AgentCardProps {
   agent: Agent;
-  onRun: (id: string) => Promise<void> | void;
-  onStop: (id: string) => Promise<void> | void;
+  onRun?: (id: string) => Promise<void> | void;
+  onStop?: (id: string) => Promise<void> | void;
   onEdit: () => void;
   onDelete: () => void;
   onViewLogs: () => void;
@@ -68,13 +69,19 @@ export function AgentCard({
     try {
       setIsRunning(true);
       setError(null);
-      await onRun(id);
-      toast.success(`Agent "${agent.name}" started successfully`);
+      
+      // 直接使用 agentsApi 服务运行代理
+      await agentsApi.runAgent(id);
+      
+      // 如果提供了回调，也执行回调
+      if (onRun) await onRun(id);
+      
+      toast.success(`代理 "${agent.name}" 启动成功`);
     } catch (err) {
       const errorMsg =
-        err instanceof Error ? err.message : "Failed to start agent";
+        err instanceof Error ? err.message : "启动代理失败";
       setError(errorMsg);
-      toast.error("Failed to start agent", {
+      toast.error("启动代理失败", {
         description: errorMsg,
       });
     } finally {
@@ -86,13 +93,19 @@ export function AgentCard({
     try {
       setIsStopping(true);
       setError(null);
-      await onStop(id);
-      toast.success(`Agent "${agent.name}" stopped successfully`);
+      
+      // 直接使用 agentsApi 服务停止代理
+      await agentsApi.stopAgent(id);
+      
+      // 如果提供了回调，也执行回调
+      if (onStop) await onStop(id);
+      
+      toast.success(`代理 "${agent.name}" 已停止`);
     } catch (err) {
       const errorMsg =
-        err instanceof Error ? err.message : "Failed to stop agent";
+        err instanceof Error ? err.message : "停止代理失败";
       setError(errorMsg);
-      toast.error("Failed to stop agent", {
+      toast.error("停止代理失败", {
         description: errorMsg,
       });
     } finally {
@@ -101,17 +114,21 @@ export function AgentCard({
   };
 
   const handleDuplicate = async (id: string) => {
-    if (!onDuplicate) return;
-
     try {
       setIsDuplicating(true);
       setError(null);
-      await onDuplicate(id);
-      toast.success(`Agent "${agent.name}" duplicated successfully`);
+      
+      // 直接使用 agentsApi 服务复制代理
+      await agentsApi.duplicateAgent(id);
+      
+      // 如果提供了回调，也执行回调
+      if (onDuplicate) await onDuplicate(id);
+      
+      toast.success(`代理 "${agent.name}" 复制成功`);
     } catch (err) {
       const errorMsg =
-        err instanceof Error ? err.message : "Failed to duplicate agent";
-      toast.error("Failed to duplicate agent", {
+        err instanceof Error ? err.message : "复制代理失败";
+      toast.error("复制代理失败", {
         description: errorMsg,
       });
     } finally {
@@ -123,9 +140,9 @@ export function AgentCard({
     if (!dateString) return null;
     try {
       const date = parseISO(dateString);
-      return isValid(date) ? format(date, "MMM d, yyyy HH:mm") : "Invalid date";
+      return isValid(date) ? format(date, "MMM d, yyyy HH:mm") : "无效日期";
     } catch {
-      return "Invalid date format";
+      return "日期格式无效";
     }
   };
 
@@ -161,7 +178,7 @@ export function AgentCard({
       whileTap="tap"
       variants={cardVariants}
       data-testid={`agent-card-${agent.id}`}
-      aria-label={`Agent: ${agent.name}`}
+      aria-label={`代理: ${agent.name}`}
     >
       <Card className={error ? "border-destructive" : ""}>
         <CardHeader className="pb-2">
@@ -183,36 +200,36 @@ export function AgentCard({
                       <Button
                         variant="ghost"
                         size="icon"
-                        aria-label="More options"
+                        aria-label="更多选项"
                       >
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>More options</p>
+                    <p>更多选项</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={onEdit}>
                   <Edit className="h-4 w-4 mr-2" />
-                  Edit
+                  编辑
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={onViewLogs}>
                   <Terminal className="h-4 w-4 mr-2" />
-                  View Logs
+                  查看日志
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  disabled={!onDuplicate || isDuplicating}
                   onClick={() => handleDuplicate(agent.id)}
+                  disabled={isDuplicating}
                 >
                   {isDuplicating ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
                     <Copy className="h-4 w-4 mr-2" />
                   )}
-                  {isDuplicating ? "Duplicating..." : "Duplicate"}
+                  {isDuplicating ? "复制中..." : "复制"}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -220,7 +237,7 @@ export function AgentCard({
                   onClick={onDelete}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
+                  删除
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -250,7 +267,7 @@ export function AgentCard({
               >
                 <Calendar className="h-4 w-4 mr-2" />
                 <span>
-                  Type:{" "}
+                  类型:{" "}
                   {agent.type.charAt(0).toUpperCase() + agent.type.slice(1)}
                 </span>
               </motion.div>
@@ -260,7 +277,7 @@ export function AgentCard({
                   whileHover={{ scale: 1.01 }}
                 >
                   <Clock className="h-4 w-4 mr-2" />
-                  <span>Last run: {lastRunFormatted}</span>
+                  <span>上次运行: {lastRunFormatted}</span>
                 </motion.div>
               )}
               {agent.nextRun && (
@@ -269,7 +286,7 @@ export function AgentCard({
                   whileHover={{ scale: 1.01 }}
                 >
                   <Calendar className="h-4 w-4 mr-2" />
-                  <span>Next run: {nextRunFormatted}</span>
+                  <span>下次运行: {nextRunFormatted}</span>
                 </motion.div>
               )}
             </div>
@@ -280,27 +297,27 @@ export function AgentCard({
                   variant="outline"
                   onClick={() => handleStop(agent.id)}
                   disabled={isStopping}
-                  aria-label="Stop agent"
+                  aria-label="停止代理"
                 >
                   {isStopping ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
                     <Pause className="h-4 w-4 mr-2" />
                   )}
-                  {isStopping ? "Stopping..." : "Stop"}
+                  {isStopping ? "停止中..." : "停止"}
                 </Button>
               ) : (
                 <Button
                   onClick={() => handleRun(agent.id)}
                   disabled={isRunning}
-                  aria-label="Run agent"
+                  aria-label="运行代理"
                 >
                   {isRunning ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
                     <Play className="h-4 w-4 mr-2" />
                   )}
-                  {isRunning ? "Starting..." : "Run"}
+                  {isRunning ? "启动中..." : "运行"}
                 </Button>
               )}
             </div>

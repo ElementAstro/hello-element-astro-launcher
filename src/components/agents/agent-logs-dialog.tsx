@@ -1,406 +1,226 @@
-import { format, parseISO } from "date-fns";
-import { useState, useRef, useEffect } from "react";
-import {
-  AlertTriangle,
-  Info,
-  XCircle,
-  Download,
-  RefreshCw,
-  Filter,
-  Loader2,
-  ChevronDown,
-  CheckCircle,
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-
-import { Button } from "@/components/ui/button";
+import { useState, useEffect, useCallback } from "react";
+import { RefreshCw, Terminal, Loader2, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { format, parseISO, isValid } from "date-fns";
+import { motion } from "framer-motion";
+import { Badge } from "@/components/ui/badge";
+import { agentsApi } from "./agents-api";
 import type { AgentLog } from "@/types/agent";
 
 interface AgentLogsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  logs: AgentLog[];
+  logs?: AgentLog[];
   agentName?: string;
+  agentId?: string;
   isLoading?: boolean;
-  onRefresh?: () => void;
+  onRefresh?: () => Promise<void>;
 }
 
 export function AgentLogsDialog({
   open,
   onOpenChange,
-  logs,
-  agentName = "Agent",
-  isLoading = false,
-  onRefresh,
+  logs: initialLogs = [],
+  agentName = "代理",
+  agentId,
+  isLoading: externalLoading = false,
+  onRefresh: externalRefresh,
 }: AgentLogsDialogProps) {
-  const [filteredLogs, setFilteredLogs] = useState<AgentLog[]>([]);
-  const [levelFilter, setLevelFilter] = useState<string[]>([
-    "info",
-    "warning",
-    "error",
-    "debug",
-  ]);
-  const [autoScroll, setAutoScroll] = useState(true);
-  const [isFiltering, setIsFiltering] = useState(false);
-  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [logs, setLogs] = useState<AgentLog[]>(initialLogs);
+  const [isLoading, setIsLoading] = useState<boolean>(externalLoading);
+  const [error, setError] = useState<string | null>(null);
 
-  const logsContainerRef = useRef<HTMLDivElement>(null);
-  const exportButtonRef = useRef<HTMLButtonElement>(null);
-
-  // Apply filters and sorting to logs
+  // 更新useEffect以在initialLogs变化时更新logs状态
   useEffect(() => {
-    setIsFiltering(true);
+    setLogs(initialLogs);
+  }, [initialLogs]);
+  
+  // 使用useCallback包装fetchLogs函数
+  const fetchLogs = useCallback(async () => {
+    // 如果没有 agentId，不执行操作
+    if (!agentId) {
+      return;
+    }
 
     try {
-      // Filter logs by level
-      const filtered = logs.filter((log) => levelFilter.includes(log.level));
-
-      // Sort logs by timestamp
-      const sorted = [...filtered].sort((a, b) => {
-        const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-        const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
-        return sortOrder === "newest" ? timeB - timeA : timeA - timeB;
-      });
-
-      setFilteredLogs(sorted);
-    } catch (error) {
-      console.error("Error filtering or sorting logs:", error);
-      setFilteredLogs(logs); // Fallback to original logs
+      setIsLoading(true);
+      setError(null);
+      
+      // 使用 agentsApi 获取最新日志
+      const fetchedLogs = await agentsApi.getAgentLogs(agentId);
+      setLogs(fetchedLogs);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "获取日志失败");
     } finally {
-      setIsFiltering(false);
+      setIsLoading(false);
     }
-  }, [logs, levelFilter, sortOrder]);
+  }, [agentId]);
 
-  // Auto-scroll to bottom on new logs if enabled
+  // 当弹窗打开或 agentId 变化时，如果有 agentId 则获取日志
   useEffect(() => {
-    if (autoScroll && logsContainerRef.current && open && !isFiltering) {
-      const container = logsContainerRef.current;
-      setTimeout(() => {
-        container.scrollTop = container.scrollHeight;
-      }, 100);
+    if (open && agentId) {
+      fetchLogs();
     }
-  }, [filteredLogs, autoScroll, open, isFiltering]);
+  }, [open, agentId, fetchLogs]);
 
-  const handleLevelFilterChange = (level: string) => {
-    setLevelFilter((current) =>
-      current.includes(level)
-        ? current.filter((l) => l !== level)
-        : [...current, level]
-    );
+  // 处理刷新
+  const handleRefresh = async () => {
+    if (externalRefresh) {
+      await externalRefresh();
+    } else {
+      await fetchLogs();
+    }
   };
 
-  const downloadLogs = () => {
+  // 格式化日期
+  const formatDate = (dateString: string) => {
     try {
-      // Format logs for download
-      const content = JSON.stringify(logs, null, 2);
-      const blob = new Blob([content], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-
-      // Create download link
-      const downloadLink = document.createElement("a");
-      downloadLink.href = url;
-      downloadLink.download = `${agentName
-        .toLowerCase()
-        .replace(/\s+/g, "-")}-logs-${
-        new Date().toISOString().split("T")[0]
-      }.json`;
-
-      // Trigger download
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-
-      // Clean up
-      URL.revokeObjectURL(url);
-      toast.success("Logs downloaded successfully");
-    } catch (error) {
-      console.error("Error downloading logs:", error);
-      toast.error("Failed to download logs", {
-        description:
-          error instanceof Error ? error.message : "Unknown error occurred",
-      });
+      const date = parseISO(dateString);
+      return isValid(date) ? format(date, "yyyy-MM-dd HH:mm:ss") : "无效日期";
+    } catch {
+      return "日期格式错误";
     }
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.05,
-      },
-    },
-  };
-
-  const logItemVariants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        type: "spring",
-        stiffness: 500,
-        damping: 30,
-      },
-    },
+  // 根据日志级别获取样式
+  const getLevelStyle = (level: string) => {
+    switch (level.toLowerCase()) {
+      case "error":
+        return "bg-destructive/10 text-destructive";
+      case "warning":
+        return "bg-warning/10 text-warning";
+      case "info":
+        return "bg-primary/10 text-primary";
+      case "debug":
+        return "bg-muted text-muted-foreground";
+      default:
+        return "bg-muted text-muted-foreground";
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-3xl h-[32rem] flex flex-col">
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle>
-              {agentName} Logs
-              {isLoading && (
-                <motion.span
-                  animate={{ opacity: [0.5, 1, 0.5] }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                  className="ml-2 inline-block"
-                >
-                  <Loader2 className="h-4 w-4 animate-spin inline-block" />
-                </motion.span>
-              )}
+            <DialogTitle className="flex items-center gap-2">
+              <Terminal className="h-5 w-5" />
+              {agentName} 日志
             </DialogTitle>
-
             <div className="flex items-center gap-2">
-              {onRefresh && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onRefresh}
-                  disabled={isLoading}
-                  aria-label="Refresh logs"
-                >
-                  <RefreshCw
-                    className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
-                  />
-                </Button>
-              )}
-
               <Button
-                ref={exportButtonRef}
-                variant="ghost"
-                size="sm"
-                onClick={downloadLogs}
-                aria-label="Download logs"
+                variant="outline"
+                size="icon"
+                onClick={handleRefresh}
+                disabled={isLoading}
               >
-                <Download className="h-4 w-4" />
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onOpenChange(false)}
+              >
+                <X className="h-4 w-4" />
               </Button>
             </div>
           </div>
           <DialogDescription>
-            View the execution logs for this agent
+            查看代理活动日志和状态变更记录
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center gap-2 mt-4">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-1"
-              >
-                <Filter className="h-3.5 w-3.5" />
-                <span>Filter</span>
-                <ChevronDown className="h-3.5 w-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuCheckboxItem
-                checked={levelFilter.includes("info")}
-                onCheckedChange={() => handleLevelFilterChange("info")}
-              >
-                <Info className="h-3.5 w-3.5 mr-2 text-blue-500" />
-                Info
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={levelFilter.includes("warning")}
-                onCheckedChange={() => handleLevelFilterChange("warning")}
-              >
-                <AlertTriangle className="h-3.5 w-3.5 mr-2 text-amber-500" />
-                Warning
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={levelFilter.includes("error")}
-                onCheckedChange={() => handleLevelFilterChange("error")}
-              >
-                <XCircle className="h-3.5 w-3.5 mr-2 text-destructive" />
-                Error
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={levelFilter.includes("debug")}
-                onCheckedChange={() => handleLevelFilterChange("debug")}
-              >
-                <CheckCircle className="h-3.5 w-3.5 mr-2 text-green-500" />
-                Debug
-              </DropdownMenuCheckboxItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Select
-            value={sortOrder}
-            onValueChange={(value) =>
-              setSortOrder(value as "newest" | "oldest")
-            }
-          >
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Sort order" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="newest">Newest first</SelectItem>
-              <SelectItem value="oldest">Oldest first</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <div className="ml-auto flex items-center gap-2">
-            <Switch
-              id="auto-scroll"
-              checked={autoScroll}
-              onCheckedChange={setAutoScroll}
-            />
-            <Label htmlFor="auto-scroll">Auto-scroll</Label>
-          </div>
-        </div>
-
-        <div
-          className="flex-1 overflow-auto mt-2 border rounded-md"
-          ref={logsContainerRef}
-        >
-          <AnimatePresence mode="wait">
-            {isFiltering ? (
-              <motion.div
-                key="filtering"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex items-center justify-center p-8"
-              >
-                <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
-                <span>Processing logs...</span>
-              </motion.div>
-            ) : filteredLogs.length === 0 ? (
-              <motion.div
-                key="no-logs"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="text-center py-8 text-muted-foreground"
-              >
-                <Info className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                <p>No logs available for this agent</p>
-                {logs.length > 0 && levelFilter.length < 4 && (
-                  <p className="text-xs mt-2">
-                    Try adjusting the filter settings
-                  </p>
-                )}
-              </motion.div>
-            ) : (
-              <motion.div
-                key="logs-list"
-                className="p-4 space-y-2"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-              >
-                {filteredLogs.map((log) => (
-                  <motion.div
-                    key={log.id}
-                    layout
-                    variants={logItemVariants}
-                    className={`p-2 rounded-md flex items-start gap-2 ${
-                      log.level === "error"
-                        ? "bg-destructive/10 text-destructive"
-                        : log.level === "warning"
-                        ? "bg-amber-500/10 text-amber-500"
-                        : log.level === "debug"
-                        ? "bg-green-500/10 text-green-700"
-                        : "bg-muted"
-                    }`}
-                  >
-                    {log.level === "error" ? (
-                      <XCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                    ) : log.level === "warning" ? (
-                      <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                    ) : log.level === "debug" ? (
-                      <CheckCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                    ) : (
-                      <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                    )}
-                    <div className="flex-1">
-                      <div className="flex justify-between items-center flex-wrap">
-                        <span className="font-medium text-xs px-1.5 py-0.5 rounded bg-background/50">
-                          {log.level.toUpperCase()}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {log.timestamp
-                            ? format(
-                                parseISO(log.timestamp),
-                                "MMM d, yyyy HH:mm:ss"
-                              )
-                            : ""}
-                        </span>
-                      </div>
-                      <p className="text-sm mt-1 whitespace-pre-wrap">
+        <ScrollArea className="flex-1 border rounded-md">
+          {error ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center p-4">
+                <p className="text-destructive mb-2">获取日志时出错</p>
+                <p className="text-sm text-muted-foreground mb-4">{error}</p>
+                <Button onClick={handleRefresh} variant="outline" size="sm">
+                  重试
+                </Button>
+              </div>
+            </div>
+          ) : logs.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center p-4">
+                <p className="text-muted-foreground">暂无日志记录</p>
+              </div>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[180px]">时间</TableHead>
+                  <TableHead className="w-[100px]">级别</TableHead>
+                  <TableHead>消息</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {logs.map((log, index) => (
+                  <TableRow key={log.id || index} className="group">
+                    <TableCell className="font-mono text-xs">
+                      {formatDate(log.timestamp)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={`${getLevelStyle(log.level)} text-xs`}
+                      >
+                        {log.level}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{
+                          delay: index * 0.05,
+                          duration: 0.2,
+                        }}
+                      >
                         {log.message}
-                      </p>
-                      {typeof log.details !== "undefined" && (
+                      </motion.div>
+                      {log.details && (
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: "auto" }}
-                          transition={{ duration: 0.3 }}
+                          className="mt-1 text-xs text-muted-foreground bg-muted/50 p-2 rounded overflow-x-auto"
                         >
-                          <pre className="text-xs mt-2 p-2 bg-background rounded overflow-x-auto max-h-[200px]">
-                            {JSON.stringify(log.details, null, 2)}
+                          <pre className="whitespace-pre-wrap break-all">
+                            {typeof log.details === "string"
+                              ? log.details
+                              : JSON.stringify(log.details, null, 2) as string}
                           </pre>
                         </motion.div>
                       )}
-                    </div>
-                  </motion.div>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        <DialogFooter className="mt-4 gap-2">
-          <div className="mr-auto text-xs text-muted-foreground">
-            {filteredLogs.length} of {logs.length} logs displayed
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="transition-all"
-          >
-            Close
-          </Button>
-        </DialogFooter>
+              </TableBody>
+            </Table>
+          )}
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

@@ -1,26 +1,25 @@
 import { useState } from "react";
-import { Loader2, AlertTriangle } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { AlertCircle, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { agentsApi } from "./agents-api";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface DeleteAgentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => Promise<void> | void;
+  onConfirm?: () => Promise<void> | void;
   onCancel: () => void;
   agentName?: string;
+  agentId?: string;
 }
 
 export function DeleteAgentDialog({
@@ -28,33 +27,38 @@ export function DeleteAgentDialog({
   onOpenChange,
   onConfirm,
   onCancel,
-  agentName = "this agent",
+  agentName = "此代理",
+  agentId,
 }: DeleteAgentDialogProps) {
   const [isDeleting, setIsDeleting] = useState(false);
-  const [confirmText, setConfirmText] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  // Determine confirmation text based on agent name
-  const requiredConfirmText = agentName.includes(" ")
-    ? "delete agent"
-    : agentName.toLowerCase();
-
-  const isConfirmDisabled = confirmText !== requiredConfirmText;
-
-  const handleConfirmDelete = async () => {
-    if (isConfirmDisabled) return;
+  const handleDelete = async () => {
+    if (!agentId) {
+      setError("代理 ID 缺失，无法删除");
+      return;
+    }
 
     try {
       setIsDeleting(true);
       setError(null);
-      await onConfirm();
-      toast.success(`Agent "${agentName}" deleted successfully`);
+      
+      // 直接使用 agentsApi 服务删除代理
+      await agentsApi.deleteAgent(agentId);
+      
+      // 如果有回调，执行回调
+      if (onConfirm) await onConfirm();
+      
+      // 关闭对话框
       onOpenChange(false);
+      
+      toast.success("代理已删除", {
+        description: "代理已成功删除",
+      });
     } catch (err) {
-      const errorMsg =
-        err instanceof Error ? err.message : "Failed to delete agent";
+      const errorMsg = err instanceof Error ? err.message : "删除代理时发生错误";
       setError(errorMsg);
-      toast.error("Failed to delete agent", {
+      toast.error("删除失败", {
         description: errorMsg,
       });
     } finally {
@@ -62,119 +66,62 @@ export function DeleteAgentDialog({
     }
   };
 
+  const handleCancel = () => {
+    setError(null);
+    onCancel();
+    onOpenChange(false);
+  };
+
   return (
-    <AlertDialog
-      open={open}
-      onOpenChange={(isOpen) => {
-        if (!isDeleting) {
-          onOpenChange(isOpen);
-          if (!isOpen) {
-            // Reset state when closing
-            setConfirmText("");
-            setError(null);
-          }
-        }
-      }}
-    >
-      <AlertDialogContent>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.2 }}
-        >
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" />
-              Delete {agentName}?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              agent and all of its data, including logs, configurations, and run
-              history.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          <div className="py-4">
-            <AnimatePresence mode="wait">
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="mb-4 p-3 bg-destructive/10 text-destructive rounded-md text-sm"
-                >
-                  {error}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <div className="space-y-2">
-              <Label
-                htmlFor="confirm-delete"
-                className="text-sm font-medium text-destructive"
-              >
-                Type{" "}
-                <span className="font-mono bg-muted px-1 rounded">
-                  {requiredConfirmText}
-                </span>{" "}
-                to confirm deletion:
-              </Label>
-              <Input
-                id="confirm-delete"
-                value={confirmText}
-                onChange={(e) => setConfirmText(e.target.value)}
-                placeholder={requiredConfirmText}
-                className="border-destructive focus-visible:ring-destructive"
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck="false"
-                aria-invalid={confirmText.length > 0 && isConfirmDisabled}
-                aria-describedby="confirm-delete-error"
-              />
-              <AnimatePresence>
-                {confirmText.length > 0 && isConfirmDisabled && (
-                  <motion.p
-                    id="confirm-delete-error"
-                    initial={{ opacity: 0, y: -5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -5 }}
-                    className="text-xs text-destructive mt-1"
-                  >
-                    Text doesn&apos;t match the required confirmation phrase
-                  </motion.p>
-                )}
-              </AnimatePresence>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3">
+            <div className="p-2 bg-destructive/10 text-destructive rounded-full">
+              <Trash2 className="h-4 w-4" />
             </div>
-          </div>
+            删除代理
+          </DialogTitle>
+          <DialogDescription>
+            您确定要删除{agentName && ` "${agentName}" `}吗？此操作无法撤销。
+          </DialogDescription>
+        </DialogHeader>
 
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              onClick={onCancel}
-              disabled={isDeleting}
-              className="transition-all"
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="p-3 bg-destructive/10 text-destructive rounded-md text-sm flex items-center gap-2 mt-4"
             >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              disabled={isConfirmDisabled || isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-all"
-            >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                "Delete Agent"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </motion.div>
-      </AlertDialogContent>
-    </AlertDialog>
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              <span>{error}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <DialogFooter className="mt-4">
+          <Button variant="outline" onClick={handleCancel} disabled={isDeleting}>
+            取消
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={isDeleting}
+          >
+            {isDeleting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                删除中...
+              </>
+            ) : (
+              "删除"
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
