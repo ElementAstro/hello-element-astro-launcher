@@ -21,13 +21,14 @@ import {
   type SortField,
   type SortDirection,
   type Software,
+  launcherTranslations
 } from "@/components/launcher";
 import * as launcherApi from "@/components/launcher/launcher-api";
+import { TranslationProvider } from "@/components/i18n";
 
-export default function LauncherPage() {
+function LauncherPageContent() {
   const searchParams = useSearchParams();
 
-  // Use destructuring assignment to get state and actions, avoiding frequent access to properties from the store object
   const {
     software,
     currentTab,
@@ -527,5 +528,24 @@ export default function LauncherPage() {
         />
       </div>
     </AppLayout>
+  );
+}
+
+export default function LauncherPage() {
+  // 检测浏览器语言，设置为英文或中文
+  const userLanguage = typeof navigator !== 'undefined' ? 
+    (navigator.language.startsWith('zh') ? 'zh-CN' : 'en-US') : 'en-US';
+  
+  // 从用户区域确定地区
+  const userRegion = userLanguage === 'zh-CN' ? 'CN' : 'US';
+  
+  return (
+    <TranslationProvider 
+      initialDictionary={launcherTranslations[userLanguage] || launcherTranslations['en-US']}
+      lang={userLanguage.split('-')[0]}
+      initialRegion={userRegion}
+    >
+      <LauncherPageContent />
+    </TranslationProvider>
   );
 }

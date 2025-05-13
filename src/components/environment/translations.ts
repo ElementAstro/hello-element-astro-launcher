@@ -1,0 +1,136 @@
+// 环境模块的翻译键
+export const translationKeys = {
+  // 页面头部
+  pageHeader: {
+    title: "environment.pageHeader.title",
+    description: "environment.pageHeader.description",
+    refresh: "environment.pageHeader.refresh",
+    refreshTooltip: "environment.pageHeader.refreshTooltip",
+    refreshSuccess: "environment.pageHeader.refreshSuccess",
+    refreshError: "environment.pageHeader.refreshError",
+  },
+
+  // 连接状态卡片
+  connectionStatus: {
+    title: "environment.connectionStatus.title",
+    description: "environment.connectionStatus.description",
+    status: "environment.connectionStatus.status",
+    connected: "environment.connectionStatus.connected",
+    disconnected: "environment.connectionStatus.disconnected",
+    connecting: "environment.connectionStatus.connecting",
+    latency: "environment.connectionStatus.latency",
+    uptime: "environment.connectionStatus.uptime",
+    lastChecked: "environment.connectionStatus.lastChecked",
+    refresh: "environment.connectionStatus.refresh",
+    connect: "environment.connectionStatus.connect",
+    disconnect: "environment.connectionStatus.disconnect",
+    connectionSuccess: "environment.connectionStatus.connectionSuccess",
+    connectionError: "environment.connectionStatus.connectionError",
+    disconnectionSuccess: "environment.connectionStatus.disconnectionSuccess",
+    disconnectionError: "environment.connectionStatus.disconnectionError",
+    refreshError: "environment.connectionStatus.refreshError",
+    emptyState: "environment.connectionStatus.emptyState",
+  },
+
+  // 连接日志卡片
+  connectionLogs: {
+    title: "environment.connectionLogs.title",
+    description: "environment.connectionLogs.description",
+    emptyState: "environment.connectionLogs.emptyState",
+    timestamp: "environment.connectionLogs.timestamp",
+    level: "environment.connectionLogs.level",
+    message: "environment.connectionLogs.message",
+    clearLogs: "environment.connectionLogs.clearLogs",
+    clearSuccess: "environment.connectionLogs.clearSuccess",
+    clearError: "environment.connectionLogs.clearError",
+    refresh: "environment.connectionLogs.refresh",
+  },
+  // 设备项目
+  equipmentItem: {
+    connect: "environment.equipmentItem.connect",
+    disconnect: "environment.equipmentItem.disconnect",
+    connectError: "environment.equipmentItem.connectError",
+    connectSuccess: "environment.equipmentItem.connectSuccess",
+    disconnectError: "environment.equipmentItem.disconnectError",
+    disconnectSuccess: "environment.equipmentItem.disconnectSuccess",
+    battery: "environment.equipmentItem.battery",
+    temperature: "environment.equipmentItem.temperature",
+    status: "environment.equipmentItem.status",
+    connected: "environment.equipmentItem.connected",
+    disconnected: "environment.equipmentItem.disconnected",
+    settings: "environment.equipmentItem.settings",
+    remove: "environment.equipmentItem.remove",
+    confirmDelete: "environment.equipmentItem.confirmDelete",
+    refresh: "environment.equipmentItem.refresh",
+    details: "environment.equipmentItem.details",
+    serialNumber: "environment.equipmentItem.serialNumber",
+    firmwareVersion: "environment.equipmentItem.firmwareVersion",
+    lastConnection: "environment.equipmentItem.lastConnection",
+    diagnostics: "environment.equipmentItem.diagnostics",
+  },
+
+  // 设备列表
+  equipmentList: {
+    title: "environment.equipmentList.title",
+    description: "environment.equipmentList.description",
+    emptyState: "environment.equipmentList.emptyState",
+    addEquipment: "environment.equipmentList.addEquipment",
+    refresh: "environment.equipmentList.refresh",
+    refreshSuccess: "environment.equipmentList.refreshSuccess",
+    refreshError: "environment.equipmentList.refreshError",
+    search: "environment.equipmentList.search",
+    filter: "environment.equipmentList.filter",
+    sort: "environment.equipmentList.sort",
+  },
+
+  // 设备配置卡片
+  equipmentProfiles: {
+    title: "environment.equipmentProfiles.title",
+    description: "environment.equipmentProfiles.description",
+    emptyState: "environment.equipmentProfiles.emptyState",
+    addProfile: "environment.equipmentProfiles.addProfile",
+    profileName: "environment.equipmentProfiles.profileName",
+    deviceCount: "environment.equipmentProfiles.deviceCount",
+    lastUsed: "environment.equipmentProfiles.lastUsed",
+    activate: "environment.equipmentProfiles.activate",
+    edit: "environment.equipmentProfiles.edit",
+    delete: "environment.equipmentProfiles.delete",
+    confirmDelete: "environment.equipmentProfiles.confirmDelete",
+  },
+
+  // 系统信息卡片
+  systemInformation: {
+    title: "environment.systemInformation.title",
+    description: "environment.systemInformation.description",
+    cpuUsage: "environment.systemInformation.cpuUsage",
+    memoryUsage: "environment.systemInformation.memoryUsage",
+    diskUsage: "environment.systemInformation.diskUsage",
+    osInfo: "environment.systemInformation.osInfo",
+    hostname: "environment.systemInformation.hostname",
+    uptime: "environment.systemInformation.uptime",
+    architecture: "environment.systemInformation.architecture",
+    refresh: "environment.systemInformation.refresh",
+    refreshSuccess: "environment.systemInformation.refreshSuccess",
+    refreshError: "environment.systemInformation.refreshError",
+    used: "environment.systemInformation.used",
+    free: "environment.systemInformation.free",
+    total: "environment.systemInformation.total",
+  },
+
+  // 系统设置卡片
+  systemSettings: {
+    title: "environment.systemSettings.title",
+    description: "environment.systemSettings.description",
+    theme: "environment.systemSettings.theme",
+    language: "environment.systemSettings.language",
+    notifications: "environment.systemSettings.notifications",
+    updates: "environment.systemSettings.updates",
+    autoConnect: "environment.systemSettings.autoConnect",
+    performance: "environment.systemSettings.performance",
+    save: "environment.systemSettings.save",
+    reset: "environment.systemSettings.reset",
+    saveSuccess: "environment.systemSettings.saveSuccess",
+    saveError: "environment.systemSettings.saveError",
+    confirmReset: "environment.systemSettings.confirmReset",
+  }
+};

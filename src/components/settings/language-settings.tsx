@@ -45,11 +45,13 @@ import {
 import { toast } from "sonner";
 // 导入 API 服务
 import { languageApi } from "./settings-api";
+import { useTranslations } from "@/components/i18n";
 
 export function LanguageSettings({
   settings,
   onSettingChange,
 }: SettingsSectionProps) {
+  const { t } = useTranslations();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isApplying, setIsApplying] = useState(false);
@@ -83,14 +85,14 @@ export function LanguageSettings({
         setAvailableLanguages(languages);
       } catch (err) {
         console.error("Error loading language settings:", err);
-        setError("无法加载语言设置，请稍后重试。");
+        setError(t("settings.language.errors.loadFailed"));
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchLanguageSettings();
-  }, [onSettingChange]);
+  }, [onSettingChange, t]);
 
   // 基于选定格式的格式示例
   const getDateFormatExample = (format: DateFormat): string => {
@@ -149,23 +151,33 @@ export function LanguageSettings({
       // 更改语言时显示预览提示
       if (setting === "appLanguage") {
         const languageNames: Record<string, string> = {
-          en: "英语",
-          fr: "法语",
-          de: "德语",
-          es: "西班牙语",
-          it: "意大利语",
-          zh: "中文",
-          ja: "日语",
+          en: t("settings.language.languageNames.en"),
+          fr: t("settings.language.languageNames.fr"),
+          de: t("settings.language.languageNames.de"),
+          es: t("settings.language.languageNames.es"),
+          it: t("settings.language.languageNames.it"),
+          zh: t("settings.language.languageNames.zh"),
+          ja: t("settings.language.languageNames.ja"),
         };
 
-        toast(`语言已更改为${languageNames[value as string] || value}`, {
-          description: "需要重新启动应用程序以应用所有更改。",
-        });
+        toast(
+          t("settings.language.notifications.languageChanged", {
+            params: { language: languageNames[value as string] || value },
+          }),
+          {
+            description: t("settings.language.notifications.restartRequired"),
+          }
+        );
       }
     } catch {
-      setError(`更改${setting}设置时出错`);
-      toast.error("设置更新失败", {
-        description: `无法更改${setting}设置，请重试。`,
+      setError(
+        t("settings.language.errors.updateFailed", { params: { setting } })
+      );
+      toast.error(t("settings.language.notifications.updateFailed.title"), {
+        description: t(
+          "settings.language.notifications.updateFailed.description",
+          { params: { setting } }
+        ),
       });
     }
   };
@@ -181,8 +193,10 @@ export function LanguageSettings({
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2000);
 
-      toast("语言设置已应用", {
-        description: "您的语言和本地化偏好已更新。",
+      toast(t("settings.language.notifications.settingsApplied.title"), {
+        description: t(
+          "settings.language.notifications.settingsApplied.description"
+        ),
         action: (
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
@@ -193,9 +207,11 @@ export function LanguageSettings({
         ),
       });
     } catch {
-      setError("应用语言设置时出错");
-      toast.error("设置应用失败", {
-        description: "无法应用语言设置，请重试。",
+      setError(t("settings.language.errors.applyFailed"));
+      toast.error(t("settings.language.notifications.applyFailed.title"), {
+        description: t(
+          "settings.language.notifications.applyFailed.description"
+        ),
       });
     } finally {
       setIsApplying(false);
@@ -203,13 +219,13 @@ export function LanguageSettings({
   };
 
   if (isLoading) {
-    return <LoadingIndicator message="加载语言设置..." />;
+    return <LoadingIndicator message={t("settings.language.loading")} />;
   }
 
   if (error && !settings) {
     return (
       <ErrorState
-        title="加载错误"
+        title={t("settings.language.errors.loadErrorTitle")}
         message={error}
         onRetry={() => setError(null)}
       />
@@ -227,8 +243,10 @@ export function LanguageSettings({
             className="flex justify-between items-start"
           >
             <div>
-              <CardTitle>语言设置</CardTitle>
-              <CardDescription>管理语言和本地化偏好</CardDescription>
+              <CardTitle>{t("settings.language.title")}</CardTitle>
+              <CardDescription>
+                {t("settings.language.description")}
+              </CardDescription>
             </div>
             <Languages className="h-6 w-6 text-muted-foreground" />
           </motion.div>
@@ -242,22 +260,24 @@ export function LanguageSettings({
           >
             <motion.div variants={slideUp} className="space-y-2">
               <div className="flex justify-between items-center">
-                <Label htmlFor="app-language">应用程序语言</Label>
+                <Label htmlFor="app-language">
+                  {t("settings.language.appLanguage")}
+                </Label>
                 <div className="text-sm text-muted-foreground">
                   {settings.language.appLanguage === "en"
-                    ? "English"
+                    ? t("settings.language.languageNames.en")
                     : settings.language.appLanguage === "fr"
-                    ? "Français"
+                    ? t("settings.language.languageNames.fr")
                     : settings.language.appLanguage === "de"
-                    ? "Deutsch"
+                    ? t("settings.language.languageNames.de")
                     : settings.language.appLanguage === "es"
-                    ? "Español"
+                    ? t("settings.language.languageNames.es")
                     : settings.language.appLanguage === "it"
-                    ? "Italiano"
+                    ? t("settings.language.languageNames.it")
                     : settings.language.appLanguage === "zh"
-                    ? "中文"
+                    ? t("settings.language.languageNames.zh")
                     : settings.language.appLanguage === "ja"
-                    ? "日本語"
+                    ? t("settings.language.languageNames.ja")
                     : settings.language.appLanguage}
                 </div>
               </div>
@@ -273,9 +293,11 @@ export function LanguageSettings({
                 >
                   <SelectTrigger
                     id="app-language"
-                    aria-label="选择应用程序语言"
+                    aria-label={t("settings.language.selectAppLanguage")}
                   >
-                    <SelectValue placeholder="选择语言" />
+                    <SelectValue
+                      placeholder={t("settings.language.selectLanguage")}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {availableLanguages.length > 0 ? (
@@ -286,13 +308,27 @@ export function LanguageSettings({
                       ))
                     ) : (
                       <>
-                        <SelectItem value="en">English</SelectItem>
-                        <SelectItem value="fr">Français</SelectItem>
-                        <SelectItem value="de">Deutsch</SelectItem>
-                        <SelectItem value="es">Español</SelectItem>
-                        <SelectItem value="it">Italiano</SelectItem>
-                        <SelectItem value="zh">中文</SelectItem>
-                        <SelectItem value="ja">日本語</SelectItem>
+                        <SelectItem value="en">
+                          {t("settings.language.languageNames.en")}
+                        </SelectItem>
+                        <SelectItem value="fr">
+                          {t("settings.language.languageNames.fr")}
+                        </SelectItem>
+                        <SelectItem value="de">
+                          {t("settings.language.languageNames.de")}
+                        </SelectItem>
+                        <SelectItem value="es">
+                          {t("settings.language.languageNames.es")}
+                        </SelectItem>
+                        <SelectItem value="it">
+                          {t("settings.language.languageNames.it")}
+                        </SelectItem>
+                        <SelectItem value="zh">
+                          {t("settings.language.languageNames.zh")}
+                        </SelectItem>
+                        <SelectItem value="ja">
+                          {t("settings.language.languageNames.ja")}
+                        </SelectItem>
                       </>
                     )}
                   </SelectContent>
@@ -308,7 +344,9 @@ export function LanguageSettings({
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                  <Label htmlFor="date-format">日期格式</Label>
+                  <Label htmlFor="date-format">
+                    {t("settings.language.dateFormat")}
+                  </Label>
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {getDateFormatExample(settings.language.dateFormat)}
@@ -324,13 +362,24 @@ export function LanguageSettings({
                     handleSettingChange("dateFormat", value)
                   }
                 >
-                  <SelectTrigger id="date-format" aria-label="选择日期格式">
-                    <SelectValue placeholder="选择日期格式" />
+                  <SelectTrigger
+                    id="date-format"
+                    aria-label={t("settings.language.selectDateFormat")}
+                  >
+                    <SelectValue
+                      placeholder={t("settings.language.selectDateFormat")}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="mdy">MM/DD/YYYY (月/日/年)</SelectItem>
-                    <SelectItem value="dmy">DD/MM/YYYY (日/月/年)</SelectItem>
-                    <SelectItem value="ymd">YYYY/MM/DD (年/月/日)</SelectItem>
+                    <SelectItem value="mdy">
+                      {t("settings.language.dateFormats.mdy")}
+                    </SelectItem>
+                    <SelectItem value="dmy">
+                      {t("settings.language.dateFormats.dmy")}
+                    </SelectItem>
+                    <SelectItem value="ymd">
+                      {t("settings.language.dateFormats.ymd")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </motion.div>
@@ -344,7 +393,9 @@ export function LanguageSettings({
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
-                  <Label htmlFor="time-format">时间格式</Label>
+                  <Label htmlFor="time-format">
+                    {t("settings.language.timeFormat")}
+                  </Label>
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {getTimeFormatExample(settings.language.timeFormat)}
@@ -360,12 +411,21 @@ export function LanguageSettings({
                     handleSettingChange("timeFormat", value)
                   }
                 >
-                  <SelectTrigger id="time-format" aria-label="选择时间格式">
-                    <SelectValue placeholder="选择时间格式" />
+                  <SelectTrigger
+                    id="time-format"
+                    aria-label={t("settings.language.selectTimeFormat")}
+                  >
+                    <SelectValue
+                      placeholder={t("settings.language.selectTimeFormat")}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="12h">12小时制 (上午/下午)</SelectItem>
-                    <SelectItem value="24h">24小时制</SelectItem>
+                    <SelectItem value="12h">
+                      {t("settings.language.timeFormats.12h")}
+                    </SelectItem>
+                    <SelectItem value="24h">
+                      {t("settings.language.timeFormats.24h")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </motion.div>
@@ -379,7 +439,9 @@ export function LanguageSettings({
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <Thermometer className="h-4 w-4 text-muted-foreground" />
-                  <Label htmlFor="temperature-unit">温度单位</Label>
+                  <Label htmlFor="temperature-unit">
+                    {t("settings.language.temperatureUnit")}
+                  </Label>
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {getTemperatureExample(settings.language.temperatureUnit)}
@@ -397,13 +459,19 @@ export function LanguageSettings({
                 >
                   <SelectTrigger
                     id="temperature-unit"
-                    aria-label="选择温度单位"
+                    aria-label={t("settings.language.selectTemperatureUnit")}
                   >
-                    <SelectValue placeholder="选择温度单位" />
+                    <SelectValue
+                      placeholder={t("settings.language.selectTemperatureUnit")}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="celsius">摄氏度 (°C)</SelectItem>
-                    <SelectItem value="fahrenheit">华氏度 (°F)</SelectItem>
+                    <SelectItem value="celsius">
+                      {t("settings.language.temperatureUnits.celsius")}
+                    </SelectItem>
+                    <SelectItem value="fahrenheit">
+                      {t("settings.language.temperatureUnits.fahrenheit")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </motion.div>
@@ -417,7 +485,9 @@ export function LanguageSettings({
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <Ruler className="h-4 w-4 text-muted-foreground" />
-                  <Label htmlFor="distance-unit">距离单位</Label>
+                  <Label htmlFor="distance-unit">
+                    {t("settings.language.distanceUnit")}
+                  </Label>
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {getDistanceExample(settings.language.distanceUnit)}
@@ -433,18 +503,27 @@ export function LanguageSettings({
                     handleSettingChange("distanceUnit", value)
                   }
                 >
-                  <SelectTrigger id="distance-unit" aria-label="选择距离单位">
-                    <SelectValue placeholder="选择距离单位" />
+                  <SelectTrigger
+                    id="distance-unit"
+                    aria-label={t("settings.language.selectDistanceUnit")}
+                  >
+                    <SelectValue
+                      placeholder={t("settings.language.selectDistanceUnit")}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="metric">公制 (千米、米)</SelectItem>
-                    <SelectItem value="imperial">英制 (英里、英尺)</SelectItem>
+                    <SelectItem value="metric">
+                      {t("settings.language.distanceUnits.metric")}
+                    </SelectItem>
+                    <SelectItem value="imperial">
+                      {t("settings.language.distanceUnits.imperial")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </motion.div>
 
               <div className="mt-4 rounded-md bg-blue-50 dark:bg-blue-900/30 p-3 text-sm text-blue-700 dark:text-blue-300">
-                <p>某些设置可能需要重新启动应用程序才能完全生效。</p>
+                <p>{t("settings.language.restartNotice")}</p>
               </div>
             </motion.div>
           </motion.div>
@@ -485,7 +564,7 @@ export function LanguageSettings({
                 animate={{ opacity: isApplying || showSuccess ? 0 : 1 }}
                 transition={{ duration: 0.1 }}
               >
-                应用语言设置
+                {t("settings.language.applyButton")}
               </motion.span>
             </Button>
           </motion.div>

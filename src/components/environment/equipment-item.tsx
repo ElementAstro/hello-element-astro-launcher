@@ -6,6 +6,8 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { equipmentApi } from "./equipment-api";
+import { useTranslations } from "@/components/i18n/client";
+import { translationKeys } from "./translations";
 
 interface EquipmentItemProps {
   equipment: Equipment;
@@ -20,6 +22,8 @@ export function EquipmentItem({
 }: EquipmentItemProps) {
   const [connecting, setConnecting] = useState(false);
   const [item, setItem] = useState<Equipment>(equipment);
+  const { t } = useTranslations();
+  const { equipmentItem } = translationKeys;
 
   // 当props更新时更新内部状态
   useEffect(() => {
@@ -50,7 +54,6 @@ export function EquipmentItem({
       </div>
     );
   };
-
   // 连接/断开设备
   const handleToggleConnection = async () => {
     if (connecting) return;
@@ -76,16 +79,21 @@ export function EquipmentItem({
       }
       
       toast.success(
-        item.status === "Connected" ? `已断开 ${item.name} 连接` : `已连接到 ${item.name}`
+        item.status === "Connected" 
+          ? t(equipmentItem.disconnectSuccess, { params: { name: item.name } }) 
+          : t(equipmentItem.connectSuccess, { params: { name: item.name } })
       );
     } catch (error) {
       console.error(`${item.status === "Connected" ? "断开" : "连接"}设备失败:`, error);
-      toast.error(`${item.status === "Connected" ? "断开" : "连接"}设备失败`);
+      toast.error(
+        item.status === "Connected" 
+          ? t(equipmentItem.disconnectError)
+          : t(equipmentItem.connectError)
+      );
     } finally {
       setConnecting(false);
     }
   };
-
   // 删除设备
   const handleDelete = async () => {
     if (connecting) return;
@@ -99,27 +107,26 @@ export function EquipmentItem({
       }
     } catch (error) {
       console.error("删除设备失败:", error);
-      toast.error("删除设备失败");
+      toast.error(t(equipmentItem.remove));
     }
   };
-
   // 运行设备诊断
   const handleDiagnostics = async () => {
     try {
       toast.promise(
         equipmentApi.runDiagnostics(item.id),
         {
-          loading: `正在对 ${item.name} 进行诊断...`,
+          loading: t(equipmentItem.connectSuccess, { params: { name: item.name } }),
           success: (result) => {
             if (result.result === 'success') {
-              return `诊断完成: ${item.name} 工作正常`;
+              return t(equipmentItem.connectSuccess, { params: { name: item.name } });
             } else if (result.result === 'warning') {
-              return `诊断发现警告: ${result.message}`;
+              return t(equipmentItem.disconnectError, { params: { message: result.message } });
             } else {
-              return `诊断发现错误: ${result.message}`;
+              return t(equipmentItem.disconnectError, { params: { message: result.message } });
             }
           },
-          error: "诊断失败，请重试"
+          error: t(equipmentItem.connectError)
         }
       );
     } catch (error) {
@@ -154,9 +161,8 @@ export function EquipmentItem({
             className="h-8 w-8 text-muted-foreground"
             onClick={handleDelete}
             disabled={connecting}
-          >
-            <Trash className="h-4 w-4" />
-            <span className="sr-only">删除</span>
+          >            <Trash className="h-4 w-4" />
+            <span className="sr-only">{t(equipmentItem.remove)}</span>
           </Button>
           
           <Button
@@ -165,9 +171,8 @@ export function EquipmentItem({
             className="h-8 w-8 text-muted-foreground"
             onClick={handleDiagnostics}
             disabled={connecting}
-          >
-            <RefreshCcw className="h-4 w-4" />
-            <span className="sr-only">诊断</span>
+          >            <RefreshCcw className="h-4 w-4" />
+            <span className="sr-only">{t(equipmentItem.diagnostics)}</span>
           </Button>
           
           <Button
@@ -176,10 +181,9 @@ export function EquipmentItem({
             className="h-8 w-8 text-muted-foreground"
           >
             <Settings className="h-4 w-4" />
-            <span className="sr-only">设置</span>
+            <span className="sr-only">{t(equipmentItem.settings)}</span>
           </Button>
-          
-          <Button
+            <Button
             variant={item.status === "Connected" ? "ghost" : "outline"}
             size="icon"
             className={`h-8 w-8 ${
@@ -196,13 +200,11 @@ export function EquipmentItem({
               <Power className="h-4 w-4" />
             )}
             <span className="sr-only">
-              {item.status === "Connected" ? "断开" : "连接"}
+              {item.status === "Connected" ? t(equipmentItem.disconnect) : t(equipmentItem.connect)}
             </span>
-          </Button>
-          
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+          </Button>          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
             <ChevronRight className="h-4 w-4" />
-            <span className="sr-only">详情</span>
+            <span className="sr-only">{t(equipmentItem.details)}</span>
           </Button>
         </div>
       </div>
@@ -211,14 +213,14 @@ export function EquipmentItem({
         {item.status === "Connected" && (
           <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-xs text-muted-foreground">
             {item.serialNumber && (
-              <div>序列号: {item.serialNumber}</div>
+              <div>{t(equipmentItem.serialNumber)}: {item.serialNumber}</div>
             )}
             {item.firmwareVersion && (
-              <div>固件版本: {item.firmwareVersion}</div>
+              <div>{t(equipmentItem.firmwareVersion)}: {item.firmwareVersion}</div>
             )}
             {item.batteryLevel !== undefined && getBatteryIcon(item.batteryLevel)}
             {item.lastConnectionTime && (
-              <div>上次连接: {item.lastConnectionTime}</div>
+              <div>{t(equipmentItem.lastConnection)}: {item.lastConnectionTime}</div>
             )}
           </div>
         )}

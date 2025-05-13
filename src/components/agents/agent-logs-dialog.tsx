@@ -22,6 +22,7 @@ import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { agentsApi } from "./agents-api";
 import type { AgentLog } from "@/types/agent";
+import { useTranslations } from "@/components/i18n/client";
 
 interface AgentLogsDialogProps {
   open: boolean;
@@ -42,6 +43,7 @@ export function AgentLogsDialog({
   isLoading: externalLoading = false,
   onRefresh: externalRefresh,
 }: AgentLogsDialogProps) {
+  const { t } = useTranslations();
   const [logs, setLogs] = useState<AgentLog[]>(initialLogs);
   const [isLoading, setIsLoading] = useState<boolean>(externalLoading);
   const [error, setError] = useState<string | null>(null);
@@ -66,11 +68,11 @@ export function AgentLogsDialog({
       const fetchedLogs = await agentsApi.getAgentLogs(agentId);
       setLogs(fetchedLogs);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "获取日志失败");
+      setError(err instanceof Error ? err.message : t("agent.logs.fetchError", { defaultValue: "获取日志失败" }));
     } finally {
       setIsLoading(false);
     }
-  }, [agentId]);
+  }, [agentId, t]);
 
   // 当弹窗打开或 agentId 变化时，如果有 agentId 则获取日志
   useEffect(() => {
@@ -92,9 +94,9 @@ export function AgentLogsDialog({
   const formatDate = (dateString: string) => {
     try {
       const date = parseISO(dateString);
-      return isValid(date) ? format(date, "yyyy-MM-dd HH:mm:ss") : "无效日期";
+      return isValid(date) ? format(date, "yyyy-MM-dd HH:mm:ss") : t("common.invalidDate", { defaultValue: "无效日期" });
     } catch {
-      return "日期格式错误";
+      return t("common.invalidDateFormat", { defaultValue: "日期格式错误" });
     }
   };
 
@@ -121,7 +123,7 @@ export function AgentLogsDialog({
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2">
               <Terminal className="h-5 w-5" />
-              {agentName} 日志
+              {t("agent.logs.title", { params: { name: agentName }, defaultValue: `${agentName} 日志` })}
             </DialogTitle>
             <div className="flex items-center gap-2">
               <Button
@@ -146,7 +148,7 @@ export function AgentLogsDialog({
             </div>
           </div>
           <DialogDescription>
-            查看代理活动日志和状态变更记录
+            {t("agent.logs.description", { defaultValue: "查看代理活动日志和状态变更记录" })}
           </DialogDescription>
         </DialogHeader>
 
@@ -154,26 +156,26 @@ export function AgentLogsDialog({
           {error ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center p-4">
-                <p className="text-destructive mb-2">获取日志时出错</p>
+                <p className="text-destructive mb-2">{t("agent.logs.error", { defaultValue: "获取日志时出错" })}</p>
                 <p className="text-sm text-muted-foreground mb-4">{error}</p>
                 <Button onClick={handleRefresh} variant="outline" size="sm">
-                  重试
+                  {t("common.retry", { defaultValue: "重试" })}
                 </Button>
               </div>
             </div>
           ) : logs.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center p-4">
-                <p className="text-muted-foreground">暂无日志记录</p>
+                <p className="text-muted-foreground">{t("agent.logs.empty", { defaultValue: "暂无日志记录" })}</p>
               </div>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[180px]">时间</TableHead>
-                  <TableHead className="w-[100px]">级别</TableHead>
-                  <TableHead>消息</TableHead>
+                  <TableHead className="w-[180px]">{t("agent.logs.time", { defaultValue: "时间" })}</TableHead>
+                  <TableHead className="w-[100px]">{t("agent.logs.level", { defaultValue: "级别" })}</TableHead>
+                  <TableHead>{t("agent.logs.message", { defaultValue: "消息" })}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -187,7 +189,7 @@ export function AgentLogsDialog({
                         variant="outline"
                         className={`${getLevelStyle(log.level)} text-xs`}
                       >
-                        {log.level}
+                        {t(`agent.logs.levels.${log.level.toLowerCase()}`, { defaultValue: log.level })}
                       </Badge>
                     </TableCell>
                     <TableCell>

@@ -40,6 +40,7 @@ import { toast } from "sonner";
 import { AgentStatusBadge } from "./agent-status-badge";
 import { agentsApi } from "./agents-api";
 import type { Agent } from "@/types/agent";
+import { useTranslations } from "@/components/i18n/client";
 
 interface AgentCardProps {
   agent: Agent;
@@ -60,6 +61,7 @@ export function AgentCard({
   onViewLogs,
   onDuplicate,
 }: AgentCardProps) {
+  const { t } = useTranslations();
   const [isRunning, setIsRunning] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState(false);
@@ -76,12 +78,12 @@ export function AgentCard({
       // 如果提供了回调，也执行回调
       if (onRun) await onRun(id);
       
-      toast.success(`代理 "${agent.name}" 启动成功`);
+      toast.success(t("agent.run.success", { params: { name: agent.name }, defaultValue: `代理 "${agent.name}" 启动成功` }));
     } catch (err) {
       const errorMsg =
-        err instanceof Error ? err.message : "启动代理失败";
+        err instanceof Error ? err.message : t("agent.run.error", { defaultValue: "启动代理失败" });
       setError(errorMsg);
-      toast.error("启动代理失败", {
+      toast.error(t("agent.run.error", { defaultValue: "启动代理失败" }), {
         description: errorMsg,
       });
     } finally {
@@ -100,12 +102,12 @@ export function AgentCard({
       // 如果提供了回调，也执行回调
       if (onStop) await onStop(id);
       
-      toast.success(`代理 "${agent.name}" 已停止`);
+      toast.success(t("agent.stop.success", { params: { name: agent.name }, defaultValue: `代理 "${agent.name}" 已停止` }));
     } catch (err) {
       const errorMsg =
-        err instanceof Error ? err.message : "停止代理失败";
+        err instanceof Error ? err.message : t("agent.stop.error", { defaultValue: "停止代理失败" });
       setError(errorMsg);
-      toast.error("停止代理失败", {
+      toast.error(t("agent.stop.error", { defaultValue: "停止代理失败" }), {
         description: errorMsg,
       });
     } finally {
@@ -124,11 +126,11 @@ export function AgentCard({
       // 如果提供了回调，也执行回调
       if (onDuplicate) await onDuplicate(id);
       
-      toast.success(`代理 "${agent.name}" 复制成功`);
+      toast.success(t("agent.duplicate.success", { params: { name: agent.name }, defaultValue: `代理 "${agent.name}" 复制成功` }));
     } catch (err) {
       const errorMsg =
-        err instanceof Error ? err.message : "复制代理失败";
-      toast.error("复制代理失败", {
+        err instanceof Error ? err.message : t("agent.duplicate.error", { defaultValue: "复制代理失败" });
+      toast.error(t("agent.duplicate.error", { defaultValue: "复制代理失败" }), {
         description: errorMsg,
       });
     } finally {
@@ -140,9 +142,9 @@ export function AgentCard({
     if (!dateString) return null;
     try {
       const date = parseISO(dateString);
-      return isValid(date) ? format(date, "MMM d, yyyy HH:mm") : "无效日期";
+      return isValid(date) ? format(date, "MMM d, yyyy HH:mm") : t("common.invalidDate", { defaultValue: "无效日期" });
     } catch {
-      return "日期格式无效";
+      return t("common.invalidDateFormat", { defaultValue: "日期格式无效" });
     }
   };
 
@@ -178,7 +180,7 @@ export function AgentCard({
       whileTap="tap"
       variants={cardVariants}
       data-testid={`agent-card-${agent.id}`}
-      aria-label={`代理: ${agent.name}`}
+      aria-label={t("agent.ariaLabel", { params: { name: agent.name }, defaultValue: `代理: ${agent.name}` })}
     >
       <Card className={error ? "border-destructive" : ""}>
         <CardHeader className="pb-2">
@@ -200,25 +202,25 @@ export function AgentCard({
                       <Button
                         variant="ghost"
                         size="icon"
-                        aria-label="更多选项"
+                        aria-label={t("common.moreOptions", { defaultValue: "更多选项" })}
                       >
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>更多选项</p>
+                    <p>{t("common.moreOptions", { defaultValue: "更多选项" })}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={onEdit}>
                   <Edit className="h-4 w-4 mr-2" />
-                  编辑
+                  {t("common.edit", { defaultValue: "编辑" })}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={onViewLogs}>
                   <Terminal className="h-4 w-4 mr-2" />
-                  查看日志
+                  {t("agent.viewLogs", { defaultValue: "查看日志" })}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => handleDuplicate(agent.id)}
@@ -229,7 +231,9 @@ export function AgentCard({
                   ) : (
                     <Copy className="h-4 w-4 mr-2" />
                   )}
-                  {isDuplicating ? "复制中..." : "复制"}
+                  {isDuplicating ? 
+                    t("agent.duplicating", { defaultValue: "复制中..." }) : 
+                    t("common.duplicate", { defaultValue: "复制" })}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -237,7 +241,7 @@ export function AgentCard({
                   onClick={onDelete}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
-                  删除
+                  {t("common.delete", { defaultValue: "删除" })}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -267,8 +271,8 @@ export function AgentCard({
               >
                 <Calendar className="h-4 w-4 mr-2" />
                 <span>
-                  类型:{" "}
-                  {agent.type.charAt(0).toUpperCase() + agent.type.slice(1)}
+                  {t("agent.type", { defaultValue: "类型" })}: {" "}
+                  {t(`agent.types.${agent.type}`, { defaultValue: agent.type.charAt(0).toUpperCase() + agent.type.slice(1) })}
                 </span>
               </motion.div>
               {agent.lastRun && (
@@ -277,7 +281,7 @@ export function AgentCard({
                   whileHover={{ scale: 1.01 }}
                 >
                   <Clock className="h-4 w-4 mr-2" />
-                  <span>上次运行: {lastRunFormatted}</span>
+                  <span>{t("agent.lastRun", { defaultValue: "上次运行" })}: {lastRunFormatted}</span>
                 </motion.div>
               )}
               {agent.nextRun && (
@@ -286,7 +290,7 @@ export function AgentCard({
                   whileHover={{ scale: 1.01 }}
                 >
                   <Calendar className="h-4 w-4 mr-2" />
-                  <span>下次运行: {nextRunFormatted}</span>
+                  <span>{t("agent.nextRun", { defaultValue: "下次运行" })}: {nextRunFormatted}</span>
                 </motion.div>
               )}
             </div>
@@ -297,27 +301,31 @@ export function AgentCard({
                   variant="outline"
                   onClick={() => handleStop(agent.id)}
                   disabled={isStopping}
-                  aria-label="停止代理"
+                  aria-label={t("agent.stopAgent", { defaultValue: "停止代理" })}
                 >
                   {isStopping ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
                     <Pause className="h-4 w-4 mr-2" />
                   )}
-                  {isStopping ? "停止中..." : "停止"}
+                  {isStopping ? 
+                    t("agent.stopping", { defaultValue: "停止中..." }) : 
+                    t("agent.stop", { defaultValue: "停止" })}
                 </Button>
               ) : (
                 <Button
                   onClick={() => handleRun(agent.id)}
                   disabled={isRunning}
-                  aria-label="运行代理"
+                  aria-label={t("agent.runAgent", { defaultValue: "运行代理" })}
                 >
                   {isRunning ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
                     <Play className="h-4 w-4 mr-2" />
                   )}
-                  {isRunning ? "启动中..." : "运行"}
+                  {isRunning ? 
+                    t("agent.starting", { defaultValue: "启动中..." }) : 
+                    t("agent.run", { defaultValue: "运行" })}
                 </Button>
               )}
             </div>

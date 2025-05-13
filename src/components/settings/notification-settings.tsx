@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useTranslations } from "@/components/i18n";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
@@ -55,6 +56,7 @@ export function NotificationSettings({
   settings,
   onSettingChange,
 }: SettingsSectionProps) {
+  const { t } = useTranslations();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [testMode, setTestMode] = useState(false);
@@ -86,47 +88,58 @@ export function NotificationSettings({
       setUpdateStatus((prev) => ({ ...prev, [setting]: "updating" }));
 
       // Apply the change
-      onSettingChange("notifications", setting, checked);
-
-      // Show toast notification if in test mode
+      onSettingChange("notifications", setting, checked); // Show toast notification if in test mode
       if (testMode && checked) {
         const notificationTypes = {
           softwareUpdates: {
-            title: "有新的软件更新可用",
-            description: "Stellar Capture 2.5 版本已发布",
+            title: t("settings.notifications.test.softwareUpdates.title"),
+            description: t(
+              "settings.notifications.test.softwareUpdates.description"
+            ),
           },
           equipmentEvents: {
-            title: "设备已连接",
-            description: "已成功连接到主相机",
+            title: t("settings.notifications.test.equipmentEvents.title"),
+            description: t(
+              "settings.notifications.test.equipmentEvents.description"
+            ),
           },
           downloadCompletion: {
-            title: "下载完成",
-            description: "星图数据库已成功下载",
+            title: t("settings.notifications.test.downloadCompletion.title"),
+            description: t(
+              "settings.notifications.test.downloadCompletion.description"
+            ),
           },
           systemAlerts: {
-            title: "系统警告",
-            description: "磁盘空间不足（剩余 15%)",
+            title: t("settings.notifications.test.systemAlerts.title"),
+            description: t(
+              "settings.notifications.test.systemAlerts.description"
+            ),
           },
           sessionReminders: {
-            title: "会话提醒",
-            description: "计划的观测会话将在 30 分钟后开始",
+            title: t("settings.notifications.test.sessionReminders.title"),
+            description: t(
+              "settings.notifications.test.sessionReminders.description"
+            ),
           },
           soundEffects: {
-            title: "声音效果已启用",
-            description: "现在将为通知播放声音",
+            title: t("settings.notifications.test.soundEffects.title"),
+            description: t(
+              "settings.notifications.test.soundEffects.description"
+            ),
           },
         };
 
         const notification = notificationTypes[setting];
-        const IconComponent = notificationIcons[setting]; // Assign component to a variable
-
-        // Correct toast usage: toast(title, options)
-        toast(`测试：${notification.title}`, {
-          description: notification.description,
-          icon: IconComponent ? (
-            <IconComponent className="h-5 w-5" /> // Use the variable
-          ) : undefined,
-        });
+        const IconComponent = notificationIcons[setting]; // Assign component to a variable        // Correct toast usage: toast(title, options)
+        toast(
+          `${t("settings.notifications.test.prefix")} ${notification.title}`,
+          {
+            description: notification.description,
+            icon: IconComponent ? (
+              <IconComponent className="h-5 w-5" /> // Use the variable
+            ) : undefined,
+          }
+        );
       }
 
       // Simulate a delay in processing
@@ -141,12 +154,22 @@ export function NotificationSettings({
       }, 1500);
     } catch {
       setUpdateStatus((prev) => ({ ...prev, [setting]: "error" }));
-      setError(`无法更新${setting}设置`);
+      setError(
+        t("settings.notifications.errors.updateFailed", {
+          params: { setting: String(setting) },
+        })
+      );
 
       // Correct toast.error usage: toast.error(title, options)
-      toast.error("设置更新失败", {
-        description: `无法更改${setting}设置，请重试。`,
-      });
+      toast.error(
+        t("settings.notifications.notifications.updateFailed.title"),
+        {
+          description: t(
+            "settings.notifications.notifications.updateFailed.description",
+            { params: { setting: String(setting) } }
+          ),
+        }
+      );
 
       // Reset to idle state after error
       setTimeout(() => {
@@ -154,28 +177,31 @@ export function NotificationSettings({
       }, 3000);
     }
   };
-
   // Handle test mode toggle
   const toggleTestMode = () => {
     const newTestMode = !testMode;
     setTestMode(newTestMode);
     // Correct toast usage: toast(title, options)
-    toast(newTestMode ? "已启用测试模式" : "已禁用测试模式", {
-      description: newTestMode
-        ? "切换任意通知开关以查看测试通知"
-        : "不会发送测试通知",
-    });
+    toast(
+      newTestMode
+        ? t("settings.notifications.testMode.enabled")
+        : t("settings.notifications.testMode.disabled"),
+      {
+        description: newTestMode
+          ? t("settings.notifications.testMode.enabledDescription")
+          : t("settings.notifications.testMode.disabledDescription"),
+      }
+    );
   };
-
   if (isLoading) {
-    return <LoadingIndicator message="加载通知设置..." />;
+    return <LoadingIndicator message={t("settings.notifications.loading")} />;
   }
 
   // Ensure settings is checked before accessing its properties
   if (error && !settings) {
     return (
       <ErrorState
-        title="加载错误"
+        title={t("settings.notifications.errors.loadingError")}
         message={error}
         onRetry={() => setError(null)}
       />
@@ -229,7 +255,9 @@ export function NotificationSettings({
                 onCheckedChange={(checked) =>
                   handleNotificationChange(key, checked)
                 }
-                aria-label={`启用或禁用${label}`}
+                aria-label={t("settings.notifications.toggleAriaLabel", {
+                  params: { label },
+                })}
                 disabled={status === "updating"}
                 className={
                   status === "error" ? "border-red-500 ring-offset-red-500" : ""
@@ -256,10 +284,9 @@ export function NotificationSettings({
       </React.Fragment>
     );
   };
-
   // Ensure settings is available before rendering content
   if (!settings) {
-    return <LoadingIndicator message="加载通知设置..." />; // Or some other placeholder
+    return <LoadingIndicator message={t("settings.notifications.loading")} />; // Or some other placeholder
   }
 
   return (
@@ -272,9 +299,12 @@ export function NotificationSettings({
             transition={{ duration: 0.3 }}
             className="flex items-center justify-between"
           >
+            {" "}
             <div>
-              <CardTitle>通知设置</CardTitle>
-              <CardDescription>管理您收到通知的方式和时间</CardDescription>
+              <CardTitle>{t("settings.notifications.title")}</CardTitle>
+              <CardDescription>
+                {t("settings.notifications.description")}
+              </CardDescription>
             </div>
             <motion.div
               whileHover={{ scale: 1.05 }}
@@ -291,7 +321,9 @@ export function NotificationSettings({
                     : ""
                 } // Added hover style
               >
-                {testMode ? "禁用测试模式" : "启用测试模式"}
+                {testMode
+                  ? t("settings.notifications.testMode.disable")
+                  : t("settings.notifications.testMode.enable")}
               </Button>
             </motion.div>
           </motion.div>
@@ -306,43 +338,43 @@ export function NotificationSettings({
             {/* Removed the icon element argument from calls */}
             {renderNotificationSetting(
               "softwareUpdates",
-              "软件更新",
-              "接收有关软件更新的通知",
+              t("settings.notifications.softwareUpdates.label"),
+              t("settings.notifications.softwareUpdates.description"),
               0
             )}
 
             {renderNotificationSetting(
               "equipmentEvents",
-              "设备连接事件",
-              "在设备连接或断开连接时通知",
+              t("settings.notifications.equipmentEvents.label"),
+              t("settings.notifications.equipmentEvents.description"),
               1
             )}
 
             {renderNotificationSetting(
               "downloadCompletion",
-              "下载完成",
-              "在下载完成或失败时通知",
+              t("settings.notifications.downloadCompletion.label"),
+              t("settings.notifications.downloadCompletion.description"),
               2
             )}
 
             {renderNotificationSetting(
               "systemAlerts",
-              "系统警报",
-              "重要的系统通知和警告",
+              t("settings.notifications.systemAlerts.label"),
+              t("settings.notifications.systemAlerts.description"),
               3
             )}
 
             {renderNotificationSetting(
               "sessionReminders",
-              "会话提醒",
-              "接收即将进行的观察会话的提醒",
+              t("settings.notifications.sessionReminders.label"),
+              t("settings.notifications.sessionReminders.description"),
               4
             )}
 
             {renderNotificationSetting(
               "soundEffects",
-              "音效",
-              "为通知和事件播放声音",
+              t("settings.notifications.soundEffects.label"),
+              t("settings.notifications.soundEffects.description"),
               5
             )}
 
@@ -354,8 +386,9 @@ export function NotificationSettings({
                 transition={{ duration: 0.3 }}
                 className="mt-4 rounded-md bg-blue-50 dark:bg-blue-900/30 p-3"
               >
+                {" "}
                 <p className="text-sm text-blue-700 dark:text-blue-300">
-                  测试模式已启用。切换任何通知开关可以看到示例通知。
+                  {t("settings.notifications.testMode.infoText")}
                 </p>
               </motion.div>
             )}

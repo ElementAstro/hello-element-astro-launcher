@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useTranslations } from "@/components/i18n";
 import {
   type SettingsSectionProps,
   type Settings,
@@ -61,6 +62,7 @@ export function AccountSettings({
   settings,
   onSettingChange,
 }: SettingsSectionProps) {
+  const { t } = useTranslations();
   // Initialize special settings state
   const [specialSettings, setSpecialSettings] =
     useState<SpecialAccountSettings>({});
@@ -139,14 +141,14 @@ export function AccountSettings({
         }
       } catch (err) {
         console.error("Error loading account settings:", err);
-        setError("无法加载账户信息，请稍后重试。");
+        setError(t("settings.account.errors.loadFailed"));
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchAccountSettings();
-  }, [onSettingChange, formData]); // 添加 formData 作为依赖项
+  }, [onSettingChange, formData, t]); // 添加 formData 和 t 作为依赖项
 
   // 处理输入变化
   const handleInputChange = (field: string, value: string) => {
@@ -198,7 +200,7 @@ export function AccountSettings({
       }
 
       if (formData.newPassword !== formData.confirmPassword) {
-        errors.confirmPassword = "密码不匹配";
+        errors.confirmPassword = t("settings.account.errors.passwordMismatch");
       }
     }
 
@@ -243,19 +245,30 @@ export function AccountSettings({
             formData.currentPassword,
             formData.newPassword
           );
-
-          toast.success("密码已更新", {
-            description: "您的密码已成功更改",
-            icon: <Shield className="h-5 w-5 text-green-500" />,
-          });
+          toast.success(
+            t("settings.account.notifications.passwordUpdated.title"),
+            {
+              description: t(
+                "settings.account.notifications.passwordUpdated.description"
+              ),
+              icon: <Shield className="h-5 w-5 text-green-500" />,
+            }
+          );
         } else {
           setFormErrors((prev) => ({
             ...prev,
-            currentPassword: "当前密码不正确",
+            currentPassword: t("settings.account.errors.incorrectPassword"),
           }));
-          toast.error("密码验证失败", {
-            description: "您输入的当前密码不正确",
-          });
+          toast.error(
+            t(
+              "settings.account.notifications.passwordVerificationFailed.title"
+            ),
+            {
+              description: t(
+                "settings.account.notifications.passwordVerificationFailed.description"
+              ),
+            }
+          );
           setIsSubmitting(false);
           return;
         }
@@ -267,31 +280,32 @@ export function AccountSettings({
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
-      }));
-
-      // 显示成功提示
-      toast.success("账户已更新", {
-        description: "您的账户信息已成功更新",
+      })); // 显示成功提示
+      toast.success(t("settings.account.notifications.accountUpdated.title"), {
+        description: t(
+          "settings.account.notifications.accountUpdated.description"
+        ),
         icon: <Check className="h-5 w-5 text-green-500" />,
       });
     } catch (err) {
-      const errorMessage = "更新账户信息时出错";
+      const errorMessage = t("settings.account.errors.updateFailed");
       setError(errorMessage);
       console.error("Error updating account:", err);
-      toast.error("更新失败", {
-        description: "无法更新您的账户信息，请重试。",
+      toast.error(t("settings.account.notifications.updateFailed.title"), {
+        description: t(
+          "settings.account.notifications.updateFailed.description"
+        ),
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-
   // 处理账户删除
   const handleDeleteAccount = async () => {
     if (!passwordDeleteConfirm) {
       setFormErrors((prev) => ({
         ...prev,
-        passwordDeleteConfirm: "请输入您的密码以确认删除",
+        passwordDeleteConfirm: t("settings.account.errors.passwordRequired"),
       }));
       return;
     }
@@ -428,17 +442,16 @@ export function AccountSettings({
       fileInputRef.current.click();
     }
   };
-
   if (isLoading) {
-    return <LoadingIndicator message="加载账户信息..." />;
+    return <LoadingIndicator message={t("settings.account.loading")} />;
   }
 
-  // 如果初始加载时发生错误，显示错误状态
+  // Show error state if there was an error during initial load
   if (error && !isSubmitting) {
     return (
       <ErrorState
-        title="无法加载或更新账户信息"
-        message={error}
+        title={t("settings.account.errors.loadOrUpdateErrorTitle")}
+        message={error || undefined}
         onRetry={() => {
           setError(null);
           // 这里可以重新获取初始数据

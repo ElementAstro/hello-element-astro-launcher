@@ -12,5 +12,8 @@ export * from "./empty-error-states";
 export * from "./animation-constants";
 export * from "./constants";
 
+// Export translations
+export * from "./translations";
+
 // Export types
 export * from "./types";

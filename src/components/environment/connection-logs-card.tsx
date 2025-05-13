@@ -101,7 +101,13 @@ export function ConnectionLogsCard({
   };
 
   // 获取日志项级别对应的颜色
-  const getLogLevelColor = (level: string) => {
+  // 修复：添加对 level 为 undefined 的检查
+  const getLogLevelColor = (level: string | undefined) => {
+    // 如果 level 是 undefined 或空字符串，返回默认颜色
+    if (!level) {
+      return "bg-primary hover:bg-primary/90";
+    }
+
     switch (level.toLowerCase()) {
       case "error":
         return "bg-destructive hover:bg-destructive/90";
@@ -190,7 +196,9 @@ export function ConnectionLogsCard({
               <div className="space-y-2">
                 {logs.map((log) => (
                   <div
-                    key={`${log.timestamp}-${log.message.substring(0, 10)}`}
+                    key={`${log.timestamp}-${
+                      log.message?.substring(0, 10) || "unknown"
+                    }`}
                     className="p-3 text-sm rounded-md border"
                   >
                     <div className="flex justify-between items-start">
@@ -198,13 +206,13 @@ export function ConnectionLogsCard({
                         className={`${getLogLevelColor(log.level)} mb-2`}
                         variant="secondary"
                       >
-                        {log.level}
+                        {log.level || "未知"}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
                         {new Date(log.timestamp).toLocaleString()}
                       </span>
                     </div>
-                    <div className="mt-1">{log.message}</div>
+                    <div className="mt-1">{log.message || "无消息内容"}</div>
                   </div>
                 ))}
               </div>

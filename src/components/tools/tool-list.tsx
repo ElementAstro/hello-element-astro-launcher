@@ -25,6 +25,7 @@ import {
 import type { Tool } from "@/types/tool";
 import { ToolCard } from "./tool-card";
 import { VARIANTS } from "./animation-constants";
+import { useTranslations } from "@/components/i18n";
 
 interface ToolListProps {
   tools: Tool[];
@@ -50,6 +51,7 @@ export function ToolList({
   const router = useRouter();
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [columns, setColumns] = useState(3); // 默认列数
+  const { t } = useTranslations();
 
   // 根据屏幕宽度调整布局列数
   useEffect(() => {
@@ -128,11 +130,10 @@ export function ToolList({
         animate="visible"
         variants={VARIANTS.fadeIn}
         className="flex flex-col items-center justify-center py-8 md:py-12 text-center px-4"
-      >
-        <div className="rounded-full bg-red-100 dark:bg-red-900/20 p-3 mb-4">
+      >        <div className="rounded-full bg-red-100 dark:bg-red-900/20 p-3 mb-4">
           <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
         </div>
-        <h3 className="text-lg font-medium">加载工具时出错</h3>
+        <h3 className="text-lg font-medium">{t("toolList.loadingError")}</h3>
         <p className="text-muted-foreground mt-2 mb-4 max-w-md text-sm md:text-base">
           {error}
         </p>
@@ -141,10 +142,10 @@ export function ToolList({
             onClick={onRetry}
             variant="outline"
             className="active:scale-95 transition-transform"
-            aria-label="重试加载工具"
+            aria-label={t("toolList.retry")}
           >
             <RefreshCcw className="h-4 w-4 mr-2" />
-            重试
+            {t("toolList.retry")}
           </Button>
         )}
       </motion.div>
@@ -163,15 +164,14 @@ export function ToolList({
         <motion.div
           className="rounded-full bg-muted p-3 mb-4"
           whileHover={{ scale: 1.1, rotate: 5 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-        >
+          transition={{ type: "spring", stiffness: 400, damping: 10 }}        >
           <Calculator className="h-6 w-6 text-muted-foreground" />
         </motion.div>
-        <h3 className="text-lg font-medium">未找到工具</h3>
+        <h3 className="text-lg font-medium">{t("toolList.noToolsFound")}</h3>
         <p className="text-muted-foreground mt-2 mb-4 max-w-md text-sm md:text-base">
           {searchQuery
-            ? "没有找到符合搜索条件的工具。尝试使用不同的搜索词。"
-            : "您尚未创建任何工具。创建您的第一个工具以帮助进行天文计算。"}
+            ? t("toolList.emptySearchResult")
+            : t("toolList.noToolsCreated")}
         </p>
         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
           <Button
@@ -179,7 +179,7 @@ export function ToolList({
             className="active:scale-95 transition-transform"
           >
             <Plus className="h-4 w-4 mr-2" />
-            创建工具
+            {t("toolList.createTool")}
           </Button>
         </motion.div>
       </motion.div>
@@ -221,11 +221,10 @@ export function ToolList({
                     />
                   </div>
                 </TooltipTrigger>
-                {deletingIds.has(tool.id) && (
-                  <TooltipContent side="top">
+                {deletingIds.has(tool.id) && (                  <TooltipContent side="top">
                     <div className="flex items-center">
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      <span>正在删除...</span>
+                      <span>{t("toolCard.delete")}中...</span>
                     </div>
                   </TooltipContent>
                 )}

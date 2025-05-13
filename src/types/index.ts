@@ -1,5 +1,6 @@
 // Software types
 export interface Software {
+  systemRequirements: ArrayLike<unknown> | { [s: string]: unknown; };
   id: number;
   name: string;
   description: string;
@@ -14,10 +15,14 @@ export interface Software {
   developer: string;
   website: string;
   installed: boolean;
-  dependencies?: string[];
+  defaultInstallPath?: string;
+  dependencies?: { name: string; version: string; required: boolean; }[];
   tags?: string[];
   rating?: number;
   releaseNotes?: string;
+  releaseDate?: string;
+  verified?: boolean;
+  license?: string;
 }
 
 // Download types

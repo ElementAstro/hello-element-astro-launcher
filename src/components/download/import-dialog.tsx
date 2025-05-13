@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { ErrorObject } from "ajv";
+import { useTranslations } from "@/components/i18n/client"; // 引入 i18n hook
 
 interface ValidationError
   extends Omit<ErrorObject, "dataPath" | "instancePath"> {
@@ -74,7 +75,10 @@ const softwareSchema = {
 const validate = ajv.compile(softwareSchema);
 
 interface ImportDialogProps {
+  open: boolean;
+  onOpenChange: (isOpen: boolean) => void;
   onImport: (data: ImportableSoftware[]) => Promise<ImportResult>;
+  trigger?: React.ReactNode;
 }
 
 enum ImportStage {
@@ -85,25 +89,30 @@ enum ImportStage {
   ERROR = "error",
 }
 
-export function ImportDialog({ onImport }: ImportDialogProps) {
-  const [importData, setImportData] = useState("");
+export function ImportDialog({
+  open,
+  onOpenChange,
+  onImport,
+  trigger,
+}: ImportDialogProps) {
+  const [importData, setImportData] = useState<string>("");
   const [importStage, setImportStage] = useState<ImportStage>(
     ImportStage.INITIAL
   );
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [parsedDataCache, setParsedDataCache] = useState<
     ImportableSoftware[] | null
   >(null);
+  const [importStats, setImportStats] = useState({
+    total: 0,
+    success: 0,
+    conflicts: 0,
+  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { t } = useTranslations(); // 使用 i18n hook
+
   const [progress, setProgress] = useState(0);
   const [showData, setShowData] = useState(true);
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const [importStats, setImportStats] = useState<{
-    total: number;
-    success: number;
-    conflicts: number;
-  }>({ total: 0, success: 0, conflicts: 0 });
-  const [open, setOpen] = useState(false);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Simulate progress update
@@ -153,7 +162,7 @@ export function ImportDialog({ onImport }: ImportDialogProps) {
   };
 
   const closeAndReset = () => {
-    setOpen(false);
+    onOpenChange(false);
     // Delay resetting state to allow the closing animation to complete
     setTimeout(resetState, 300);
   };
@@ -216,14 +225,18 @@ export function ImportDialog({ onImport }: ImportDialogProps) {
       if (importResult.success) {
         setImportStage(ImportStage.SUCCESS);
 
-        toast.success("Import successful", {
-          // Changed from "导入成功"
-          description: importResult.message,
-          action: {
-            label: "Close", // Changed from "关闭"
-            onClick: () => {},
-          },
-        });
+        toast.success(
+          t("download.import.successTitle", {
+            defaultValue: "Import successful",
+          }),
+          {
+            description: importResult.message,
+            action: {
+              label: t("common.close", { defaultValue: "Close" }),
+              onClick: () => {},
+            },
+          }
+        );
       } else {
         throw new Error(importResult.message);
       }
@@ -233,22 +246,34 @@ export function ImportDialog({ onImport }: ImportDialogProps) {
       setValidationErrors([
         error instanceof Error
           ? error.message
-          : "An error occurred during import", // Changed from "导入过程中出现错误"
+          : t("download.import.genericError", {
+              defaultValue: "An error occurred during import",
+            }),
       ]);
 
       setImportStage(ImportStage.ERROR);
 
-      toast.error("Import failed", {
-        // Changed from "导入失败"
-        description:
-          error instanceof Error ? error.message : "Error importing software", // Changed from "导入软件时出错"
-      });
+      toast.error(
+        t("download.import.failedTitle", { defaultValue: "Import failed" }),
+        {
+          description:
+            error instanceof Error
+              ? error.message
+              : t("download.import.errorDescription", {
+                  defaultValue: "Error importing software",
+                }),
+        }
+      );
     }
   };
 
   const handleImportSoftware = async () => {
     if (importData.trim() === "") {
-      setValidationErrors(["Please enter JSON data or upload a file"]); // Changed from "请输入JSON数据或上传文件"
+      setValidationErrors([
+        t("download.import.emptyInput", {
+          defaultValue: "Please enter JSON data or upload a file",
+        }),
+      ]);
       setImportStage(ImportStage.ERROR);
       return;
     }
@@ -266,7 +291,11 @@ export function ImportDialog({ onImport }: ImportDialogProps) {
 
     // Validate if the file is JSON
     if (!file.name.endsWith(".json")) {
-      setValidationErrors(["Please upload a JSON format file"]); // Changed from "请上传JSON格式的文件"
+      setValidationErrors([
+        t("download.import.invalidFile", {
+          defaultValue: "Please upload a JSON format file",
+        }),
+      ]);
       setImportStage(ImportStage.ERROR);
       return;
     }
@@ -624,21 +653,24 @@ export function ImportDialog({ onImport }: ImportDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline">
-          <Upload className="h-4 w-4 mr-2" />
-          Import {/* Changed from "导入" */}
-        </Button>
+        {trigger || (
+          <Button variant="outline" size="sm" className="gap-2">
+            <Upload className="h-4 w-4" />
+            {t("download.import.button", { defaultValue: "导入软件" })}
+          </Button>
+        )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Import Software List</DialogTitle>{" "}
-          {/* Changed from "导入软件列表" */}
+          <DialogTitle>
+            {t("download.import.title", { defaultValue: "导入软件" })}
+          </DialogTitle>
           <DialogDescription>
-            Paste a JSON array of software or upload a JSON file. The system
-            will check for duplicates and merge with existing software.{" "}
-            {/* Changed from "粘贴软件的 JSON 数组或上传 JSON 文件。系统将检查重复并与现有软件合并。" */}
+            {t("download.import.description", {
+              defaultValue: "从JSON文件或直接粘贴JSON数据导入软件清单。",
+            })}
           </DialogDescription>
         </DialogHeader>
 

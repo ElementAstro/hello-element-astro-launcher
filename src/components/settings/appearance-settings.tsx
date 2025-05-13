@@ -31,11 +31,13 @@ import {
 } from "./animation-constants";
 import { toast } from "sonner";
 import { appearanceApi } from "./settings-api";
+import { useTranslations } from "@/components/i18n";
 
 export function AppearanceSettings({
   settings,
   onSettingChange,
 }: SettingsSectionProps) {
+  const { t } = useTranslations();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<
@@ -80,14 +82,14 @@ export function AppearanceSettings({
         });
       } catch (err) {
         console.error("Error loading appearance settings:", err);
-        setError("无法加载外观设置，请稍后重试。");
+        setError(t("settings.appearance.errors.loadFailed"));
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchAppearanceSettings();
-  }, [onSettingChange]);
+  }, [onSettingChange, t]);
 
   const handleThemeChange = async (value: Theme) => {
     try {
@@ -102,17 +104,21 @@ export function AppearanceSettings({
       });
 
       setSaveStatus("success");
-      toast("主题已更新", {
-        description: "您的显示主题已成功更改。",
+      toast(t("settings.appearance.notifications.themeUpdated.title"), {
+        description: t(
+          "settings.appearance.notifications.themeUpdated.description"
+        ),
       });
 
       // 重置状态
       setTimeout(() => setSaveStatus("idle"), 2000);
     } catch {
       setSaveStatus("error");
-      setError("更改主题时出错");
-      toast.error("设置更新失败", {
-        description: "无法更改主题，请重试。",
+      setError(t("settings.appearance.errors.themeChangeFailed"));
+      toast.error(t("settings.appearance.notifications.updateFailed.title"), {
+        description: t(
+          "settings.appearance.notifications.updateFailed.themeDescription"
+        ),
       });
     }
   };
@@ -141,21 +147,27 @@ export function AppearanceSettings({
     } catch (err: unknown) {
       console.error(`Error updating setting ${String(setting)}:`, err);
       setSaveStatus("error");
-      setError(`更改${setting}设置时出错`);
-      toast.error("设置更新失败", {
-        description: `无法更新${setting}设置，请重试。`,
+      setError(
+        t("settings.appearance.errors.settingChangeFailed", {
+          params: { setting: String(setting) },
+        })
+      );
+      toast.error(t("settings.appearance.notifications.updateFailed.title"), {
+        description: t(
+          "settings.appearance.notifications.updateFailed.settingDescription",
+          { params: { setting: String(setting) } }
+        ),
       });
     }
   };
-
   if (isLoading) {
-    return <LoadingIndicator message="加载外观设置..." />;
+    return <LoadingIndicator message={t("settings.appearance.loading")} />;
   }
 
   if (error && !settings) {
     return (
       <ErrorState
-        title="加载错误"
+        title={t("settings.appearance.errors.loadErrorTitle")}
         message={error}
         onRetry={() => {
           setError(null);
@@ -170,16 +182,21 @@ export function AppearanceSettings({
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
+            {" "}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
             >
-              <CardTitle>外观</CardTitle>
-              <CardDescription>自定义应用程序的外观和感觉</CardDescription>
+              <CardTitle>{t("settings.appearance.title")}</CardTitle>
+              <CardDescription>
+                {t("settings.appearance.description")}
+              </CardDescription>
             </motion.div>
-
             {saveStatus === "saving" && (
-              <StatusBadge status="info" message="保存中..." />
+              <StatusBadge
+                status="info"
+                message={t("settings.appearance.saving")}
+              />
             )}
             {saveStatus === "success" && (
               <motion.div
@@ -189,7 +206,9 @@ export function AppearanceSettings({
                 className="flex items-center text-green-600 dark:text-green-400"
               >
                 <Check className="w-4 h-4 mr-1" />
-                <span className="text-sm">已保存</span>
+                <span className="text-sm">
+                  {t("settings.appearance.saved")}
+                </span>
               </motion.div>
             )}
           </div>
@@ -201,15 +220,18 @@ export function AppearanceSettings({
             animate="show"
             className="space-y-4"
           >
+            {" "}
             <motion.div variants={slideUp} className="space-y-2">
-              <Label htmlFor="theme-selection">主题</Label>
+              <Label htmlFor="theme-selection">
+                {t("settings.appearance.theme.label")}
+              </Label>
               <div className="flex items-center gap-4">
                 <RadioGroup
                   id="theme-selection"
                   value={settings.appearance.theme}
                   onValueChange={(value) => handleThemeChange(value as Theme)}
                   className="flex flex-wrap gap-2"
-                  aria-label="选择应用主题"
+                  aria-label={t("settings.appearance.theme.ariaLabel")}
                 >
                   <motion.div
                     className="flex items-center space-x-2"
@@ -219,7 +241,7 @@ export function AppearanceSettings({
                     <RadioGroupItem value="light" id="light" />
                     <Label htmlFor="light" className="flex items-center gap-1">
                       <Sun className="h-4 w-4" />
-                      亮色
+                      {t("settings.appearance.theme.light")}
                     </Label>
                   </motion.div>
                   <motion.div
@@ -230,7 +252,7 @@ export function AppearanceSettings({
                     <RadioGroupItem value="dark" id="dark" />
                     <Label htmlFor="dark" className="flex items-center gap-1">
                       <Moon className="h-4 w-4" />
-                      暗色
+                      {t("settings.appearance.theme.dark")}
                     </Label>
                   </motion.div>
                   <motion.div
@@ -239,7 +261,9 @@ export function AppearanceSettings({
                     transition={{ duration: TRANSITION_DURATION.fast }}
                   >
                     <RadioGroupItem value="system" id="system" />
-                    <Label htmlFor="system">跟随系统</Label>
+                    <Label htmlFor="system">
+                      {t("settings.appearance.theme.system")}
+                    </Label>
                   </motion.div>
                   <motion.div
                     className="flex items-center space-x-2"
@@ -252,7 +276,7 @@ export function AppearanceSettings({
                       className="flex items-center gap-1"
                     >
                       <Palette className="h-4 w-4" />
-                      红色夜间
+                      {t("settings.appearance.theme.redNight")}
                     </Label>
                   </motion.div>
                 </RadioGroup>
@@ -262,24 +286,24 @@ export function AppearanceSettings({
                 </div>
               </div>
             </motion.div>
-
             <motion.div variants={slideUp}>
               <Separator />
-            </motion.div>
-
+            </motion.div>{" "}
             <motion.div variants={slideUp} className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="font-size-slider">字体大小</Label>
+                <Label htmlFor="font-size-slider">
+                  {t("settings.appearance.fontSize.label")}
+                </Label>
                 <span className="text-sm text-muted-foreground">
                   {settings.appearance.fontSize === 1
-                    ? "小"
+                    ? t("settings.appearance.fontSize.small")
                     : settings.appearance.fontSize === 2
-                    ? "中"
+                    ? t("settings.appearance.fontSize.medium")
                     : settings.appearance.fontSize === 3
-                    ? "大"
+                    ? t("settings.appearance.fontSize.large")
                     : settings.appearance.fontSize === 4
-                    ? "特大"
-                    : "超大"}
+                    ? t("settings.appearance.fontSize.extraLarge")
+                    : t("settings.appearance.fontSize.huge")}
                 </span>
               </div>
               <motion.div
@@ -288,7 +312,7 @@ export function AppearanceSettings({
               >
                 <Slider
                   id="font-size-slider"
-                  aria-label="调整字体大小"
+                  aria-label={t("settings.appearance.fontSize.ariaLabel")}
                   value={[settings.appearance.fontSize]}
                   min={1}
                   max={5}
@@ -300,23 +324,23 @@ export function AppearanceSettings({
                 />
               </motion.div>
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>小</span>
-                <span>大</span>
+                <span>{t("settings.appearance.fontSize.small")}</span>
+                <span>{t("settings.appearance.fontSize.large")}</span>
               </div>
             </motion.div>
-
             <motion.div variants={slideUp}>
               <Separator />
-            </motion.div>
-
+            </motion.div>{" "}
             <motion.div
               variants={slideUp}
               className="flex items-center justify-between"
             >
               <div className="space-y-0.5">
-                <Label htmlFor="red-night-mode">红色夜间模式</Label>
+                <Label htmlFor="red-night-mode">
+                  {t("settings.appearance.redNightMode.label")}
+                </Label>
                 <p className="text-sm text-muted-foreground">
-                  使用红色配色方案以保护夜视能力
+                  {t("settings.appearance.redNightMode.description")}
                 </p>
               </div>
               <motion.div
@@ -333,23 +357,23 @@ export function AppearanceSettings({
                   onCheckedChange={(checked) =>
                     handleSettingChange("redNightMode", checked)
                   }
-                  aria-label="启用或禁用红色夜间模式"
+                  aria-label={t("settings.appearance.redNightMode.ariaLabel")}
                 />
               </motion.div>
             </motion.div>
-
             <motion.div variants={slideUp}>
               <Separator />
-            </motion.div>
-
+            </motion.div>{" "}
             <motion.div
               variants={slideUp}
               className="flex items-center justify-between"
             >
               <div className="space-y-0.5">
-                <Label htmlFor="compact-view">紧凑视图</Label>
+                <Label htmlFor="compact-view">
+                  {t("settings.appearance.compactView.label")}
+                </Label>
                 <p className="text-sm text-muted-foreground">
-                  使用更紧凑的布局以在屏幕上显示更多内容
+                  {t("settings.appearance.compactView.description")}
                 </p>
               </div>
               <motion.div
@@ -366,23 +390,23 @@ export function AppearanceSettings({
                   onCheckedChange={(checked) =>
                     handleSettingChange("compactView", checked)
                   }
-                  aria-label="启用或禁用紧凑视图"
+                  aria-label={t("settings.appearance.compactView.ariaLabel")}
                 />
               </motion.div>
             </motion.div>
-
             <motion.div variants={slideUp}>
               <Separator />
-            </motion.div>
-
+            </motion.div>{" "}
             <motion.div
               variants={slideUp}
               className="flex items-center justify-between"
             >
               <div className="space-y-0.5">
-                <Label htmlFor="show-status-bar">显示状态栏</Label>
+                <Label htmlFor="show-status-bar">
+                  {t("settings.appearance.statusBar.label")}
+                </Label>
                 <p className="text-sm text-muted-foreground">
-                  在窗口底部显示状态信息
+                  {t("settings.appearance.statusBar.description")}
                 </p>
               </div>
               <motion.div
@@ -399,23 +423,23 @@ export function AppearanceSettings({
                   onCheckedChange={(checked) =>
                     handleSettingChange("showStatusBar", checked)
                   }
-                  aria-label="启用或禁用状态栏"
+                  aria-label={t("settings.appearance.statusBar.ariaLabel")}
                 />
               </motion.div>
             </motion.div>
-
             <motion.div variants={slideUp}>
               <Separator />
             </motion.div>
-
             <motion.div
               variants={slideUp}
               className="flex items-center justify-between"
             >
               <div className="space-y-0.5">
-                <Label htmlFor="enable-animations">启用动画</Label>
+                <Label htmlFor="enable-animations">
+                  {t("settings.appearance.animations.label")}
+                </Label>
                 <p className="text-sm text-muted-foreground">
-                  为转场和效果使用动画
+                  {t("settings.appearance.animations.description")}
                 </p>
               </div>
               <motion.div
@@ -434,7 +458,7 @@ export function AppearanceSettings({
                   onCheckedChange={(checked) =>
                     handleSettingChange("animationsEnabled", checked)
                   }
-                  aria-label="启用或禁用动画效果"
+                  aria-label={t("settings.appearance.animations.ariaLabel")}
                 />
               </motion.div>
             </motion.div>

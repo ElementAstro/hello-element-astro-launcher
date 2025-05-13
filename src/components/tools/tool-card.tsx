@@ -37,6 +37,7 @@ import {
 import type { Tool } from "@/types/tool";
 import { getCategoryIcon } from "./utils";
 import { VARIANTS, EASE } from "./animation-constants";
+import { useTranslations } from "@/components/i18n";
 
 interface ToolCardProps {
   tool: Tool;
@@ -81,7 +82,8 @@ export function ToolCard({
   const handleTouchEnd = useCallback(() => {
     setIsPressing(false);
   }, []);
-
+  const { t } = useTranslations();
+          
   return (
     <motion.div
       initial="hidden"
@@ -136,7 +138,7 @@ export function ToolCard({
                       onToggleFavorite();
                     }}
                     className="text-muted-foreground hover:text-foreground h-8 w-8"
-                    aria-label={tool.favorite ? "从收藏中移除" : "添加到收藏"}
+                    aria-label={tool.favorite ? t("toolCard.removeFromFavorites") : t("toolCard.addToFavorites")}
                   >
                     <motion.div
                       whileHover={{ scale: 1.2 }}
@@ -156,7 +158,7 @@ export function ToolCard({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top" align="end">
-                  {tool.favorite ? "从收藏中移除" : "添加到收藏"}
+                  {tool.favorite ? t("toolCard.removeFromFavorites") : t("toolCard.addToFavorites")}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -168,13 +170,13 @@ export function ToolCard({
               <>
                 <Clock className="h-3.5 w-3.5 mr-1.5" />
                 <span>
-                  最近使用: {format(parseISO(tool.lastUsed), "yyyy-MM-dd")}
+                  {t("toolCard.lastUsed")}: {format(parseISO(tool.lastUsed), "yyyy-MM-dd")}
                 </span>
               </>
             ) : (
               <>
                 <Clock className="h-3.5 w-3.5 mr-1.5" />
-                <span>从未使用</span>
+                <span>{t("toolCard.neverUsed")}</span>
               </>
             )}
           </div>
@@ -211,27 +213,26 @@ export function ToolCard({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <DropdownMenuContent align="start" className="w-48">
-              <DropdownMenuItem
+            <DropdownMenuContent align="start" className="w-48">              <DropdownMenuItem
                 onClick={onEdit}
                 className="flex items-center cursor-pointer"
               >
                 <Edit className="h-4 w-4 mr-2" />
-                <span>编辑</span>
+                <span>{t("toolCard.edit")}</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {}}
                 className="flex items-center cursor-pointer"
               >
                 <History className="h-4 w-4 mr-2" />
-                <span>查看历史</span>
+                <span>{t("toolCard.viewHistory")}</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {}}
                 className="flex items-center cursor-pointer"
               >
                 <Copy className="h-4 w-4 mr-2" />
-                <span>复制</span>
+                <span>{t("toolCard.duplicate")}</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -239,7 +240,7 @@ export function ToolCard({
                 onClick={(e) => {
                   e.stopPropagation();
                   const confirmed = window.confirm(
-                    `确定要删除"${tool.name}"吗？`
+                    `${t("toolCard.confirmDelete")} "${tool.name}"？`
                   );
                   if (confirmed) onDelete();
                 }}
@@ -276,13 +277,12 @@ export function ToolCard({
                   }}
                 >
                   <Play className="h-3.5 w-3.5 mr-1.5" />
-                </motion.div>
-                <span className="text-xs sm:text-sm">运行中...</span>
+                </motion.div>                <span className="text-xs sm:text-sm">{t("toolCard.run")}中...</span>
               </>
             ) : (
               <>
                 <Play className="h-3.5 w-3.5 mr-1.5" />
-                <span className="text-xs sm:text-sm">运行</span>
+                <span className="text-xs sm:text-sm">{t("toolCard.run")}</span>
               </>
             )}
           </Button>

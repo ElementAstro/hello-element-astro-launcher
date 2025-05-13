@@ -1,11 +1,11 @@
-import type { Settings } from "./types"
+import type { Settings } from "./types";
 
 /**
  * Type guard to check if a settings object conforms to our Settings interface
  */
 export function isValidSettings(settings: unknown): settings is Settings {
-  if (!settings || typeof settings !== "object") return false
-  
+  if (!settings || typeof settings !== "object") return false;
+
   const requiredCategories = [
     "general",
     "appearance",
@@ -14,15 +14,15 @@ export function isValidSettings(settings: unknown): settings is Settings {
     "storage",
     "privacy",
     "language",
-    "advanced"
-  ]
+    "advanced",
+  ];
 
   // Check if all required categories exist
   for (const category of requiredCategories) {
-    if (!(category in settings)) return false
+    if (!(category in settings)) return false;
   }
 
-  const s = settings as Settings
+  const s = settings as Settings;
 
   // Check general settings
   if (
@@ -35,7 +35,8 @@ export function isValidSettings(settings: unknown): settings is Settings {
     typeof s.general.defaultApps.imaging !== "string" ||
     typeof s.general.defaultApps.planetarium !== "string" ||
     typeof s.general.defaultApps.guiding !== "string"
-  ) return false
+  )
+    return false;
 
   // Check appearance settings
   if (
@@ -45,11 +46,12 @@ export function isValidSettings(settings: unknown): settings is Settings {
     typeof s.appearance.compactView !== "boolean" ||
     typeof s.appearance.showStatusBar !== "boolean" ||
     typeof s.appearance.animationsEnabled !== "boolean"
-  ) return false
+  )
+    return false;
 
   // You can add more specific checks for other settings categories as needed
 
-  return true
+  return true;
 }
 
 /**
@@ -58,16 +60,16 @@ export function isValidSettings(settings: unknown): settings is Settings {
  */
 export function assertSettings(settings: unknown): Settings {
   if (!isValidSettings(settings)) {
-    throw new Error("Invalid settings object")
+    throw new Error("Invalid settings object");
   }
-  return settings
+  return settings;
 }
 
 /**
  * Safe version of settings type assertion that provides a default value
  */
 export function getSettingsWithDefaults(settings: unknown): Settings {
-  if (isValidSettings(settings)) return settings
+  if (isValidSettings(settings)) return settings;
 
   // Return default settings if the provided settings are invalid
   return {
@@ -81,8 +83,8 @@ export function getSettingsWithDefaults(settings: unknown): Settings {
       defaultApps: {
         imaging: "nina",
         planetarium: "stellarium",
-        guiding: "phd2"
-      }
+        guiding: "phd2",
+      },
     },
     appearance: {
       theme: "system",
@@ -90,12 +92,13 @@ export function getSettingsWithDefaults(settings: unknown): Settings {
       redNightMode: false,
       compactView: false,
       showStatusBar: true,
-      animationsEnabled: true
+      animationsEnabled: true,
     },
     account: {
       name: "",
       email: "",
-      organization: ""
+      organization: "",
+      status: "active"
     },
     notifications: {
       softwareUpdates: true,
@@ -103,34 +106,34 @@ export function getSettingsWithDefaults(settings: unknown): Settings {
       downloadCompletion: true,
       systemAlerts: true,
       sessionReminders: true,
-      soundEffects: true
+      soundEffects: true,
     },
     storage: {
       downloadLocation: "",
       imageLocation: "",
       clearCacheAutomatically: true,
       cacheSizeLimit: 2,
-      backupFrequency: "weekly"
+      backupFrequency: "weekly",
     },
     privacy: {
       shareUsageData: true,
       errorReporting: true,
       rememberLogin: true,
       encryptLocalData: true,
-      dataRetentionPeriod: 90
+      dataRetentionPeriod: 90,
     },
     language: {
       appLanguage: "en",
       dateFormat: "mdy",
       timeFormat: "12h",
       temperatureUnit: "celsius",
-      distanceUnit: "metric"
+      distanceUnit: "metric",
     },
     advanced: {
       debugMode: false,
       logLevel: "error",
       experimentalFeatures: false,
-      apiEndpoints: {}
-    }
-  }
+      apiEndpoints: {},
+    },
+  };
 }

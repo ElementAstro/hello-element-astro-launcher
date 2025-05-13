@@ -36,6 +36,7 @@ import type {
   ChangeHandler,
 } from "./types";
 import { useCallback, useMemo } from "react";
+import { useTranslations } from "@/components/i18n";
 
 interface FilterControlsProps {
   currentTab: Category;
@@ -66,21 +67,33 @@ export function FilterControls({
   activeFiltersCount = 0,
   isLoading = false,
 }: FilterControlsProps) {
+  const { t } = useTranslations();
+
   // 生成排序选项显示文本
   const getSortOptionLabel = useCallback(
     (field: SortField, direction: SortDirection) => {
       switch (field) {
         case "name":
-          return direction === "asc" ? "名称 (A-Z)" : "名称 (Z-A)";
+          return direction === "asc"
+            ? t("launcher.filter.sortNameAsc", { defaultValue: "名称 (A-Z)" })
+            : t("launcher.filter.sortNameDesc", { defaultValue: "名称 (Z-A)" });
         case "downloads":
-          return direction === "desc" ? "下载量 (高到低)" : "下载量 (低到高)";
+          return direction === "desc"
+            ? t("launcher.filter.sortDownloadsDesc", {
+                defaultValue: "下载量 (高到低)",
+              })
+            : t("launcher.filter.sortDownloadsAsc", {
+                defaultValue: "下载量 (低到高)",
+              });
         case "lastUpdated":
-          return direction === "desc" ? "最近更新" : "最早更新";
+          return direction === "desc"
+            ? t("launcher.filter.sortUpdatedDesc", { defaultValue: "最近更新" })
+            : t("launcher.filter.sortUpdatedAsc", { defaultValue: "最早更新" });
         default:
-          return "默认排序";
+          return t("launcher.filter.sortDefault", { defaultValue: "默认排序" });
       }
     },
-    []
+    [t]
   );
 
   // 当前排序选项的标签
@@ -92,10 +105,14 @@ export function FilterControls({
   // 为了可访问性获取激活的过滤器信息
   const getActiveFiltersInfo = useCallback(() => {
     const filters = [];
-    if (filterFeatured) filters.push("精选");
-    if (filterInstalled) filters.push("已安装");
-    return filters.length ? filters.join("、") : "无过滤器";
-  }, [filterFeatured, filterInstalled]);
+    if (filterFeatured)
+      filters.push(t("launcher.filter.featured", { defaultValue: "精选" }));
+    if (filterInstalled)
+      filters.push(t("launcher.filter.installed", { defaultValue: "已安装" }));
+    return filters.length
+      ? filters.join(t("launcher.filter.separator", { defaultValue: "、" }))
+      : t("launcher.filter.noFilters", { defaultValue: "无过滤器" });
+  }, [filterFeatured, filterInstalled, t]);
 
   return (
     <motion.div
@@ -118,12 +135,19 @@ export function FilterControls({
                   isLoading && "opacity-70 cursor-not-allowed"
                 )}
               >
-                <SelectValue placeholder="选择分类" />
+                <SelectValue
+                  placeholder={t("launcher.filter.selectCategory", {
+                    defaultValue: "选择分类",
+                  })}
+                />
                 {activeFiltersCount > 0 && (
                   <Badge
                     variant="secondary"
                     className="ml-1.5 h-4 px-1.5 text-xs"
-                    aria-label={`${activeFiltersCount} 个激活的过滤器: ${getActiveFiltersInfo()}`}
+                    aria-label={`${activeFiltersCount} ${t(
+                      "launcher.filter.activeFilters",
+                      { defaultValue: "个激活的过滤器" }
+                    )}: ${getActiveFiltersInfo()}`}
                   >
                     {activeFiltersCount}
                   </Badge>
@@ -131,7 +155,9 @@ export function FilterControls({
               </SelectTrigger>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs">
-              选择软件分类
+              {t("launcher.filter.selectSoftwareCategory", {
+                defaultValue: "选择软件分类",
+              })}
             </TooltipContent>
           </Tooltip>
           <SelectContent>
@@ -140,14 +166,32 @@ export function FilterControls({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: ANIMATION_DURATION.normal }}
             >
-              <SelectItem value="all">所有分类</SelectItem>
-              <SelectItem value="deepspace">深空</SelectItem>
-              <SelectItem value="planets">行星</SelectItem>
-              <SelectItem value="guiding">引导</SelectItem>
-              <SelectItem value="analysis">分析</SelectItem>
-              <SelectItem value="drivers">驱动</SelectItem>
-              <SelectItem value="vendor">厂商</SelectItem>
-              <SelectItem value="utilities">工具</SelectItem>
+              <SelectItem value="all">
+                {t("launcher.filter.allCategories", {
+                  defaultValue: "所有分类",
+                })}
+              </SelectItem>
+              <SelectItem value="deepspace">
+                {t("launcher.filter.deepspace", { defaultValue: "深空" })}
+              </SelectItem>
+              <SelectItem value="planets">
+                {t("launcher.filter.planets", { defaultValue: "行星" })}
+              </SelectItem>
+              <SelectItem value="guiding">
+                {t("launcher.filter.guiding", { defaultValue: "引导" })}
+              </SelectItem>
+              <SelectItem value="analysis">
+                {t("launcher.filter.analysis", { defaultValue: "分析" })}
+              </SelectItem>
+              <SelectItem value="drivers">
+                {t("launcher.filter.drivers", { defaultValue: "驱动" })}
+              </SelectItem>
+              <SelectItem value="vendor">
+                {t("launcher.filter.vendor", { defaultValue: "厂商" })}
+              </SelectItem>
+              <SelectItem value="utilities">
+                {t("launcher.filter.utilities", { defaultValue: "工具" })}
+              </SelectItem>
             </motion.div>
           </SelectContent>
         </Select>
@@ -170,7 +214,9 @@ export function FilterControls({
                   checked={filterFeatured}
                   onCheckedChange={onFeaturedFilterChange}
                   disabled={isLoading}
-                  aria-label="只显示精选项目"
+                  aria-label={t("launcher.filter.featuredOnly", {
+                    defaultValue: "只显示精选项目",
+                  })}
                   className="h-3.5 w-7 data-[state=checked]:bg-primary"
                 />
                 <Label
@@ -180,12 +226,18 @@ export function FilterControls({
                     isLoading && "opacity-70 cursor-not-allowed"
                   )}
                 >
-                  精选
+                  {t("launcher.filter.featured", { defaultValue: "精选" })}
                 </Label>
               </div>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs">
-              {filterFeatured ? "显示所有软件" : "只显示精选软件"}
+              {filterFeatured
+                ? t("launcher.filter.showAllSoftware", {
+                    defaultValue: "显示所有软件",
+                  })
+                : t("launcher.filter.showFeaturedSoftware", {
+                    defaultValue: "只显示精选软件",
+                  })}
             </TooltipContent>
           </Tooltip>
         </div>
@@ -199,7 +251,9 @@ export function FilterControls({
                   checked={filterInstalled}
                   onCheckedChange={onInstalledFilterChange}
                   disabled={isLoading}
-                  aria-label="只显示已安装项目"
+                  aria-label={t("launcher.filter.installedOnly", {
+                    defaultValue: "只显示已安装项目",
+                  })}
                   className="h-3.5 w-7 data-[state=checked]:bg-primary"
                 />
                 <Label
@@ -209,12 +263,18 @@ export function FilterControls({
                     isLoading && "opacity-70 cursor-not-allowed"
                   )}
                 >
-                  已安装
+                  {t("launcher.filter.installed", { defaultValue: "已安装" })}
                 </Label>
               </div>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs">
-              {filterInstalled ? "显示所有软件" : "只显示已安装软件"}
+              {filterInstalled
+                ? t("launcher.filter.showAllSoftware", {
+                    defaultValue: "显示所有软件",
+                  })
+                : t("launcher.filter.showInstalledSoftware", {
+                    defaultValue: "只显示已安装软件",
+                  })}
             </TooltipContent>
           </Tooltip>
         </div>
@@ -237,11 +297,23 @@ export function FilterControls({
                     onViewModeChange(viewMode === "list" ? "grid" : "list")
                   }
                   title={
-                    viewMode === "list" ? "切换到网格视图" : "切换到列表视图"
+                    viewMode === "list"
+                      ? t("launcher.filter.switchToGridView", {
+                          defaultValue: "切换到网格视图",
+                        })
+                      : t("launcher.filter.switchToListView", {
+                          defaultValue: "切换到列表视图",
+                        })
                   }
                   disabled={isLoading}
                   aria-label={
-                    viewMode === "list" ? "切换到网格视图" : "切换到列表视图"
+                    viewMode === "list"
+                      ? t("launcher.filter.switchToGridView", {
+                          defaultValue: "切换到网格视图",
+                        })
+                      : t("launcher.filter.switchToListView", {
+                          defaultValue: "切换到列表视图",
+                        })
                   }
                 >
                   <AnimatePresence mode="wait" initial={false}>
@@ -271,7 +343,13 @@ export function FilterControls({
               </motion.div>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs">
-              {viewMode === "list" ? "切换到网格视图" : "切换到列表视图"}
+              {viewMode === "list"
+                ? t("launcher.filter.switchToGridView", {
+                    defaultValue: "切换到网格视图",
+                  })
+                : t("launcher.filter.switchToListView", {
+                    defaultValue: "切换到列表视图",
+                  })}
             </TooltipContent>
           </Tooltip>
 
@@ -288,7 +366,9 @@ export function FilterControls({
                         isLoading && "opacity-70 cursor-not-allowed"
                       )}
                       disabled={isLoading}
-                      aria-label={`排序方式: ${currentSortLabel}`}
+                      aria-label={`${t("launcher.filter.sortBy", {
+                        defaultValue: "排序方式",
+                      })}: ${currentSortLabel}`}
                     >
                       <ArrowUpDown className="h-3 w-3" />
                       <span className="hidden xs:inline-block max-w-[65px] sm:max-w-none truncate">
@@ -299,13 +379,15 @@ export function FilterControls({
                 </div>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs">
-                选择排序方式
+                {t("launcher.filter.selectSortMethod", {
+                  defaultValue: "选择排序方式",
+                })}
               </TooltipContent>
             </Tooltip>
 
             <DropdownMenuContent align="end" className="min-w-[150px]">
               <DropdownMenuLabel className="text-xs">
-                排序方式
+                {t("launcher.filter.sortMethod", { defaultValue: "排序方式" })}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
@@ -321,7 +403,11 @@ export function FilterControls({
                 >
                   <DropdownMenuRadioItem value="name-asc" className="text-xs">
                     <div className="flex items-center justify-between w-full">
-                      <span>名称 (A-Z)</span>
+                      <span>
+                        {t("launcher.filter.sortNameAsc", {
+                          defaultValue: "名称 (A-Z)",
+                        })}
+                      </span>
                       {currentSort.field === "name" &&
                         currentSort.direction === "asc" && (
                           <Check className="h-3 w-3 ml-2" />
@@ -330,7 +416,11 @@ export function FilterControls({
                   </DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="name-desc" className="text-xs">
                     <div className="flex items-center justify-between w-full">
-                      <span>名称 (Z-A)</span>
+                      <span>
+                        {t("launcher.filter.sortNameDesc", {
+                          defaultValue: "名称 (Z-A)",
+                        })}
+                      </span>
                       {currentSort.field === "name" &&
                         currentSort.direction === "desc" && (
                           <Check className="h-3 w-3 ml-2" />
@@ -343,7 +433,11 @@ export function FilterControls({
                     className="text-xs"
                   >
                     <div className="flex items-center justify-between w-full">
-                      <span>下载量 (高到低)</span>
+                      <span>
+                        {t("launcher.filter.sortDownloadsDesc", {
+                          defaultValue: "下载量 (高到低)",
+                        })}
+                      </span>
                       {currentSort.field === "downloads" &&
                         currentSort.direction === "desc" && (
                           <Check className="h-3 w-3 ml-2" />
@@ -355,7 +449,11 @@ export function FilterControls({
                     className="text-xs"
                   >
                     <div className="flex items-center justify-between w-full">
-                      <span>下载量 (低到高)</span>
+                      <span>
+                        {t("launcher.filter.sortDownloadsAsc", {
+                          defaultValue: "下载量 (低到高)",
+                        })}
+                      </span>
                       {currentSort.field === "downloads" &&
                         currentSort.direction === "asc" && (
                           <Check className="h-3 w-3 ml-2" />
@@ -368,7 +466,11 @@ export function FilterControls({
                     className="text-xs"
                   >
                     <div className="flex items-center justify-between w-full">
-                      <span>最近更新</span>
+                      <span>
+                        {t("launcher.filter.sortUpdatedDesc", {
+                          defaultValue: "最近更新",
+                        })}
+                      </span>
                       {currentSort.field === "lastUpdated" &&
                         currentSort.direction === "desc" && (
                           <Check className="h-3 w-3 ml-2" />
@@ -380,7 +482,11 @@ export function FilterControls({
                     className="text-xs"
                   >
                     <div className="flex items-center justify-between w-full">
-                      <span>最早更新</span>
+                      <span>
+                        {t("launcher.filter.sortUpdatedAsc", {
+                          defaultValue: "最早更新",
+                        })}
+                      </span>
                       {currentSort.field === "lastUpdated" &&
                         currentSort.direction === "asc" && (
                           <Check className="h-3 w-3 ml-2" />

@@ -14,6 +14,8 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { connectionApi } from "./connection-api";
+import { useTranslations } from "@/components/i18n/client";
+import { translationKeys } from "./translations";
 
 interface ConnectionStatusCardProps {
   connectionStatus?: ConnectionStatus;
@@ -29,6 +31,8 @@ export function ConnectionStatusCard({
   );
   const [refreshing, setRefreshing] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const { t } = useTranslations();
+  const { connectionStatus: csKeys } = translationKeys;
   // 移除未使用的 error 状态
   // const [error, setError] = useState<string | null>(null);
 
@@ -38,7 +42,6 @@ export function ConnectionStatusCard({
       setStatus(connectionStatus);
     }
   }, [connectionStatus]);
-
   // 刷新连接状态
   const handleRefresh = async () => {
     if (refreshing) return;
@@ -49,15 +52,14 @@ export function ConnectionStatusCard({
       const statuses = await connectionApi.getConnectionStatus();
       // Use the first status if available
       setStatus(statuses[0]);
-      toast.success("连接状态已更新");
+      toast.success(t(csKeys.connectionSuccess));
     } catch (err) {
       console.error("获取连接状态失败:", err);
-      toast.error("更新连接状态失败");
+      toast.error(t(csKeys.refreshError));
     } finally {
       setRefreshing(false);
     }
   };
-
   // 连接/断开网络
   const handleToggleConnection = async () => {
     if (connecting || !status) return;
@@ -75,19 +77,24 @@ export function ConnectionStatusCard({
       }
 
       toast.success(
-        status.status === "connected" ? "已断开服务" : "已连接到服务"
+        status.status === "connected" 
+          ? t(csKeys.disconnectionSuccess) 
+          : t(csKeys.connectionSuccess)
       );
     } catch (err) {
       console.error(
         `${status.status === "connected" ? "断开" : "连接"}服务失败:`,
         err
       );
-      toast.error(`${status.status === "connected" ? "断开" : "连接"}服务失败`);
+      toast.error(
+        status.status === "connected" 
+          ? t(csKeys.disconnectionError) 
+          : t(csKeys.connectionError)
+      );
     } finally {
       setConnecting(false);
     }
   };
-
   // 重置连接
   const handleResetConnection = async () => {
     if (connecting || !status) return;
@@ -97,20 +104,19 @@ export function ConnectionStatusCard({
     try {
       const newStatus = await connectionApi.reconnectService(status.name);
       setStatus(newStatus);
-      toast.success("服务已重置");
+      toast.success(t(csKeys.connectionSuccess));
     } catch (err) {
       console.error("重置服务失败:", err);
-      toast.error("重置服务失败");
+      toast.error(t(csKeys.connectionError));
     } finally {
       setConnecting(false);
     }
   };
-
   // 获取状态文本
   const getStatusText = (status?: ConnectionStatus): string => {
-    if (!status) return "无连接信息";
-    if (status.status === "connected") return "已连接";
-    return "未连接";
+    if (!status) return t(csKeys.disconnected);
+    if (status.status === "connected") return t(csKeys.connected);
+    return t(csKeys.disconnected);
   };
 
   // 获取状态颜色类
@@ -119,7 +125,6 @@ export function ConnectionStatusCard({
     if (status.status === "connected") return "text-green-500";
     return "text-red-500";
   };
-
   // 渲染加载状态
   if (isLoading) {
     return (
@@ -129,11 +134,11 @@ export function ConnectionStatusCard({
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center">
                 <Wifi className="h-5 w-5 mr-2" />
-                服务连接状态
+                {t(csKeys.title)}
               </div>
               <div className="h-9 w-9 bg-muted/40 rounded animate-pulse" />
             </CardTitle>
-            <CardDescription>显示当前系统服务连接状态</CardDescription>
+            <CardDescription>{t(csKeys.description)}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -173,7 +178,6 @@ export function ConnectionStatusCard({
       </motion.div>
     );
   }
-
   return (
     <motion.div variants={fadeIn} className="w-full">
       <Card>
@@ -181,7 +185,7 @@ export function ConnectionStatusCard({
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center">
               <Wifi className="h-5 w-5 mr-2" />
-              服务连接状态
+              {t(csKeys.title)}
             </div>
             <Button
               variant="ghost"
@@ -193,17 +197,16 @@ export function ConnectionStatusCard({
               <RefreshCw
                 className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
               />
-              <span className="sr-only">刷新</span>
+              <span className="sr-only">{t(csKeys.refresh)}</span>
             </Button>
           </CardTitle>
-          <CardDescription>显示当前系统服务连接状态</CardDescription>
-        </CardHeader>
-        <CardContent>
+          <CardDescription>{t(csKeys.description)}</CardDescription>
+        </CardHeader>        <CardContent>
           {status ? (
             <>
               <div className="space-y-4">
                 <div className="space-y-1">
-                  <span className="text-sm font-medium">状态</span>
+                  <span className="text-sm font-medium">{t(csKeys.status)}</span>
                   <div className="flex items-center space-x-2 rounded-md border p-2">
                     <div
                       className={`h-2 w-2 rounded-full ${
@@ -218,24 +221,22 @@ export function ConnectionStatusCard({
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-sm font-medium">网络详情</span>
-                  <div className="rounded-md border p-2">
+                  <span className="text-sm font-medium">{t(csKeys.latency)}</span>                  <div className="rounded-md border p-2">
                     <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div className="text-muted-foreground">服务名称</div>
-                      <div>{status.name || "未知"}</div>
-                      <div className="text-muted-foreground">状态</div>
-                      <div>{status.status}</div>
-                      <div className="text-muted-foreground">描述</div>
-                      <div>{status.description || "无描述"}</div>
+                      <div className="text-muted-foreground">{t(csKeys.latency)}</div>
+                      <div>{status.name || t(csKeys.disconnected)}</div>
+                      <div className="text-muted-foreground">{t(csKeys.status)}</div>
+                      <div>{status.status === "connected" ? t(csKeys.connected) : t(csKeys.disconnected)}</div>
+                      <div className="text-muted-foreground">{t(csKeys.uptime)}</div>
+                      <div>{status.description || "-"}</div>
                     </div>
                   </div>
                 </div>
               </div>
-            </>
-          ) : (
+            </>          ) : (
             <div className="py-8 text-center">
               <WifiOff className="h-12 w-12 mx-auto text-muted-foreground/60" />
-              <p className="mt-4 text-muted-foreground">无可用连接信息</p>
+              <p className="mt-4 text-muted-foreground">{t(csKeys.emptyState)}</p>
               <Button
                 variant="outline"
                 size="sm"
@@ -246,19 +247,18 @@ export function ConnectionStatusCard({
                 {refreshing ? (
                   <>
                     <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    加载中...
+                    {t(csKeys.connecting)}...
                   </>
                 ) : (
                   <>
                     <RefreshCw className="h-4 w-4 mr-2" />
-                    加载连接状态
+                    {t(csKeys.refresh)}
                   </>
                 )}
               </Button>
             </div>
           )}
-        </CardContent>
-        {status && (
+        </CardContent>        {status && (
           <CardFooter className="flex justify-between">
             <Button
               variant="outline"
@@ -270,7 +270,7 @@ export function ConnectionStatusCard({
               ) : (
                 <RefreshCw className="h-4 w-4 mr-2" />
               )}
-              重置服务
+              {t(csKeys.refresh)}
             </Button>
             <Button
               variant={
@@ -286,7 +286,7 @@ export function ConnectionStatusCard({
               ) : (
                 <Wifi className="h-4 w-4 mr-2" />
               )}
-              {status.status === "connected" ? "断开服务" : "连接服务"}
+              {status.status === "connected" ? t(csKeys.disconnect) : t(csKeys.connect)}
             </Button>
           </CardFooter>
         )}

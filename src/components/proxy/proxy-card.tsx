@@ -23,6 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useTranslations } from "@/components/i18n";
 import type { Proxy } from "@/types/proxy";
 
 interface ProxyCardProps {
@@ -42,6 +43,7 @@ export function ProxyCard({
   onDeleteProxy,
   onViewLogs,
 }: ProxyCardProps) {
+  const { t } = useTranslations();
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -62,15 +64,21 @@ export function ProxyCard({
         <CardContent>
           <div className="grid gap-2">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">类型:</span>
+              <span className="text-muted-foreground">
+                {t("proxy.card.type")}:
+              </span>
               <span className="font-medium">{proxy.type.toUpperCase()}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">地址:</span>
+              <span className="text-muted-foreground">
+                {t("proxy.card.address")}:
+              </span>
               <span className="font-medium">{proxy.address}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">延迟:</span>
+              <span className="text-muted-foreground">
+                {t("proxy.card.latency")}:
+              </span>
               <span className="font-medium">{proxy.latency} ms</span>
             </div>
           </div>
@@ -87,7 +95,9 @@ export function ProxyCard({
                   <BarChart className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>查看日志</TooltipContent>
+              <TooltipContent>
+                {t("proxy.card.tooltips.viewLogs")}
+              </TooltipContent>
             </Tooltip>
           </TooltipProvider>
 
@@ -104,7 +114,9 @@ export function ProxyCard({
                       <PlayCircle className="h-4 w-4 text-green-600" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>启动</TooltipContent>
+                  <TooltipContent>
+                    {t("proxy.card.tooltips.start")}
+                  </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             ) : (
@@ -119,7 +131,9 @@ export function ProxyCard({
                       <StopCircle className="h-4 w-4 text-amber-600" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>停止</TooltipContent>
+                  <TooltipContent>
+                    {t("proxy.card.tooltips.stop")}
+                  </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             )}
@@ -135,7 +149,7 @@ export function ProxyCard({
                     <Pen className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>编辑</TooltipContent>
+                <TooltipContent>{t("proxy.card.tooltips.edit")}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
 
@@ -150,7 +164,9 @@ export function ProxyCard({
                     <Trash2 className="h-4 w-4 text-red-600" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>删除</TooltipContent>
+                <TooltipContent>
+                  {t("proxy.card.tooltips.delete")}
+                </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>

@@ -1,6 +1,7 @@
 import { PlusCircle } from "lucide-react";
 import { ProxyCard } from "./proxy-card";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "@/components/i18n";
 import type { Proxy } from "@/types/proxy";
 
 interface ProxyListProps {
@@ -26,6 +27,8 @@ export function ProxyList({
   onViewLogs,
   onCreateProxy,
 }: ProxyListProps) {
+  const { t } = useTranslations();
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -45,19 +48,21 @@ export function ProxyList({
         <div className="text-muted-foreground mb-4">
           {searchQuery ? (
             <>
-              <h3 className="text-lg font-medium">未找到匹配的代理</h3>
+              <h3 className="text-lg font-medium">
+                {t("proxy.list.emptyFiltered")}
+              </h3>
               <p>尝试使用不同的搜索词或过滤条件</p>
             </>
           ) : (
             <>
-              <h3 className="text-lg font-medium">没有配置代理服务器</h3>
+              <h3 className="text-lg font-medium">{t("proxy.list.empty")}</h3>
               <p>添加您的第一个代理服务器以开始使用</p>
             </>
           )}
         </div>
         <Button onClick={onCreateProxy} className="mt-2">
           <PlusCircle className="h-4 w-4 mr-2" />
-          添加代理
+          {t("proxy.list.addNew")}
         </Button>
       </div>
     );

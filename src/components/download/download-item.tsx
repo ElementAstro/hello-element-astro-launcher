@@ -44,6 +44,7 @@ import {
   formatSpeed,
 } from "./download-status-utils";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "@/components/i18n/client"; // 引入 i18n hook
 
 interface DownloadItemProps {
   download: DownloadItemType;
@@ -67,21 +68,22 @@ export function DownloadItem({
   const [isExiting, setIsExiting] = useState(false);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
   const progressBarRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslations(); // 使用 i18n hook
 
   // Handle error message display
-  const errorMessage = "An error occurred during download";
-
+  const errorMessage = t("download.item.error", {
+    defaultValue: "下载过程中发生错误",
+  });
   // Handle download speed formatting
   const formattedSpeed = download.speed
     ? typeof download.speed === "number"
-      ? formatSpeed(download.speed)
+      ? formatSpeed(download.speed, t)
       : download.speed
     : "";
-
   // Handle remaining time formatting
   const formattedTimeRemaining = download.estimatedTimeRemaining
     ? typeof download.estimatedTimeRemaining === "number"
-      ? formatTimeRemaining(download.estimatedTimeRemaining)
+      ? formatTimeRemaining(download.estimatedTimeRemaining, t)
       : download.estimatedTimeRemaining
     : "";
 
@@ -135,13 +137,17 @@ export function DownloadItem({
               size="sm"
               onClick={onRetry}
               className="flex items-center gap-1"
-              aria-label="Retry download"
+              aria-label={t("download.item.retryAriaLabel", {
+                defaultValue: "重试下载",
+              })}
             >
               <RefreshCw className="h-3.5 w-3.5" />
-              <span>Retry</span>
+              <span>{t("download.item.retry", { defaultValue: "重试" })}</span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Retry download</TooltipContent>
+          <TooltipContent>
+            {t("download.item.retry", { defaultValue: "重试" })}
+          </TooltipContent>
         </Tooltip>
       );
     }
@@ -155,13 +161,17 @@ export function DownloadItem({
               size="sm"
               onClick={onResume}
               className="flex items-center gap-1"
-              aria-label="Resume download"
+              aria-label={t("download.item.resumeAriaLabel", {
+                defaultValue: "继续下载",
+              })}
             >
               <Play className="h-3.5 w-3.5" />
-              <span>Resume</span>
+              <span>{t("download.item.resume", { defaultValue: "继续" })}</span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Resume download</TooltipContent>
+          <TooltipContent>
+            {t("download.item.resume", { defaultValue: "继续" })}
+          </TooltipContent>
         </Tooltip>
       );
     }
@@ -175,13 +185,17 @@ export function DownloadItem({
               size="sm"
               onClick={onPause}
               className="flex items-center gap-1"
-              aria-label="Pause download"
+              aria-label={t("download.item.pauseAriaLabel", {
+                defaultValue: "暂停下载",
+              })}
             >
               <Pause className="h-3.5 w-3.5" />
-              <span>Pause</span>
+              <span>{t("download.item.pause", { defaultValue: "暂停" })}</span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Pause download</TooltipContent>
+          <TooltipContent>
+            {t("download.item.pause", { defaultValue: "暂停" })}
+          </TooltipContent>
         </Tooltip>
       );
     }
@@ -243,6 +257,7 @@ export function DownloadItem({
                         animate="animate"
                         variants={iconVariants}
                       >
+                        {" "}
                         <Badge
                           variant="outline"
                           className={cn(
@@ -251,7 +266,7 @@ export function DownloadItem({
                           )}
                         >
                           {getStatusIcon(download.status)}
-                          {getStatusText(download.status)}
+                          {getStatusText(download.status, t)}
                         </Badge>
                       </motion.div>
 
@@ -262,12 +277,18 @@ export function DownloadItem({
                               variant="ghost"
                               size="icon"
                               onClick={onCancel}
-                              aria-label="Cancel download"
+                              aria-label={t("download.item.cancelAriaLabel", {
+                                defaultValue: "取消下载",
+                              })}
                             >
                               <X className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Cancel download</TooltipContent>
+                          <TooltipContent>
+                            {t("download.item.cancel", {
+                              defaultValue: "取消",
+                            })}
+                          </TooltipContent>
                         </Tooltip>
                       )}
 
@@ -278,12 +299,18 @@ export function DownloadItem({
                               variant="ghost"
                               size="icon"
                               onClick={() => setShowRemoveDialog(true)}
-                              aria-label="Remove from list"
+                              aria-label={t("download.item.removeAriaLabel", {
+                                defaultValue: "从列表中移除",
+                              })}
                             >
                               <Trash2 className="h-4 w-4 text-muted-foreground" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Remove from list</TooltipContent>
+                          <TooltipContent>
+                            {t("download.item.remove", {
+                              defaultValue: "删除",
+                            })}
+                          </TooltipContent>
                         </Tooltip>
                       )}
                     </div>
@@ -292,14 +319,22 @@ export function DownloadItem({
                   {isActiveDownload && (
                     <div className="mt-2 space-y-1">
                       <div className="flex justify-between text-xs">
+                        {" "}
                         <span>
                           {download.progress !== undefined
                             ? `${download.progress.toFixed(0)}%`
-                            : "Waiting"}
+                            : t("download.item.waiting", {
+                                defaultValue: "等待中",
+                              })}
                         </span>
                         {download.status === "downloading" &&
                           formattedTimeRemaining && (
-                            <span>{formattedTimeRemaining} remaining</span>
+                            <span>
+                              {formattedTimeRemaining}{" "}
+                              {t("download.item.timeRemaining", {
+                                defaultValue: "剩余",
+                              })}
+                            </span>
                           )}
                       </div>
                       <div
@@ -339,7 +374,11 @@ export function DownloadItem({
                                   <Info className="h-4 w-4" />
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>Show details</TooltipContent>
+                              <TooltipContent>
+                                {t("download.item.details", {
+                                  defaultValue: "查看详情",
+                                })}
+                              </TooltipContent>
                             </Tooltip>
                           )}
                         </div>
@@ -374,7 +413,11 @@ export function DownloadItem({
                         className="text-xs flex items-center gap-1 h-7"
                       >
                         <Info className="h-3.5 w-3.5" />
-                        <span>Show details</span>
+                        <span>
+                          {t("download.item.details", {
+                            defaultValue: "查看详情",
+                          })}
+                        </span>
                       </Button>
                     </motion.div>
                   )}
@@ -390,17 +433,24 @@ export function DownloadItem({
           >
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Remove Download Record</AlertDialogTitle>
+                <AlertDialogTitle>
+                  {t("download.item.removeConfirmTitle", {
+                    defaultValue: "删除下载记录？",
+                  })}
+                </AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to remove &quot;{download.name}&quot;
-                  from the download list? This action will not delete the
-                  downloaded file.
+                  {t("download.item.removeConfirmDescription", {
+                    params: { downloadName: download.name },
+                    defaultValue: `您确定要删除"${download.name}"的下载记录吗？此操作不会删除已下载的文件。`,
+                  })}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel>
+                  {t("common.cancel", { defaultValue: "取消" })}
+                </AlertDialogCancel>
                 <AlertDialogAction onClick={handleRemove}>
-                  Remove
+                  {t("download.item.confirmRemove", { defaultValue: "删除" })}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

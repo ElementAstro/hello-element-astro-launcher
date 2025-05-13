@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useTranslations } from "@/components/i18n";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -56,6 +57,7 @@ export function StorageSettings({
   settings,
   onSettingChange,
 }: SettingsSectionProps) {
+  const { t } = useTranslations();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isClearingCache, setIsClearingCache] = useState(false);
@@ -146,10 +148,10 @@ export function StorageSettings({
       });
     } catch {
       // Renamed unused variable
-      setError("清除缓存时出错");
+      setError(t("settings.storage.errors.clearCacheFailed"));
       // Corrected toast.error usage: toast.error(title, options)
-      toast.error("清除失败", {
-        description: "无法清除缓存文件，请重试",
+      toast.error(t("settings.storage.toast.error.clearCache.title"), {
+        description: t("settings.storage.toast.error.clearCache.description"),
       });
     } finally {
       setIsClearingCache(false);
@@ -173,10 +175,10 @@ export function StorageSettings({
       });
     } catch {
       // Renamed unused variable
-      setError("保存设置时出错");
+      setError(t("settings.storage.errors.saveSettingsFailed"));
       // Corrected toast.error usage: toast.error(title, options)
-      toast.error("保存失败", {
-        description: "无法保存存储设置，请重试",
+      toast.error(t("settings.storage.toast.error.save.title"), {
+        description: t("settings.storage.toast.error.save.description"),
       });
     } finally {
       setIsSaving(false);
@@ -187,13 +189,18 @@ export function StorageSettings({
   const formatSize = (sizeInGB: number) => {
     return sizeInGB.toFixed(1) + " GB";
   };
-
   if (isLoading) {
-    return <LoadingIndicator message="加载存储设置..." />;
+    return <LoadingIndicator message={t("settings.storage.loading")} />;
   }
 
   if (error && !settings) {
-    return <ErrorState message={error} onRetry={() => setError(null)} />;
+    return (
+      <ErrorState
+        message={error}
+        onRetry={() => setError(null)}
+        title={t("settings.storage.errors.title")}
+      />
+    );
   }
 
   const cacheUsagePercent = (cacheUsage.used / cacheUsage.total) * 100;
@@ -208,9 +215,12 @@ export function StorageSettings({
             transition={{ duration: 0.3 }}
             className="flex justify-between"
           >
+            {" "}
             <div>
-              <CardTitle>存储设置</CardTitle>
-              <CardDescription>管理存储位置和偏好设置</CardDescription>
+              <CardTitle>{t("settings.storage.title")}</CardTitle>
+              <CardDescription>
+                {t("settings.storage.description")}
+              </CardDescription>
             </div>
             <HardDrive className="h-6 w-6 text-muted-foreground" />
           </motion.div>
@@ -225,43 +235,61 @@ export function StorageSettings({
             {/* Storage Statistics */}
             <motion.div variants={slideUp} className="mb-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+                {" "}
                 <div className="rounded-lg bg-muted/50 p-3">
-                  <h4 className="text-sm font-medium mb-2">下载统计</h4>
+                  <h4 className="text-sm font-medium mb-2">
+                    {t("settings.storage.stats.downloads.title")}
+                  </h4>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">文件数量:</span>
+                    <span className="text-muted-foreground">
+                      {t("settings.storage.stats.fileCount")}:
+                    </span>
                     <span>{storageStats.downloads.count}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">占用空间:</span>
+                    <span className="text-muted-foreground">
+                      {t("settings.storage.stats.spaceUsed")}:
+                    </span>
                     <span>{formatSize(storageStats.downloads.size)}</span>
                   </div>
-                </div>
-
+                </div>{" "}
                 <div className="rounded-lg bg-muted/50 p-3">
-                  <h4 className="text-sm font-medium mb-2">图像统计</h4>
+                  <h4 className="text-sm font-medium mb-2">
+                    {t("settings.storage.stats.images.title")}
+                  </h4>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">文件数量:</span>
+                    <span className="text-muted-foreground">
+                      {t("settings.storage.stats.fileCount")}:
+                    </span>
                     <span>{storageStats.images.count}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">占用空间:</span>
+                    <span className="text-muted-foreground">
+                      {t("settings.storage.stats.spaceUsed")}:
+                    </span>
                     <span>{formatSize(storageStats.images.size)}</span>
                   </div>
                 </div>
-              </div>
-
+              </div>{" "}
               <ProgressIndicator
                 value={cacheUsagePercent}
-                label="当前缓存使用"
+                label={t("settings.storage.cacheUsage.label")}
               />
               <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                <span>{formatSize(cacheUsage.used)} (已使用)</span>
-                <span>{formatSize(cacheUsage.total)} (总计)</span>
+                <span>
+                  {formatSize(cacheUsage.used)} (
+                  {t("settings.storage.cacheUsage.used")})
+                </span>
+                <span>
+                  {formatSize(cacheUsage.total)} (
+                  {t("settings.storage.cacheUsage.total")})
+                </span>
               </div>
-            </motion.div>
-
+            </motion.div>{" "}
             <motion.div variants={slideUp} className="space-y-2">
-              <Label htmlFor="download-location">默认下载位置</Label>
+              <Label htmlFor="download-location">
+                {t("settings.storage.downloadLocation.label")}
+              </Label>
               <div className="flex gap-2">
                 <Input
                   id="download-location"
@@ -274,7 +302,7 @@ export function StorageSettings({
                     )
                   }
                   className="flex-1"
-                  aria-label="默认下载位置"
+                  aria-label={t("settings.storage.downloadLocation.ariaLabel")}
                 />
                 <TooltipProvider>
                   <Tooltip>
@@ -287,27 +315,29 @@ export function StorageSettings({
                         <Button
                           variant="outline"
                           onClick={() => handleBrowse("downloadLocation")}
-                          aria-label="浏览下载位置"
+                          aria-label={t(
+                            "settings.storage.downloadLocation.browse.ariaLabel"
+                          )}
                         >
                           <FolderOpen className="h-4 w-4 mr-1" />
-                          浏览
+                          {t("settings.storage.browse")}
                         </Button>
                       </motion.div>
-                    </TooltipTrigger>
+                    </TooltipTrigger>{" "}
                     <TooltipContent>
-                      <p>选择下载文件的保存位置</p>
+                      <p>{t("settings.storage.downloadLocation.tooltip")}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </div>
             </motion.div>
-
             <motion.div variants={slideUp}>
               <Separator />
-            </motion.div>
-
+            </motion.div>{" "}
             <motion.div variants={slideUp} className="space-y-2">
-              <Label htmlFor="image-location">图像存储位置</Label>
+              <Label htmlFor="image-location">
+                {t("settings.storage.imageLocation.label")}
+              </Label>
               <div className="flex gap-2">
                 <Input
                   id="image-location"
@@ -316,7 +346,7 @@ export function StorageSettings({
                     onSettingChange("storage", "imageLocation", e.target.value)
                   }
                   className="flex-1"
-                  aria-label="图像存储位置"
+                  aria-label={t("settings.storage.imageLocation.ariaLabel")}
                 />
                 <TooltipProvider>
                   <Tooltip>
@@ -329,33 +359,36 @@ export function StorageSettings({
                         <Button
                           variant="outline"
                           onClick={() => handleBrowse("imageLocation")}
-                          aria-label="浏览图像位置"
+                          aria-label={t(
+                            "settings.storage.imageLocation.browse.ariaLabel"
+                          )}
                         >
                           <FolderOpen className="h-4 w-4 mr-1" />
-                          浏览
+                          {t("settings.storage.browse")}
                         </Button>
                       </motion.div>
-                    </TooltipTrigger>
+                    </TooltipTrigger>{" "}
                     <TooltipContent>
-                      <p>选择图像文件的保存位置</p>
+                      <p>{t("settings.storage.imageLocation.tooltip")}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </div>
             </motion.div>
-
             <motion.div variants={slideUp}>
               <Separator />
             </motion.div>
-
             <motion.div
               variants={slideUp}
               className="flex items-center justify-between"
             >
+              {" "}
               <div className="space-y-0.5">
-                <Label htmlFor="clear-cache-automatically">自动清理缓存</Label>
+                <Label htmlFor="clear-cache-automatically">
+                  {t("settings.storage.autoClearCache.label")}
+                </Label>
                 <p className="text-sm text-muted-foreground">
-                  定期清理临时文件和缓存
+                  {t("settings.storage.autoClearCache.description")}
                 </p>
               </div>
               <motion.div
@@ -378,18 +411,19 @@ export function StorageSettings({
                       checked
                     )
                   }
-                  aria-label="启用或禁用自动清理缓存"
+                  aria-label={t("settings.storage.autoClearCache.ariaLabel")}
                 />
               </motion.div>
             </motion.div>
-
             <motion.div variants={slideUp}>
               <Separator />
             </motion.div>
-
             <motion.div variants={slideUp} className="space-y-2">
+              {" "}
               <div className="flex justify-between">
-                <Label htmlFor="cache-size-limit">缓存大小限制</Label>
+                <Label htmlFor="cache-size-limit">
+                  {t("settings.storage.cacheSizeLimit.label")}
+                </Label>
                 <span className="text-sm text-muted-foreground">
                   {settings.storage.cacheSizeLimit} GB
                 </span>
@@ -407,7 +441,7 @@ export function StorageSettings({
                   onValueChange={(value) =>
                     onSettingChange("storage", "cacheSizeLimit", value[0])
                   }
-                  aria-label="调整缓存大小限制"
+                  aria-label={t("settings.storage.cacheSizeLimit.ariaLabel")}
                 />
               </motion.div>
               <div className="flex justify-between text-xs text-muted-foreground">
@@ -415,13 +449,14 @@ export function StorageSettings({
                 <span>5 GB</span>
               </div>
             </motion.div>
-
             <motion.div variants={slideUp}>
               <Separator />
             </motion.div>
-
             <motion.div variants={slideUp} className="space-y-2">
-              <Label htmlFor="backup-frequency">备份频率</Label>
+              {" "}
+              <Label htmlFor="backup-frequency">
+                {t("settings.storage.backupFrequency.label")}
+              </Label>
               <Select
                 value={settings.storage.backupFrequency}
                 onValueChange={(value) =>
@@ -432,14 +467,29 @@ export function StorageSettings({
                   )
                 }
               >
-                <SelectTrigger id="backup-frequency" aria-label="选择备份频率">
-                  <SelectValue placeholder="选择频率" />
-                </SelectTrigger>
+                <SelectTrigger
+                  id="backup-frequency"
+                  aria-label={t("settings.storage.backupFrequency.ariaLabel")}
+                >
+                  <SelectValue
+                    placeholder={t(
+                      "settings.storage.backupFrequency.placeholder"
+                    )}
+                  />
+                </SelectTrigger>{" "}
                 <SelectContent>
-                  <SelectItem value="daily">每日</SelectItem>
-                  <SelectItem value="weekly">每周</SelectItem>
-                  <SelectItem value="monthly">每月</SelectItem>
-                  <SelectItem value="never">从不</SelectItem>
+                  <SelectItem value="daily">
+                    {t("settings.storage.backupFrequency.options.daily")}
+                  </SelectItem>
+                  <SelectItem value="weekly">
+                    {t("settings.storage.backupFrequency.options.weekly")}
+                  </SelectItem>
+                  <SelectItem value="monthly">
+                    {t("settings.storage.backupFrequency.options.monthly")}
+                  </SelectItem>
+                  <SelectItem value="never">
+                    {t("settings.storage.backupFrequency.options.never")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </motion.div>
@@ -469,7 +519,7 @@ export function StorageSettings({
                 <Trash className="h-4 w-4 mr-2" />
               )}
               <span className={isClearingCache ? "opacity-0" : "opacity-100"}>
-                立即清除缓存
+                {t("settings.storage.clearCache.button")}
               </span>
             </Button>
           </motion.div>
@@ -498,7 +548,9 @@ export function StorageSettings({
                 <Save className="h-4 w-4 mr-2" />
               )}
               <span className={isSaving ? "opacity-0" : "opacity-100"}>
-                {showSuccess ? "已保存" : "保存更改"}
+                {showSuccess
+                  ? t("settings.storage.save.success")
+                  : t("settings.storage.save.button")}
               </span>
             </Button>
           </motion.div>

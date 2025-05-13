@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { InterpolationParams } from "@/components/i18n/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, Info } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { ToolInput, ToolInputValue } from "@/types/tool";
 import { VARIANTS, DURATION, EASE } from "./animation-constants";
+import { useTranslations } from "@/components/i18n";
 
 interface ToolInputFieldProps {
   input: ToolInput;
@@ -36,6 +38,7 @@ export function ToolInputField({
   const [localError, setLocalError] = useState<string | null>(null);
   const [touched, setTouched] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const { t } = useTranslations();
 
   // 使用 useCallback 优化验证逻辑
   const validate = useCallback((): boolean => {
@@ -44,18 +47,24 @@ export function ToolInputField({
       input.required &&
       (value === undefined || value === "" || value === null)
     ) {
-      setLocalError(`${input.description} 是必填项`);
+      setLocalError(t("tools.validation.requiredField", { name: input.description } as InterpolationParams));
       return false;
     }
 
     // 数字类型验证
     if (input.type === "number" && typeof value === "number") {
       if (input.validation?.min !== undefined && value < input.validation.min) {
-        setLocalError(`${input.description} 不能小于 ${input.validation.min}`);
+        setLocalError(t("tools.validation.minValue", {
+          name: input.description,
+          min: input.validation.min
+        } as InterpolationParams));
         return false;
       }
       if (input.validation?.max !== undefined && value > input.validation.max) {
-        setLocalError(`${input.description} 不能大于 ${input.validation.max}`);
+        setLocalError(t("tools.validation.maxValue", {
+          name: input.description,
+          max: input.validation.max
+        } as InterpolationParams));
         return false;
       }
     }
@@ -68,7 +77,7 @@ export function ToolInputField({
     ) {
       const regex = new RegExp(input.validation.pattern);
       if (!regex.test(value)) {
-        setLocalError(`${input.description} 格式不正确`);
+        setLocalError(t("tools.validation.invalidFormat", { name: input.description } as InterpolationParams));
         return false;
       }
     }
@@ -83,7 +92,7 @@ export function ToolInputField({
         const result = validatorFunc(value);
         if (result !== true) {
           setLocalError(
-            typeof result === "string" ? result : `${input.description} 无效`
+            typeof result === "string" ? result : t("tools.validation.invalid", { name: input.description } as InterpolationParams)
           );
           return false;
         }
@@ -94,7 +103,7 @@ export function ToolInputField({
 
     setLocalError(null);
     return true;
-  }, [input, value]);
+  }, [input, value, t]);
 
   // 处理表单获得焦点
   const handleFocus = () => {

@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useEffect, useState, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
+import { useTranslations } from "@/components/i18n/client";
 
 interface AgentSearchAndFilterProps {
   searchQuery: string;
@@ -50,6 +51,7 @@ export function AgentSearchAndFilter({
   onFilterChange,
   showCounts = { all: 0, running: 0, idle: 0, error: 0 },
 }: AgentSearchAndFilterProps) {
+  const { t } = useTranslations();
   const [isMounted, setIsMounted] = useState(false);
   const [hasTyped, setHasTyped] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -77,11 +79,28 @@ export function AgentSearchAndFilter({
   };
 
   const filterOptions = [
-    { id: "scheduled", label: "Scheduled" },
-    { id: "manual", label: "Manual Trigger" },
-    { id: "observation", label: "Observation Type" },
-    { id: "processing", label: "Processing Type" },
-    { id: "analysis", label: "Analysis Type" },
+    {
+      id: "scheduled",
+      label: t("agent.filter.scheduled", { defaultValue: "Scheduled" }),
+    },
+    {
+      id: "manual",
+      label: t("agent.filter.manual", { defaultValue: "Manual Trigger" }),
+    },
+    {
+      id: "observation",
+      label: t("agent.filter.observation", {
+        defaultValue: "Observation Type",
+      }),
+    },
+    {
+      id: "processing",
+      label: t("agent.filter.processing", { defaultValue: "Processing Type" }),
+    },
+    {
+      id: "analysis",
+      label: t("agent.filter.analysis", { defaultValue: "Analysis Type" }),
+    },
   ];
 
   const tabAnimation = {
@@ -109,11 +128,15 @@ export function AgentSearchAndFilter({
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             ref={inputRef}
-            placeholder="Search agents by name, description, type..."
+            placeholder={t("agent.search.placeholder", {
+              defaultValue: "Search agents by name, description, type...",
+            })}
             className={`pl-10 pr-${searchQuery ? "9" : "4"} transition-all`}
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            aria-label="Search agents"
+            aria-label={t("agent.search.ariaLabel", {
+              defaultValue: "Search agents",
+            })}
           />
           <AnimatePresence>
             {searchQuery && (
@@ -129,7 +152,9 @@ export function AgentSearchAndFilter({
                   size="icon"
                   className="h-6 w-6"
                   onClick={handleClearSearch}
-                  aria-label="Clear search"
+                  aria-label={t("agent.search.clear", {
+                    defaultValue: "Clear search",
+                  })}
                 >
                   <X className="h-3.5 w-3.5" />
                 </Button>
@@ -147,7 +172,7 @@ export function AgentSearchAndFilter({
           >
             <TabsList>
               <TabsTrigger value="all">
-                All
+                {t("agent.tabs.all", { defaultValue: "All" })}
                 {showCounts.all > 0 && (
                   <motion.span
                     initial={isMounted ? tabAnimation.initial : undefined}

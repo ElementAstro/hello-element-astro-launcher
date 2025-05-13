@@ -8,6 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useTranslations } from "@/components/i18n";
 
 interface DeleteProxyDialogProps {
   open: boolean;
@@ -22,6 +23,8 @@ export function DeleteProxyDialog({
   onConfirm,
   onCancel,
 }: DeleteProxyDialogProps) {
+  const { t } = useTranslations();
+
   const handleCancel = () => {
     onOpenChange(false);
     onCancel();
@@ -35,18 +38,20 @@ export function DeleteProxyDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>确认删除代理</AlertDialogTitle>
+          <AlertDialogTitle>{t("proxy.deleteDialog.title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            此操作不可撤销。这将永久删除您的代理服务器配置及所有相关设置。
+            {t("proxy.deleteDialog.description")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleCancel}>取消</AlertDialogCancel>
+          <AlertDialogCancel onClick={handleCancel}>
+            {t("proxy.deleteDialog.cancel")}
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            删除
+            {t("proxy.deleteDialog.confirm")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

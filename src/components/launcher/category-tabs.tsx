@@ -7,6 +7,7 @@ import { CATEGORIES } from "./constants";
 import { useRef, useEffect, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import * as launcherApi from "./launcher-api";
+import { useTranslations } from "@/components/i18n";
 
 interface CategoryTabsProps {
   currentTab: Category;
@@ -21,10 +22,14 @@ export function CategoryTabs({
 }: CategoryTabsProps) {
   const tabsRef = useRef<HTMLDivElement>(null);
   const activeTabRef = useRef<HTMLButtonElement>(null);
+  const { t } = useTranslations();
   const [categories, setCategories] = useState<
     Array<{ value: Category; label: string }>
   >([
-    { value: "all", label: "全部" }, // "全部" 分类总是会有
+    {
+      value: "all",
+      label: t("launcher.categories.all", { defaultValue: "全部" }),
+    }, // "全部" 分类总是会有
   ]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
 
@@ -47,21 +52,53 @@ export function CategoryTabs({
 
         // 确保"全部"分类总在第一位
         setCategories([
-          { value: "all", label: "全部" },
+          {
+            value: "all",
+            label: t("launcher.categories.all", { defaultValue: "全部" }),
+          },
           ...processedCategories,
         ]);
       } catch (error) {
-        console.error("获取软件分类失败:", error);
+        console.error(
+          t("launcher.categories.fetchError", {
+            defaultValue: "获取软件分类失败:",
+          }),
+          error
+        );
         // 如果API调用失败，退回到默认分类
         setCategories([
-          { value: "all", label: "全部" },
-          { value: "deepspace", label: "深空" },
-          { value: "planets", label: "行星" },
-          { value: "guiding", label: "引导" },
-          { value: "analysis", label: "分析" },
-          { value: "drivers", label: "驱动" },
-          { value: "vendor", label: "厂商" },
-          { value: "utilities", label: "工具" },
+          {
+            value: "all",
+            label: t("launcher.categories.all", { defaultValue: "全部" }),
+          },
+          {
+            value: "deepspace",
+            label: t("launcher.categories.deepspace", { defaultValue: "深空" }),
+          },
+          {
+            value: "planets",
+            label: t("launcher.categories.planets", { defaultValue: "行星" }),
+          },
+          {
+            value: "guiding",
+            label: t("launcher.categories.guiding", { defaultValue: "引导" }),
+          },
+          {
+            value: "analysis",
+            label: t("launcher.categories.analysis", { defaultValue: "分析" }),
+          },
+          {
+            value: "drivers",
+            label: t("launcher.categories.drivers", { defaultValue: "驱动" }),
+          },
+          {
+            value: "vendor",
+            label: t("launcher.categories.vendor", { defaultValue: "厂商" }),
+          },
+          {
+            value: "utilities",
+            label: t("launcher.categories.utilities", { defaultValue: "工具" }),
+          },
         ]);
       } finally {
         setIsLoadingCategories(false);
@@ -69,7 +106,7 @@ export function CategoryTabs({
     };
 
     fetchCategories();
-  }, []); // 只在组件挂载时获取一次分类
+  }, [t]); // 当t(翻译函数)改变时重新获取分类
 
   const handleTabChange = useCallback(
     (value: string) => {

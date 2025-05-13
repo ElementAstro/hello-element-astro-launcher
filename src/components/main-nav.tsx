@@ -8,7 +8,6 @@ import {
   Download,
   Layers,
   Box,
-  Cpu,
   PenToolIcon as Tool,
   Settings,
   Power,
@@ -66,7 +65,7 @@ export function MainNav() {
       animate={{ width: isExpanded ? "14rem" : "4rem" }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
     >
-      <div className="flex justify-end w-full p-2">
+      <div className="flex justify-center w-full p-2">
         <Button
           variant="ghost"
           size="sm"
@@ -151,24 +150,6 @@ export function MainNav() {
           </TooltipTrigger>
           <TooltipContent side="right" className={isExpanded ? "hidden" : ""}>
             Environment
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Link href="/blocks" className="w-full">
-              <NavItem
-                icon={<Cpu className="h-5 w-5" />}
-                label="Blocks"
-                active={pathname === "/blocks"}
-                showText={isExpanded}
-              />
-            </Link>
-          </TooltipTrigger>
-          <TooltipContent side="right" className={isExpanded ? "hidden" : ""}>
-            Blocks
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -320,7 +301,7 @@ function NavItem({
       className={cn(
         "flex items-center w-full p-2 text-xs text-muted-foreground hover:text-foreground cursor-pointer",
         active && "text-primary",
-        showText ? "justify-start px-4" : "flex-col justify-center"
+        showText ? "justify-start px-4" : "justify-center"
       )}
     >
       <motion.div
@@ -330,28 +311,17 @@ function NavItem({
       >
         {icon}
       </motion.div>
-      <AnimatePresence>
-        {showText ? (
-          <motion.span
-            className="ml-3 text-sm font-medium"
-            initial={{ opacity: 0, width: 0 }}
-            animate={{ opacity: 1, width: "auto" }}
-            exit={{ opacity: 0, width: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            {label}
-          </motion.span>
-        ) : (
-          <motion.span
-            className="mt-1"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            {label}
-          </motion.span>
-        )}
-      </AnimatePresence>
+      {showText && (
+        <motion.span
+          className="ml-3 text-sm font-medium overflow-hidden"
+          initial={{ opacity: 0, width: 0 }}
+          animate={{ opacity: 1, width: "auto" }}
+          exit={{ opacity: 0, width: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          {label}
+        </motion.span>
+      )}
     </div>
   );
 }

@@ -45,11 +45,13 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import { useTranslations } from "@/components/i18n";
 
 export function PrivacySettings({
   settings,
   onSettingChange,
 }: SettingsSectionProps) {
+  const { t } = useTranslations();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [privacyPolicyOpen, setPrivacyPolicyOpen] = useState(false);
@@ -88,15 +90,17 @@ export function PrivacySettings({
 
       // Apply setting change
       // Removed 'as any' assertion
-      onSettingChange("privacy", setting, value);
-
-      // Show feedback toast for important settings
+      onSettingChange("privacy", setting, value); // Show feedback toast for important settings
       if (setting === "encryptLocalData") {
-        const toastTitle = value ? "已启用数据加密" : "已禁用数据加密";
+        const toastTitle = value
+          ? t("settings.privacy.notifications.encryption.enabled.title")
+          : t("settings.privacy.notifications.encryption.disabled.title");
         const toastOptions = {
           description: value
-            ? "您的本地数据现在将被加密存储。"
-            : "您的本地数据将不再加密。这可能会降低安全性。",
+            ? t("settings.privacy.notifications.encryption.enabled.description")
+            : t(
+                "settings.privacy.notifications.encryption.disabled.description"
+              ),
         };
         if (value) {
           toast(toastTitle, toastOptions);
@@ -107,10 +111,17 @@ export function PrivacySettings({
         }
       }
     } catch {
-      setError(`更改${setting}设置时出错`);
+      setError(
+        t("settings.privacy.errors.settingChangeFailed", {
+          params: { setting: String(setting) },
+        })
+      );
       // Use toast.error for errors
-      toast.error("设置更新失败", {
-        description: `无法更改${setting}设置，请重试。`,
+      toast.error(t("settings.privacy.notifications.updateFailed.title"), {
+        description: t(
+          "settings.privacy.notifications.updateFailed.description",
+          { params: { setting: String(setting) } }
+        ),
       });
     }
   };
@@ -136,15 +147,23 @@ export function PrivacySettings({
       setTimeout(() => {
         setSensitiveChange(null);
         // Use toast(title, options) format
-        toast("隐私设置已更新", {
-          description: "您的隐私偏好已成功保存。",
+        toast(t("settings.privacy.notifications.settingsUpdated.title"), {
+          description: t(
+            "settings.privacy.notifications.settingsUpdated.description"
+          ),
         });
       }, 1500);
     } catch {
-      setError(`更改${sensitiveChange.setting}设置时出错`);
+      setError(
+        t("settings.privacy.errors.sensitiveChangeFailed", {
+          params: { setting: String(sensitiveChange.setting) },
+        })
+      );
       // Use toast.error for errors
-      toast.error("设置更新失败", {
-        description: `无法应用隐私设置更改，请重试。`,
+      toast.error(t("settings.privacy.notifications.changeFailed.title"), {
+        description: t(
+          "settings.privacy.notifications.changeFailed.description"
+        ),
       });
       setSensitiveChange(null);
     }
@@ -154,22 +173,26 @@ export function PrivacySettings({
   const handleOpenPrivacyPolicy = () => {
     setPrivacyPolicyOpen(true);
   };
-
   if (isLoading) {
-    return <LoadingIndicator message="加载隐私设置..." />;
+    return <LoadingIndicator message={t("settings.privacy.loading")} />;
   }
 
   // Ensure settings is checked before accessing its properties
   if (error && !settings) {
     // Assuming ErrorState component accepts a title prop
-    return <ErrorState title="加载错误" message={error} onRetry={() => setError(null)} />;
+    return (
+      <ErrorState
+        title={t("settings.privacy.errors.loadErrorTitle")}
+        message={error}
+        onRetry={() => setError(null)}
+      />
+    );
   }
 
   // Ensure settings is available before rendering content
   if (!settings) {
-     return <LoadingIndicator message="加载隐私设置..." />; // Or some other placeholder
+    return <LoadingIndicator message={t("settings.privacy.loading")} />; // Or some other placeholder
   }
-
 
   return (
     <>
@@ -182,9 +205,12 @@ export function PrivacySettings({
               transition={{ duration: 0.3 }}
               className="flex justify-between items-start"
             >
+              {" "}
               <div>
-                <CardTitle>隐私设置</CardTitle>
-                <CardDescription>管理您的隐私和安全偏好</CardDescription>
+                <CardTitle>{t("settings.privacy.title")}</CardTitle>
+                <CardDescription>
+                  {t("settings.privacy.description")}
+                </CardDescription>
               </div>
               <Shield className="h-6 w-6 text-muted-foreground" />
             </motion.div>

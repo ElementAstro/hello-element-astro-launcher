@@ -25,6 +25,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
 import type { ToolOutput } from "@/types/tool";
+import { useTranslations } from "@/components/i18n";
 
 // 验证表单数据
 const outputSchema = z.object({
@@ -48,6 +49,8 @@ interface OutputEditorProps {
 }
 
 export function OutputEditor({ output, onChange }: OutputEditorProps) {
+  const { t } = useTranslations();
+  
   const form = useForm<OutputFormValues>({
     resolver: zodResolver(outputSchema),
     defaultValues: {
@@ -79,26 +82,25 @@ export function OutputEditor({ output, onChange }: OutputEditorProps) {
       );
     }
   });
-
   // 获取输出类型的说明
   const getOutputTypeDescription = (type: string) => {
     switch (type) {
       case "text":
-        return "文本输出，如计算结果、状态信息等";
+        return t("editors.textOutputDesc");
       case "number":
-        return "数值输出，如计算结果、测量值等";
+        return t("editors.numberOutputDesc");
       case "date":
-        return "日期输出，如计算得到的日期时间";
+        return t("editors.dateOutputDesc");
       case "image":
-        return "图像输出，如图表、天体图像等";
+        return t("editors.imageOutputDesc");
       case "file":
-        return "文件输出，如生成的报告或数据文件";
+        return t("editors.fileOutputDesc");
       case "chart":
-        return "图表输出，如折线图、柱状图等";
+        return t("editors.chartOutputDesc");
       case "table":
-        return "表格数据输出，如数据列表、结果集等";
+        return t("editors.tableOutputDesc");
       default:
-        return "输出结果的数据类型";
+        return t("editors.defaultOutputDesc");
     }
   };
 
@@ -110,14 +112,13 @@ export function OutputEditor({ output, onChange }: OutputEditorProps) {
           <FormField
             control={form.control}
             name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>输出名称 *</FormLabel>
+            render={({ field }) => (              <FormItem>
+                <FormLabel>{t("editors.outputName")} *</FormLabel>
                 <FormControl>
-                  <Input placeholder="输入名称" {...field} />
+                  <Input placeholder={t("editors.enterName")} {...field} />
                 </FormControl>
                 <FormDescription className="text-xs">
-                  用于标识此输出的唯一名称
+                  {t("editors.outputNameDescription")}
                 </FormDescription>
               </FormItem>
             )}
@@ -126,26 +127,25 @@ export function OutputEditor({ output, onChange }: OutputEditorProps) {
           <FormField
             control={form.control}
             name="type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>输出类型 *</FormLabel>
+            render={({ field }) => (              <FormItem>
+                <FormLabel>{t("editors.outputType")} *</FormLabel>
                 <Select
                   onValueChange={field.onChange}
                   defaultValue={field.value}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="选择类型" />
+                      <SelectValue placeholder={t("editors.selectType")} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="text">文本</SelectItem>
-                    <SelectItem value="number">数字</SelectItem>
-                    <SelectItem value="date">日期</SelectItem>
-                    <SelectItem value="image">图像</SelectItem>
-                    <SelectItem value="file">文件</SelectItem>
-                    <SelectItem value="chart">图表</SelectItem>
-                    <SelectItem value="table">表格</SelectItem>
+                    <SelectItem value="text">{t("editors.text")}</SelectItem>
+                    <SelectItem value="number">{t("editors.number")}</SelectItem>
+                    <SelectItem value="date">{t("editors.date")}</SelectItem>
+                    <SelectItem value="image">{t("editors.image")}</SelectItem>
+                    <SelectItem value="file">{t("editors.file")}</SelectItem>
+                    <SelectItem value="chart">{t("editors.chart")}</SelectItem>
+                    <SelectItem value="table">{t("editors.table")}</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormDescription className="text-xs">
@@ -159,14 +159,13 @@ export function OutputEditor({ output, onChange }: OutputEditorProps) {
         <FormField
           control={form.control}
           name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>描述 *</FormLabel>
+          render={({ field }) => (            <FormItem>
+              <FormLabel>{t("editors.description")} *</FormLabel>
               <FormControl>
-                <Textarea placeholder="描述此输出的内容和用途" {...field} />
+                <Textarea placeholder={t("editors.descriptionPlaceholder")} {...field} />
               </FormControl>
               <FormDescription className="text-xs">
-                帮助用户理解此输出的含义
+                {t("editors.descriptionHelpText")}
               </FormDescription>
             </FormItem>
           )}
@@ -175,14 +174,13 @@ export function OutputEditor({ output, onChange }: OutputEditorProps) {
         {/* 输出类型的高级帮助信息 */}
         {["chart", "table"].includes(form.watch("type")) && (
           <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="typeHelp">
-              <AccordionTrigger>类型说明</AccordionTrigger>
+            <AccordionItem value="typeHelp">              <AccordionTrigger>{t("editors.typeHelp")}</AccordionTrigger>
               <AccordionContent>
                 {form.watch("type") === "chart" && (
                   <div className="space-y-3 pt-2">
-                    <h4 className="text-sm font-medium">图表输出</h4>
+                    <h4 className="text-sm font-medium">{t("editors.chartOutput")}</h4>
                     <p className="text-sm text-muted-foreground">
-                      图表输出将以可视化图表的形式呈现数据，支持以下图表类型：
+                      {t("editors.chartDescription")}
                     </p>
                     <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
                       <li>

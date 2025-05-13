@@ -9,6 +9,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useTranslations } from "@/components/i18n/client";
+import { translationKeys } from "./translations";
 
 interface PageHeaderProps {
   onRefresh: () => void;
@@ -16,6 +18,8 @@ interface PageHeaderProps {
 
 export function PageHeader({ onRefresh }: PageHeaderProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { t } = useTranslations();
+  const { pageHeader } = translationKeys;
 
   const handleRefresh = async () => {
     if (isRefreshing) return;
@@ -23,9 +27,9 @@ export function PageHeader({ onRefresh }: PageHeaderProps) {
     setIsRefreshing(true);
     try {
       await onRefresh();
-      toast.success("设备已成功刷新");
+      toast.success(t(pageHeader.refreshSuccess));
     } catch (error) {
-      toast.error("刷新设备时出错");
+      toast.error(t(pageHeader.refreshError));
       console.error("Error refreshing devices:", error);
     } finally {
       // 添加短暂延迟以确保动画流畅
@@ -43,8 +47,8 @@ export function PageHeader({ onRefresh }: PageHeaderProps) {
       transition={{ duration: DURATION.quick, ease: EASE.gentle }}
     >
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Environment</h1>
-        <p className="text-muted-foreground">管理您的天文设备和系统设置</p>
+        <h1 className="text-2xl font-bold tracking-tight">{t(pageHeader.title)}</h1>
+        <p className="text-muted-foreground">{t(pageHeader.description)}</p>
       </div>
       <Tooltip>
         <TooltipTrigger asChild>
@@ -52,15 +56,14 @@ export function PageHeader({ onRefresh }: PageHeaderProps) {
             onClick={handleRefresh}
             disabled={isRefreshing}
             className="relative overflow-hidden"
-          >
-            {isRefreshing ? (
+          >            {isRefreshing ? (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="flex items-center"
               >
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                更新中...
+                {t(pageHeader.refresh)}...
               </motion.div>
             ) : (
               <motion.div
@@ -69,7 +72,7 @@ export function PageHeader({ onRefresh }: PageHeaderProps) {
                 className="flex items-center"
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
-                刷新设备
+                {t(pageHeader.refresh)}
               </motion.div>
             )}
             {isRefreshing && (
@@ -83,7 +86,7 @@ export function PageHeader({ onRefresh }: PageHeaderProps) {
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>刷新所有连接的设备和系统状态</p>
+          <p>{t(pageHeader.refreshTooltip)}</p>
         </TooltipContent>
       </Tooltip>
     </motion.div>

@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { VARIANTS, DURATION } from "./animation-constants";
+import { useTranslations } from "@/components/i18n";
 
 interface SearchAndFilterProps {
   searchQuery: string;
@@ -45,6 +46,8 @@ export function SearchAndFilter({
   const [showClearButton, setShowClearButton] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const [isMobile, setIsMobile] = useState(false);
+  // 修复重复声明的问题
+  const { t } = useTranslations();
 
   // 检测屏幕尺寸以适应移动设备
   useEffect(() => {
@@ -104,11 +107,11 @@ export function SearchAndFilter({
           />
           <Input
             ref={inputRef}
-            placeholder="搜索工具..."
+            placeholder={t("tools.searchAndFilter.searchPlaceholder")}
             className="pl-10 pr-8 w-full"
             value={searchQuery}
             onChange={handleSearchChange}
-            aria-label="搜索工具"
+            aria-label={t("tools.searchAndFilter.searchAriaLabel")}
             type="search"
           />
           <AnimatePresence>
@@ -120,7 +123,7 @@ export function SearchAndFilter({
                 transition={{ duration: DURATION.fast }}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 p-0 text-muted-foreground hover:text-foreground rounded-full flex items-center justify-center"
                 onClick={clearSearch}
-                aria-label="清除搜索"
+                aria-label={t("tools.searchAndFilter.clearSearch")}
                 type="button"
               >
                 <X className="h-3.5 w-3.5" />
@@ -141,10 +144,14 @@ export function SearchAndFilter({
                         variant="outline"
                         size={isMobile ? "default" : "icon"}
                         className="relative"
-                        aria-label="高级过滤选项"
+                        aria-label={t("tools.searchAndFilter.filters")}
                       >
                         <Filter className="h-4 w-4" />
-                        {!isMobile ? null : <span className="ml-2">过滤</span>}
+                        {!isMobile ? null : (
+                          <span className="ml-2">
+                            {t("tools.searchAndFilter.filters")}
+                          </span>
+                        )}
                         {activeFiltersCount > 0 && (
                           <Badge
                             className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-[10px]"
@@ -157,13 +164,15 @@ export function SearchAndFilter({
                     </DropdownMenuTrigger>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
-                    <p>高级过滤选项</p>
+                    <p>{t("tools.searchAndFilter.filters")}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
 
               <DropdownMenuContent className="min-w-[200px]">
-                <DropdownMenuLabel>过滤选项</DropdownMenuLabel>
+                <DropdownMenuLabel>
+                  {t("tools.searchAndFilter.filters")}
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {/* 这里可以添加过滤选项 */}
                 <DropdownMenuCheckboxItem
@@ -172,7 +181,7 @@ export function SearchAndFilter({
                     onFilterChange?.({ ...filters, onlyFavorites: checked });
                   }}
                 >
-                  只显示收藏
+                  {t("tools.searchAndFilter.favorites")}
                 </DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -190,7 +199,7 @@ export function SearchAndFilter({
                     size={isMobile ? "default" : "icon"}
                     onClick={handleRefreshClick}
                     disabled={isRefreshing}
-                    aria-label="刷新工具列表"
+                    aria-label={t("tools.searchAndFilter.refreshTools")}
                     className="active:scale-95 transition-transform"
                   >
                     {isRefreshing ? (
@@ -198,12 +207,20 @@ export function SearchAndFilter({
                     ) : (
                       <RefreshCw className="h-4 w-4" />
                     )}
-                    {!isMobile ? null : <span className="ml-2">刷新</span>}
+                    {!isMobile ? null : (
+                      <span className="ml-2">
+                        {t("tools.searchAndFilter.refresh")}
+                      </span>
+                    )}
                   </Button>
                 </motion.div>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                <p>{isRefreshing ? "正在刷新..." : "刷新工具列表"}</p>
+                <p>
+                  {isRefreshing
+                    ? t("tools.searchAndFilter.refreshingTools")
+                    : t("tools.searchAndFilter.refreshTools")}
+                </p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -224,7 +241,7 @@ export function SearchAndFilter({
               className="flex-shrink-0"
             >
               <TabsTrigger value="all" className="text-xs md:text-sm px-3">
-                全部
+                {t("tools.searchAndFilter.all")}
               </TabsTrigger>
             </motion.div>
 
@@ -238,7 +255,7 @@ export function SearchAndFilter({
                 className="flex items-center gap-1 text-xs md:text-sm px-3"
               >
                 <Star className="h-3.5 w-3.5" />
-                收藏
+                {t("tools.searchAndFilter.favorites")}
               </TabsTrigger>
             </motion.div>
 
@@ -251,7 +268,7 @@ export function SearchAndFilter({
                 value="calculation"
                 className="text-xs md:text-sm px-3"
               >
-                计算
+                {t("tools.searchAndFilter.calculation")}
               </TabsTrigger>
             </motion.div>
 
@@ -261,7 +278,7 @@ export function SearchAndFilter({
               className="flex-shrink-0"
             >
               <TabsTrigger value="planning" className="text-xs md:text-sm px-3">
-                规划
+                {t("tools.searchAndFilter.planning")}
               </TabsTrigger>
             </motion.div>
 
@@ -271,7 +288,7 @@ export function SearchAndFilter({
               className="flex-shrink-0"
             >
               <TabsTrigger value="utility" className="text-xs md:text-sm px-3">
-                工具
+                {t("tools.searchAndFilter.utility")}
               </TabsTrigger>
             </motion.div>
           </TabsList>

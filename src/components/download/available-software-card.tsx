@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cardVariants, DURATION, EASE } from "./animation-variants";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "@/components/i18n/client"; // 引入 i18n hook
 
 interface AvailableSoftwareCardProps {
   software: {
@@ -59,32 +60,33 @@ export function AvailableSoftwareCard({
   const [isDownloading, setIsDownloading] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [hovered, setHovered] = useState(false);
-  
+  const { t } = useTranslations(); // 使用 i18n hook
+
   // 处理下载操作
   const handleDownload = () => {
     if (software.installed) {
       setShowConfirmDialog(true);
       return;
     }
-    
+
     startDownload();
   };
-  
+
   // 开始下载
   const startDownload = () => {
     setIsDownloading(true);
-    
+
     // 模拟网络请求延迟
     setTimeout(() => {
       onDownload();
       setIsDownloading(false);
     }, 800);
   };
-  
+
   // 渲染星级评分
   const renderRating = () => {
     if (!software.rating) return null;
-    
+
     return (
       <div className="flex items-center gap-1 mt-1">
         {Array.from({ length: 5 }).map((_, i) => (
@@ -116,11 +118,13 @@ export function AvailableSoftwareCard({
       onHoverEnd={() => setHovered(false)}
       layout
     >
-      <Card className={cn(
-        "overflow-hidden h-full flex flex-col",
-        software.installed && "border-green-200 dark:border-green-800",
-        hovered && "shadow-lg"
-      )}>
+      <Card
+        className={cn(
+          "overflow-hidden h-full flex flex-col",
+          software.installed && "border-green-200 dark:border-green-800",
+          hovered && "shadow-lg"
+        )}
+      >
         <CardHeader className="p-4 flex flex-row items-center gap-4">
           <div className="relative">
             <Image
@@ -131,7 +135,7 @@ export function AvailableSoftwareCard({
               className="rounded"
             />
             {software.installed && (
-              <motion.div 
+              <motion.div
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 className="absolute -bottom-1 -right-1 bg-green-500 text-white rounded-full p-0.5"
@@ -147,17 +151,22 @@ export function AvailableSoftwareCard({
                 <motion.div
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  transition={{ 
+                  transition={{
                     duration: DURATION.normal,
-                    ease: EASE.bounce
+                    ease: EASE.bounce,
                   }}
                 >
-                  <Badge className="bg-blue-500 hover:bg-blue-600">新</Badge>
+                  <Badge className="bg-blue-500 hover:bg-blue-600">
+                    {t("download.software.new", { defaultValue: "新" })}
+                  </Badge>
                 </motion.div>
               )}
             </div>
             <div className="text-sm text-muted-foreground flex items-center">
-              <span>版本 {software.version}</span>
+              <span>
+                {t("download.software.version", { defaultValue: "版本" })}{" "}
+                {software.version}
+              </span>
               {software.lastUpdated && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -166,7 +175,11 @@ export function AvailableSoftwareCard({
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>最后更新时间</p>
+                    <p>
+                      {t("download.software.lastUpdated", {
+                        defaultValue: "最后更新时间",
+                      })}
+                    </p>
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -178,18 +191,18 @@ export function AvailableSoftwareCard({
           <CardDescription className="line-clamp-2 mb-2">
             {software.description}
           </CardDescription>
-          
+
           {software.tags && software.tags.length > 0 && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.1, duration: DURATION.normal }}
               className="flex flex-wrap gap-1.5 mt-2"
             >
               {software.tags.map((tag, index) => (
-                <Badge 
-                  key={index} 
-                  variant="outline" 
+                <Badge
+                  key={index}
+                  variant="outline"
                   className="text-xs py-0 h-5 px-1.5 font-normal"
                 >
                   <Tag className="h-3 w-3 mr-1" />
@@ -205,51 +218,85 @@ export function AvailableSoftwareCard({
             {onViewDetails && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  {" "}
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={onViewDetails}
-                    aria-label="查看软件详情"
+                    aria-label={t("download.software.viewDetails", {
+                      defaultValue: "查看软件详情",
+                    })}
                   >
                     <Info className="h-4 w-4" />
                   </Button>
-                </TooltipTrigger>
-                <TooltipContent>查看详情</TooltipContent>
+                </TooltipTrigger>{" "}
+                <TooltipContent>
+                  {t("download.software.viewDetails", {
+                    defaultValue: "查看详情",
+                  })}
+                </TooltipContent>
               </Tooltip>
             )}
-            <Button 
+            <Button
               onClick={handleDownload}
               disabled={isDownloading || alreadyDownloading}
-              aria-label={software.installed ? "重新下载" : "开始下载"}
+              aria-label={
+                software.installed
+                  ? t("download.software.reinstall", {
+                      defaultValue: "重新下载",
+                    })
+                  : t("download.software.startDownload", {
+                      defaultValue: "开始下载",
+                    })
+              }
             >
               {isDownloading || alreadyDownloading ? (
                 <>
+                  {" "}
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  下载中
+                  {t("download.software.downloading", {
+                    defaultValue: "下载中",
+                  })}
                 </>
               ) : (
                 <>
                   <Download className="h-4 w-4 mr-2" />
-                  {software.installed ? "重新下载" : "下载"}
+                  {software.installed
+                    ? t("download.software.reinstall", {
+                        defaultValue: "重新下载",
+                      })
+                    : t("download.software.download", { defaultValue: "下载" })}
                 </>
               )}
             </Button>
           </div>
         </CardFooter>
       </Card>
-      
       {/* 重新下载确认对话框 */}
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>重新下载软件？</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("download.software.reinstallConfirmTitle", {
+                defaultValue: "重新下载软件？",
+              })}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {software.name} 已经安装在您的系统上。您确定要重新下载吗？
+              {t("download.software.reinstallConfirmDescription", {
+                params: { softwareName: software.name },
+                defaultValue: `${software.name} 已经安装在您的系统上。您确定要重新下载吗？`,
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={startDownload}>确认下载</AlertDialogAction>
+            <AlertDialogCancel>
+              {t("common.cancel", { defaultValue: "取消" })}
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={startDownload}>
+              {t("download.software.confirmReinstall", {
+                defaultValue: "确认下载",
+              })}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

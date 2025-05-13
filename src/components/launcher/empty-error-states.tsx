@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { emptyStateVariants, errorVariants } from "./animation-constants";
+import { useTranslations } from "@/components/i18n";
 
 interface EmptyStateProps {
   title: string;
@@ -59,6 +60,8 @@ export function ErrorState({
   onRetry,
   errorDetails,
 }: ErrorStateProps) {
+  const { t } = useTranslations();
+
   return (
     <motion.div
       variants={errorVariants}
@@ -80,7 +83,7 @@ export function ErrorState({
       )}
       {onRetry && (
         <Button onClick={onRetry} variant="outline" className="mt-4">
-          重试
+          {t("launcher.states.retry", { defaultValue: "重试" })}
         </Button>
       )}
     </motion.div>
@@ -94,13 +97,22 @@ export function NoResultsFound({
 }: {
   onClearFilters: () => void;
 }) {
+  const { t } = useTranslations();
+
   return (
     <EmptyState
-      title="未找到结果"
-      description="没有匹配当前搜索或过滤条件的软件。请尝试修改您的搜索条件。"
+      title={t("launcher.states.noResultsTitle", {
+        defaultValue: "未找到结果",
+      })}
+      description={t("launcher.states.noResultsDesc", {
+        defaultValue:
+          "没有匹配当前搜索或过滤条件的软件。请尝试修改您的搜索条件。",
+      })}
       icon={<Filter className="h-12 w-12 text-muted-foreground/70" />}
       action={{
-        label: "清除所有过滤器",
+        label: t("launcher.states.clearFilters", {
+          defaultValue: "清除过滤器",
+        }),
         onClick: onClearFilters,
       }}
     />
@@ -108,13 +120,19 @@ export function NoResultsFound({
 }
 
 export function NoSoftwareAvailable({ onRefresh }: { onRefresh: () => void }) {
+  const { t } = useTranslations();
+
   return (
     <EmptyState
-      title="没有可用软件"
-      description="目前还没有任何可用的软件。请稍后再来查看或刷新列表。"
+      title={t("launcher.states.noSoftwareTitle", {
+        defaultValue: "没有可用软件",
+      })}
+      description={t("launcher.states.noSoftwareDesc", {
+        defaultValue: "目前还没有任何可用的软件。请稍后再来查看或刷新列表。",
+      })}
       icon={<Database className="h-12 w-12 text-muted-foreground/70" />}
       action={{
-        label: "刷新列表",
+        label: t("launcher.states.refreshList", { defaultValue: "刷新列表" }),
         onClick: onRefresh,
       }}
     />
@@ -122,22 +140,34 @@ export function NoSoftwareAvailable({ onRefresh }: { onRefresh: () => void }) {
 }
 
 export function LoadingState() {
+  const { t } = useTranslations();
+
   return (
     <div className="flex flex-col items-center justify-center p-8 text-center h-full min-h-[300px]">
       <Loader2 className="h-12 w-12 text-primary/70 animate-spin" />
-      <h3 className="mt-4 text-lg font-medium">正在加载...</h3>
+      <h3 className="mt-4 text-lg font-medium">
+        {t("launcher.states.loading", { defaultValue: "正在加载..." })}
+      </h3>
       <p className="mt-2 text-sm text-muted-foreground">
-        请稍候，我们正在加载软件数据
+        {t("launcher.states.loadingDesc", {
+          defaultValue: "请稍候，我们正在加载软件数据",
+        })}
       </p>
     </div>
   );
 }
 
 export function NetworkErrorState({ onRetry }: { onRetry: () => void }) {
+  const { t } = useTranslations();
+
   return (
     <ErrorState
-      title="网络错误"
-      description="连接服务器时发生错误。请检查您的网络连接并重试。"
+      title={t("launcher.states.networkErrorTitle", {
+        defaultValue: "网络错误",
+      })}
+      description={t("launcher.states.networkErrorDesc", {
+        defaultValue: "连接服务器时发生错误。请检查您的网络连接并重试。",
+      })}
       onRetry={onRetry}
     />
   );
@@ -150,10 +180,17 @@ export function ServerErrorState({
   onRetry: () => void;
   details?: string;
 }) {
+  const { t } = useTranslations();
+
   return (
     <ErrorState
-      title="服务器错误"
-      description="服务器处理您的请求时发生错误。我们已记录此问题，请稍后重试。"
+      title={t("launcher.states.serverErrorTitle", {
+        defaultValue: "服务器错误",
+      })}
+      description={t("launcher.states.serverErrorDesc", {
+        defaultValue:
+          "服务器处理您的请求时发生错误。我们已记录此问题，请稍后重试。",
+      })}
       errorDetails={details}
       onRetry={onRetry}
     />

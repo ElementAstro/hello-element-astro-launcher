@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   SettingsIcon,
   Moon,
@@ -10,14 +10,20 @@ import {
   Shield,
   Globe,
   Code,
-} from "lucide-react"
+} from "lucide-react";
+import { useTranslations } from "@/components/i18n";
 
 interface SettingsNavigationProps {
-  activeTab: string
-  onTabChange: (value: string) => void
+  activeTab: string;
+  onTabChange: (value: string) => void;
 }
 
-export function SettingsNavigation({ activeTab, onTabChange }: SettingsNavigationProps) {
+export function SettingsNavigation({
+  activeTab,
+  onTabChange,
+}: SettingsNavigationProps) {
+  const { t } = useTranslations();
+
   return (
     <TabsList className="flex flex-col h-auto w-full bg-transparent p-0 space-y-1">
       <TabsTrigger
@@ -27,7 +33,7 @@ export function SettingsNavigation({ activeTab, onTabChange }: SettingsNavigatio
         data-state={activeTab === "general" ? "active" : "inactive"}
       >
         <SettingsIcon className="h-4 w-4 mr-2" />
-        General
+        {t("settings.navigation.general")}
       </TabsTrigger>
       <TabsTrigger
         value="appearance"
@@ -36,7 +42,7 @@ export function SettingsNavigation({ activeTab, onTabChange }: SettingsNavigatio
         data-state={activeTab === "appearance" ? "active" : "inactive"}
       >
         <Moon className="h-4 w-4 mr-2" />
-        Appearance
+        {t("settings.navigation.appearance")}
       </TabsTrigger>
       <TabsTrigger
         value="account"
@@ -45,7 +51,7 @@ export function SettingsNavigation({ activeTab, onTabChange }: SettingsNavigatio
         data-state={activeTab === "account" ? "active" : "inactive"}
       >
         <User className="h-4 w-4 mr-2" />
-        Account
+        {t("settings.navigation.account")}
       </TabsTrigger>
       <TabsTrigger
         value="notifications"
@@ -54,7 +60,7 @@ export function SettingsNavigation({ activeTab, onTabChange }: SettingsNavigatio
         data-state={activeTab === "notifications" ? "active" : "inactive"}
       >
         <Bell className="h-4 w-4 mr-2" />
-        Notifications
+        {t("settings.navigation.notifications")}
       </TabsTrigger>
       <TabsTrigger
         value="storage"
@@ -63,7 +69,7 @@ export function SettingsNavigation({ activeTab, onTabChange }: SettingsNavigatio
         data-state={activeTab === "storage" ? "active" : "inactive"}
       >
         <HardDrive className="h-4 w-4 mr-2" />
-        Storage
+        {t("settings.navigation.storage")}
       </TabsTrigger>
       <TabsTrigger
         value="privacy"
@@ -72,7 +78,7 @@ export function SettingsNavigation({ activeTab, onTabChange }: SettingsNavigatio
         data-state={activeTab === "privacy" ? "active" : "inactive"}
       >
         <Shield className="h-4 w-4 mr-2" />
-        Privacy
+        {t("settings.navigation.privacy")}
       </TabsTrigger>
       <TabsTrigger
         value="language"
@@ -81,7 +87,7 @@ export function SettingsNavigation({ activeTab, onTabChange }: SettingsNavigatio
         data-state={activeTab === "language" ? "active" : "inactive"}
       >
         <Globe className="h-4 w-4 mr-2" />
-        Language
+        {t("settings.navigation.language")}
       </TabsTrigger>
       <TabsTrigger
         value="advanced"
@@ -90,8 +96,8 @@ export function SettingsNavigation({ activeTab, onTabChange }: SettingsNavigatio
         data-state={activeTab === "advanced" ? "active" : "inactive"}
       >
         <Code className="h-4 w-4 mr-2" />
-        Advanced
+        {t("settings.navigation.advanced")}
       </TabsTrigger>
     </TabsList>
-  )
+  );
 }

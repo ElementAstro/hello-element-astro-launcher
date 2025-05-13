@@ -1,5 +1,5 @@
-import { ApiService } from './api-service';
-import { Equipment } from './types';
+import { ApiService } from "./api-service";
+import { Equipment } from "./types";
 
 // 高级设置接口
 interface AdvancedSettings {
@@ -18,21 +18,27 @@ interface FirmwareUpdateResponse {
 
 // 固件更新进度接口
 interface FirmwareUpdateProgress {
-  progress: number;  // 0-100
-  status: 'pending' | 'downloading' | 'installing' | 'verifying' | 'complete' | 'error';
+  progress: number; // 0-100
+  status:
+    | "pending"
+    | "downloading"
+    | "installing"
+    | "verifying"
+    | "complete"
+    | "error";
   message?: string;
 }
 
 // 诊断结果接口
 interface DiagnosticDetails {
-  componentStatus: Record<string, 'ok' | 'warning' | 'error'>;
+  componentStatus: Record<string, "ok" | "warning" | "error">;
   readings?: Record<string, number>;
   errors?: string[];
   warnings?: string[];
 }
 
 interface DiagnosticsResult {
-  result: 'success' | 'warning' | 'error';
+  result: "success" | "warning" | "error";
   details?: DiagnosticDetails;
   message?: string;
 }
@@ -47,7 +53,7 @@ interface ConnectAllResult {
 
 // 设备API服务类
 class EquipmentApiService extends ApiService {
-  private endpoint = '/equipment';
+  private endpoint = "/equipment";
 
   // 获取所有设备
   public async getAllEquipment(): Promise<Equipment[]> {
@@ -75,9 +81,12 @@ class EquipmentApiService extends ApiService {
   }
 
   // 保存设备高级设置
-  public async saveAdvancedSettings(id: number, settings: AdvancedSettings): Promise<{ success: boolean }> {
+  public async saveAdvancedSettings(
+    id: number,
+    settings: AdvancedSettings
+  ): Promise<{ success: boolean }> {
     return this.put<{ success: boolean }, AdvancedSettings>(
-      `${this.endpoint}/${id}/settings`, 
+      `${this.endpoint}/${id}/settings`,
       settings
     );
   }
@@ -89,12 +98,18 @@ class EquipmentApiService extends ApiService {
 
   // 更新设备固件
   public async updateFirmware(id: number): Promise<FirmwareUpdateResponse> {
-    return this.post<FirmwareUpdateResponse>(`${this.endpoint}/${id}/firmware/update`);
+    return this.post<FirmwareUpdateResponse>(
+      `${this.endpoint}/${id}/firmware/update`
+    );
   }
 
   // 获取固件更新进度
-  public async getFirmwareUpdateProgress(id: number): Promise<FirmwareUpdateProgress> {
-    return this.get<FirmwareUpdateProgress>(`${this.endpoint}/${id}/firmware/progress`);
+  public async getFirmwareUpdateProgress(
+    id: number
+  ): Promise<FirmwareUpdateProgress> {
+    return this.get<FirmwareUpdateProgress>(
+      `${this.endpoint}/${id}/firmware/progress`
+    );
   }
 
   // 运行设备诊断
@@ -103,8 +118,13 @@ class EquipmentApiService extends ApiService {
   }
 
   // 添加新设备（抽象接口，具体实现需要根据不同设备类型）
-  public async addEquipment(equipmentData: Partial<Equipment>): Promise<Equipment> {
-    return this.post<Equipment, Partial<Equipment>>(this.endpoint, equipmentData);
+  public async addEquipment(
+    equipmentData: Partial<Equipment>
+  ): Promise<Equipment> {
+    return this.post<Equipment, Partial<Equipment>>(
+      this.endpoint,
+      equipmentData
+    );
   }
 
   // 删除设备
@@ -113,9 +133,9 @@ class EquipmentApiService extends ApiService {
   }
 
   // 获取支持的设备类型和驱动
-  public async getSupportedDrivers(): Promise<{ 
-    types: string[]; 
-    drivers: Record<string, string[]> 
+  public async getSupportedDrivers(): Promise<{
+    types: string[];
+    drivers: Record<string, string[]>;
   }> {
     return this.get<{ types: string[]; drivers: Record<string, string[]> }>(
       `${this.endpoint}/drivers`

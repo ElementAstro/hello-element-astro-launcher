@@ -5,3 +5,8 @@ export * from "./available-software-card";
 export * from "./import-dialog";
 export * from "./empty-states";
 export * from "./types";
+export * from "./download-filter";
+export * from "./download-stats-card";
+export * from "./software-details-dialog";
+export * from "./batch-download-dialog";
+export * from "./download-settings-dialog";

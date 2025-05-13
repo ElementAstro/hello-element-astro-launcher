@@ -23,6 +23,7 @@ import type { Software, ActionHandler } from "./types";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import * as launcherApi from "./launcher-api";
+import { useTranslations } from "@/components/i18n";
 
 interface SoftwareDetailsDialogProps {
   software: Software | null;
@@ -50,6 +51,7 @@ export function SoftwareDetailsDialog({
   const [localInstallProgress, setLocalInstallProgress] = useState(0);
   const [localError, setLocalError] = useState<string | null>(null);
   const [isLocalInstalling, setIsLocalInstalling] = useState(false);
+  const { t } = useTranslations();
 
   // Fetch latest software details when the dialog opens and if a valid software ID exists
   useEffect(() => {
@@ -109,14 +111,18 @@ export function SoftwareDetailsDialog({
         }
       } catch (err) {
         console.error("Failed to fetch installation progress:", err);
-        setLocalError("Unable to fetch installation progress information");
+        setLocalError(
+          t("launcher.error.installProgress", {
+            defaultValue: "无法获取安装进度信息",
+          })
+        );
         setIsLocalInstalling(false);
         clearInterval(progressInterval);
       }
     }, 1000);
 
     return () => clearInterval(progressInterval);
-  }, [isLocalInstalling, activeInstallId, software, onInstallComplete]);
+  }, [isLocalInstalling, activeInstallId, software, onInstallComplete, t]);
 
   if (!software) return null;
 
@@ -242,7 +248,9 @@ export function SoftwareDetailsDialog({
                 >
                   <Alert variant="destructive">
                     <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>Error</AlertTitle>
+                    <AlertTitle>
+                      {t("launcher.details.error", { defaultValue: "错误" })}
+                    </AlertTitle>
                     <AlertDescription>{displayedError}</AlertDescription>
                   </Alert>
                 </motion.div>
@@ -250,40 +258,67 @@ export function SoftwareDetailsDialog({
             </AnimatePresence>
 
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="text-muted-foreground">Version:</div>
+              <div className="text-muted-foreground">
+                {t("launcher.details.version", { defaultValue: "版本" })}:
+              </div>
               <div>{software.version}</div>
 
-              <div className="text-muted-foreground">Size:</div>
+              <div className="text-muted-foreground">
+                {t("launcher.details.size", { defaultValue: "大小" })}:
+              </div>
               <div>{software.size}</div>
 
-              <div className="text-muted-foreground">Developer:</div>
+              <div className="text-muted-foreground">
+                {t("launcher.details.developer", { defaultValue: "开发者" })}:
+              </div>
               <div>{software.developer}</div>
 
-              <div className="text-muted-foreground">Downloads:</div>
+              <div className="text-muted-foreground">
+                {t("launcher.details.downloads", { defaultValue: "下载次数" })}:
+              </div>
               <div>{software.downloads.toLocaleString()}</div>
 
-              <div className="text-muted-foreground">Last Updated:</div>
+              <div className="text-muted-foreground">
+                {t("launcher.details.updated", { defaultValue: "更新日期" })}:
+              </div>
               <div>{new Date(software.lastUpdated).toLocaleDateString()}</div>
 
-              <div className="text-muted-foreground">Status:</div>
+              <div className="text-muted-foreground">
+                {t("launcher.details.status", { defaultValue: "状态" })}:
+              </div>
               <div>
                 {software.installed ? (
-                  <Badge variant="default">Installed</Badge>
+                  <Badge variant="default">
+                    {t("launcher.details.installed", {
+                      defaultValue: "已安装",
+                    })}
+                  </Badge>
                 ) : (
-                  <Badge variant="secondary">Not Installed</Badge>
+                  <Badge variant="secondary">
+                    {t("launcher.details.notInstalled", {
+                      defaultValue: "未安装",
+                    })}
+                  </Badge>
                 )}
               </div>
 
               {software.dependencies && software.dependencies.length > 0 && (
                 <>
-                  <div className="text-muted-foreground">Dependencies:</div>
+                  <div className="text-muted-foreground">
+                    {t("launcher.details.dependencies", {
+                      defaultValue: "依赖项",
+                    })}
+                    :
+                  </div>
                   <div>{software.dependencies.join(", ")}</div>
                 </>
               )}
 
               {software.tags && software.tags.length > 0 && (
                 <>
-                  <div className="text-muted-foreground">Tags:</div>
+                  <div className="text-muted-foreground">
+                    {t("launcher.details.tags", { defaultValue: "标签" })}:
+                  </div>
                   <div className="flex flex-wrap gap-1">
                     {software.tags.map((tag) => (
                       <Badge key={tag} variant="outline" className="text-xs">
@@ -305,7 +340,11 @@ export function SoftwareDetailsDialog({
                   className="space-y-2"
                 >
                   <div className="flex justify-between text-sm">
-                    <span>Installing...</span>
+                    <span>
+                      {t("launcher.details.installing", {
+                        defaultValue: "正在安装...",
+                      })}
+                    </span>
                     <span>{displayedInstallProgress}%</span>
                   </div>
                   <motion.div
@@ -325,13 +364,19 @@ export function SoftwareDetailsDialog({
 
             {software.releaseNotes && (
               <div className="space-y-2">
-                <Label htmlFor="release-notes">Release Notes</Label>
+                <Label htmlFor="release-notes">
+                  {t("launcher.details.releaseNotes", {
+                    defaultValue: "版本说明",
+                  })}
+                </Label>
                 <div
                   id="release-notes"
                   className="text-sm p-2 bg-muted rounded-md max-h-24 overflow-y-auto"
                   tabIndex={0}
                   role="region"
-                  aria-label="Release notes"
+                  aria-label={t("launcher.details.releaseNotes", {
+                    defaultValue: "版本说明",
+                  })}
                 >
                   {software.releaseNotes}
                 </div>
@@ -348,7 +393,7 @@ export function SoftwareDetailsDialog({
                 disabled={displayedIsInstalling}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
-                Visit Website
+                {t("launcher.details.website", { defaultValue: "访问网站" })}
               </Button>
             )}
 
@@ -362,17 +407,19 @@ export function SoftwareDetailsDialog({
               {displayedIsInstalling ? (
                 <>
                   <div className="mr-2 h-4 w-4 border-2 border-r-transparent rounded-full animate-spin"></div>
-                  Installing...
+                  {t("launcher.details.installing", {
+                    defaultValue: "正在安装...",
+                  })}
                 </>
               ) : software.actionLabel === "Install" ? (
                 <>
                   <DownloadIcon className="h-4 w-4 mr-2" />
-                  Install
+                  {t("launcher.details.install", { defaultValue: "安装" })}
                 </>
               ) : (
                 <>
                   <Play className="h-4 w-4 mr-2" />
-                  Launch
+                  {t("launcher.details.launch", { defaultValue: "启动" })}
                 </>
               )}
             </Button>

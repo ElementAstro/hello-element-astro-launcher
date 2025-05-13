@@ -5,22 +5,21 @@ import { useState, useEffect } from "react";
 import { MainNav } from "@/components/main-nav";
 import { MobileNav } from "@/components/mobile-nav";
 import { SystemControlModal } from "@/components/system-control-modal";
-import { cn } from "@/lib/utils";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  // 检测窗口大小以实现更好的布局调整
-  const [windowWidth, setWindowWidth] = useState<number>(
-    typeof window !== "undefined" ? window.innerWidth : 0
+  // 监听窗口尺寸变化，用于控制移动导航的显示
+  const [isMobile, setIsMobile] = useState<boolean>(
+    typeof window !== "undefined" ? window.innerWidth < 768 : false
   );
 
   useEffect(() => {
     const handleResize = () => {
-      setWindowWidth(window.innerWidth);
+      setIsMobile(window.innerWidth < 768);
     };
 
-    // 初始化窗口大小
+    // 初始化窗口尺寸
     if (typeof window !== "undefined") {
-      setWindowWidth(window.innerWidth);
+      handleResize();
       window.addEventListener("resize", handleResize);
     }
 
@@ -31,25 +30,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // 针对不同屏幕大小优化内容区域宽度
-  const contentMaxWidth =
-    windowWidth >= 1920
-      ? "max-w-[1600px]"
-      : windowWidth >= 1440
-      ? "max-w-[1200px]"
-      : "";
-
   return (
-    <div className="flex h-screen">
-      <MainNav />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div
-          className={cn("flex-1 mx-auto w-full overflow-auto", contentMaxWidth)}
-        >
+    <div className="flex h-screen overflow-hidden">
+      {/* 在非移动设备上显示主导航 */}
+      {!isMobile && <MainNav />}
+      <div className="flex-1 flex flex-col">
+        <div className="flex-1 w-full h-full overflow-auto px-4 py-4">
           {children}
         </div>
       </div>
-      <MobileNav />
+      {/* 只在移动设备上显示移动导航 */}
+      {isMobile && <MobileNav />}
       <SystemControlModal />
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useTranslations } from "@/components/i18n";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -64,6 +65,7 @@ export function AdvancedSettings({
   settings,
   onSettingChange,
 }: SettingsSectionProps) {
+  const { t } = useTranslations();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isApplying, setIsApplying] = useState(false);
@@ -407,12 +409,13 @@ export function AdvancedSettings({
       setImportFile(e.target.files[0]);
     }
   };
-
   // 导入设置
   const importSettings = async () => {
     if (!importFile) {
-      toast.error("未选择文件", {
-        description: "请选择有效的设置文件进行导入。",
+      toast.error(t("settings.advanced.importExport.errors.noFile.title"), {
+        description: t(
+          "settings.advanced.importExport.errors.noFile.description"
+        ),
       });
       return;
     }
@@ -471,20 +474,18 @@ export function AdvancedSettings({
     }
   };
 
-  // 获取日志级别的可读名称
   const getLogLevelText = (level: LogLevel): string => {
     const names: Record<LogLevel, string> = {
-      error: "错误",
-      warning: "警告",
-      info: "信息",
-      debug: "调试",
-      verbose: "详细",
+      error: t("settings.advanced.logLevel.options.error"),
+      warning: t("settings.advanced.logLevel.options.warning"),
+      info: t("settings.advanced.logLevel.options.info"),
+      debug: t("settings.advanced.logLevel.options.debug"),
+      verbose: t("settings.advanced.logLevel.options.verbose"),
     };
     return names[level] || level;
   };
-
   if (isLoading) {
-    return <LoadingIndicator message="加载高级设置..." />;
+    return <LoadingIndicator message={t("settings.advanced.loading")} />;
   }
 
   if (error && !settings) {
@@ -509,8 +510,11 @@ export function AdvancedSettings({
               className="flex justify-between items-start"
             >
               <div>
-                <CardTitle>高级设置</CardTitle>
-                <CardDescription>为高级用户配置高级选项</CardDescription>
+                {" "}
+                <CardTitle>{t("settings.advanced.title")}</CardTitle>
+                <CardDescription>
+                  {t("settings.advanced.description")}
+                </CardDescription>
               </div>
               <Settings2 className="h-6 w-6 text-muted-foreground" />
             </motion.div>
@@ -555,11 +559,9 @@ export function AdvancedSettings({
                   />
                 </motion.div>
               </motion.div>
-
               <motion.div variants={slideUp}>
                 <Separator />
               </motion.div>
-
               <motion.div variants={slideUp} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -641,11 +643,9 @@ export function AdvancedSettings({
                   </div>
                 )}
               </motion.div>
-
               <motion.div variants={slideUp}>
                 <Separator />
               </motion.div>
-
               <motion.div
                 variants={slideUp}
                 className="flex items-center justify-between"
@@ -681,11 +681,9 @@ export function AdvancedSettings({
                   />
                 </motion.div>
               </motion.div>
-
               <motion.div variants={slideUp}>
                 <Separator />
               </motion.div>
-
               <motion.div variants={slideUp} className="space-y-2">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
@@ -793,14 +791,12 @@ export function AdvancedSettings({
                   )}
                 </div>
               </motion.div>
-
               {/* 导入/导出设置 */}
               <motion.div variants={slideUp}>
                 <Separator />
-              </motion.div>
-
+              </motion.div>{" "}
               <motion.div variants={slideUp} className="space-y-2">
-                <Label>导入/导出设置</Label>
+                <Label>{t("settings.advanced.importExport.label")}</Label>
                 <div className="flex flex-wrap gap-3">
                   <Button
                     variant="outline"
@@ -809,7 +805,7 @@ export function AdvancedSettings({
                     className="flex items-center"
                   >
                     <Download className="h-4 w-4 mr-2" />
-                    导出设置
+                    {t("settings.advanced.importExport.export")}
                   </Button>
 
                   <div className="flex items-center gap-2">
@@ -820,7 +816,9 @@ export function AdvancedSettings({
                         accept=".json"
                         onChange={handleFileSelect}
                         className="absolute inset-0 opacity-0 w-full cursor-pointer"
-                        aria-label="选择设置文件导入"
+                        aria-label={t(
+                          "settings.advanced.importExport.importAriaLabel"
+                        )}
                       />
                       <Button
                         variant="outline"
@@ -852,7 +850,6 @@ export function AdvancedSettings({
                   导出设置以备份或在另一台设备上导入。导入设置将覆盖所有现有设置。
                 </div>
               </motion.div>
-
               {settings.advanced.experimentalFeatures && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}

@@ -12,6 +12,7 @@ import { itemVariants } from "./animation-constants";
 import type { Software, ViewMode, ActionHandler } from "./types";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "@/components/i18n";
 
 interface SoftwareItemProps {
   software: Software;
@@ -29,15 +30,19 @@ export function SoftwareItem({
   isLoading = false,
 }: SoftwareItemProps) {
   const [imageError, setImageError] = useState(false);
-  
-  const formattedDate = useMemo(() => 
-    new Date(software.lastUpdated).toLocaleDateString(),
-    [software.lastUpdated]
+  const { t, formatDate } = useTranslations();
+
+  const formattedDate = useMemo(
+    () => formatDate(new Date(software.lastUpdated), { dateStyle: "medium" }),
+    [software.lastUpdated, formatDate]
   );
 
   const handleAction = () => {
     if (isLoading) return;
-    onAction(software);
+    onAction({
+      ...software,
+      actionType: software.installed ? "launched" : "installing",
+    });
   };
 
   const handleImageError = () => {
@@ -79,31 +84,35 @@ export function SoftwareItem({
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 justify-between">
-              <h3 className="text-sm font-medium truncate">
-                {software.name}
-              </h3>
+              <h3 className="text-sm font-medium truncate">{software.name}</h3>
               <div className="flex items-center gap-1">
                 {software.featured && (
-                  <Badge variant="secondary" className="px-1 py-0 text-[10px] h-4">
-                    精选
+                  <Badge
+                    variant="secondary"
+                    className="px-1 py-0 text-[10px] h-4"
+                  >
+                    {t("launcher.software.featured", { defaultValue: "精选" })}
                   </Badge>
                 )}
                 {software.installed && (
-                  <Badge variant="outline" className="px-1 py-0 text-[10px] h-4">
-                    已装
+                  <Badge
+                    variant="outline"
+                    className="px-1 py-0 text-[10px] h-4"
+                  >
+                    {t("launcher.software.installed", { defaultValue: "已装" })}
                   </Badge>
                 )}
               </div>
             </div>
           </div>
         </div>
-        
+
         <div className="p-2 sm:p-3 flex-1">
           <p className="text-xs text-muted-foreground line-clamp-2">
             {software.description}
           </p>
         </div>
-        
+
         <div className="p-2 sm:p-3 border-t bg-muted/10 flex flex-wrap sm:flex-nowrap items-center justify-between gap-y-2">
           <div className="flex flex-col text-[10px] text-muted-foreground">
             <span>v{software.version}</span>
@@ -116,15 +125,23 @@ export function SoftwareItem({
                   variant="ghost"
                   size="icon"
                   onClick={onInfo}
-                  title="更多信息"
-                  aria-label="查看有关此软件的更多信息"
+                  title={t("launcher.software.moreInfo", {
+                    defaultValue: "更多信息",
+                  })}
+                  aria-label={t("launcher.software.viewMoreInfo", {
+                    defaultValue: "查看有关此软件的更多信息",
+                  })}
                   disabled={isLoading}
                   className="h-7 w-7"
                 >
                   <Info className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs">详细信息</TooltipContent>
+              <TooltipContent side="bottom" className="text-xs">
+                {t("launcher.software.detailedInfo", {
+                  defaultValue: "详细信息",
+                })}
+              </TooltipContent>
             </Tooltip>
 
             <Button
@@ -143,11 +160,17 @@ export function SoftwareItem({
                 <>
                   <div className="mr-1 h-3 w-3 border-2 border-r-transparent rounded-full animate-spin"></div>
                   {software.actionLabel === "Install"
-                    ? "安装中..."
-                    : "加载中..."}
+                    ? t("launcher.software.installing", {
+                        defaultValue: "安装中...",
+                      })
+                    : t("launcher.software.loading", {
+                        defaultValue: "加载中...",
+                      })}
                 </>
+              ) : software.actionLabel === "Install" ? (
+                t("launcher.software.install", { defaultValue: "安装" })
               ) : (
-                software.actionLabel === "Install" ? "安装" : "启动"
+                t("launcher.software.launch", { defaultValue: "启动" })
               )}
             </Button>
           </div>
@@ -185,31 +208,38 @@ export function SoftwareItem({
           onError={handleImageError}
         />
       </div>
-      
+
       <div className="flex-1 min-w-0 mr-2">
         <div className="flex flex-wrap items-center gap-1.5">
           <h3 className="text-sm font-medium">{software.name}</h3>
           <div className="flex gap-1">
-            {software.featured && 
-              <Badge variant="secondary" className="px-1 py-0 text-[10px] h-4">精选</Badge>
-            }
-            {software.installed && 
-              <Badge variant="outline" className="px-1 py-0 text-[10px] h-4">已装</Badge>
-            }
+            {software.featured && (
+              <Badge variant="secondary" className="px-1 py-0 text-[10px] h-4">
+                {t("launcher.software.featured", { defaultValue: "精选" })}
+              </Badge>
+            )}
+            {software.installed && (
+              <Badge variant="outline" className="px-1 py-0 text-[10px] h-4">
+                {t("launcher.software.installed", { defaultValue: "已装" })}
+              </Badge>
+            )}
           </div>
         </div>
-        
+
         <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5 pr-1">
           {software.description}
         </p>
-        
+
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-[10px] text-muted-foreground">
           <span>v{software.version}</span>
-          <span className="hidden sm:inline">{software.downloads.toLocaleString()} 下载</span>
+          <span className="hidden sm:inline">
+            {software.downloads.toLocaleString()}{" "}
+            {t("launcher.software.downloads", { defaultValue: "下载" })}
+          </span>
           <span>{formattedDate}</span>
         </div>
       </div>
-      
+
       <div className="flex-shrink-0 flex gap-1.5">
         <Tooltip>
           <TooltipTrigger asChild>
@@ -217,15 +247,21 @@ export function SoftwareItem({
               variant="ghost"
               size="icon"
               onClick={onInfo}
-              title="更多信息"
-              aria-label="查看有关此软件的更多信息"
+              title={t("launcher.software.moreInfo", {
+                defaultValue: "更多信息",
+              })}
+              aria-label={t("launcher.software.viewMoreInfo", {
+                defaultValue: "查看有关此软件的更多信息",
+              })}
               disabled={isLoading}
               className="h-7 w-7"
             >
               <Info className="h-3.5 w-3.5" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="text-xs">详细信息</TooltipContent>
+          <TooltipContent side="bottom" className="text-xs">
+            {t("launcher.software.detailedInfo", { defaultValue: "详细信息" })}
+          </TooltipContent>
         </Tooltip>
 
         <Button
@@ -241,10 +277,16 @@ export function SoftwareItem({
           {isLoading ? (
             <>
               <div className="mr-1 h-3 w-3 border-2 border-r-transparent rounded-full animate-spin"></div>
-              {software.actionLabel === "Install" ? "安装中..." : "加载中..."}
+              {software.actionLabel === "Install"
+                ? t("launcher.software.installing", {
+                    defaultValue: "安装中...",
+                  })
+                : t("launcher.software.loading", { defaultValue: "加载中..." })}
             </>
+          ) : software.actionLabel === "Install" ? (
+            t("launcher.software.install", { defaultValue: "安装" })
           ) : (
-            software.actionLabel === "Install" ? "安装" : "启动"
+            t("launcher.software.launch", { defaultValue: "启动" })
           )}
         </Button>
       </div>

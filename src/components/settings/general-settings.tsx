@@ -49,11 +49,13 @@ import {
 import { toast } from "sonner"; // Use sonner for toasts
 // 导入 API 服务
 import { generalApi } from "./settings-api";
+import { useTranslations } from "@/components/i18n";
 
 export function GeneralSettings({
   settings,
   onSettingChange,
 }: SettingsSectionProps) {
+  const { t } = useTranslations();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -73,14 +75,27 @@ export function GeneralSettings({
         // 更新父组件中的设置
         Object.entries(generalData).forEach(([key, value]) => {
           const settingKey = key as keyof SettingsType["general"];
-          
+
           // Validate and type check the value based on the setting key
           if (settingKey === "updateFrequency") {
-            const validFrequencies: UpdateFrequency[] = ["startup", "daily", "weekly", "monthly", "never"];
-            if (typeof value === "string" && validFrequencies.includes(value as UpdateFrequency)) {
+            const validFrequencies: UpdateFrequency[] = [
+              "startup",
+              "daily",
+              "weekly",
+              "monthly",
+              "never",
+            ];
+            if (
+              typeof value === "string" &&
+              validFrequencies.includes(value as UpdateFrequency)
+            ) {
               onSettingChange("general", settingKey, value as UpdateFrequency);
             }
-          } else if (settingKey === "defaultApps" && typeof value === "object" && value !== null) {
+          } else if (
+            settingKey === "defaultApps" &&
+            typeof value === "object" &&
+            value !== null
+          ) {
             // Type guard to ensure all required properties exist and are strings
             const apps = value as Record<string, unknown>;
             if (
@@ -100,14 +115,13 @@ export function GeneralSettings({
         });
       } catch (err) {
         console.error("Error loading general settings:", err);
-        setError("无法加载通用设置，请稍后重试。");
+        setError(t("settings.general.errors.loadFailed"));
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchGeneralSettings();
-  }, [onSettingChange]);
+  }, [onSettingChange, t]);
 
   // Handle general setting change
   // Removed unnecessary generic constraint
@@ -123,29 +137,56 @@ export function GeneralSettings({
       await generalApi.updateGeneralSettings({
         ...settings.general,
         [setting]: value,
-      });
-
-      // Show feedback toast for important settings
+      }); // Show feedback toast for important settings
       if (setting === "startOnBoot") {
         // Use sonner toast directly
-        toast(value ? "开机自启已启用" : "开机自启已禁用", {
-          description: value
-            ? "应用程序将在系统启动时自动运行。"
-            : "应用程序将不会在系统启动时自动运行。",
-        });
+        toast(
+          value
+            ? t("settings.general.notifications.startOnBoot.enabled.title")
+            : t("settings.general.notifications.startOnBoot.disabled.title"),
+          {
+            description: value
+              ? t(
+                  "settings.general.notifications.startOnBoot.enabled.description"
+                )
+              : t(
+                  "settings.general.notifications.startOnBoot.disabled.description"
+                ),
+          }
+        );
       } else if (setting === "confirmBeforeClosing") {
         // Use sonner toast directly
-        toast(value ? "已启用关闭前确认" : "已禁用关闭前确认", {
-          description: value
-            ? "关闭应用程序前将显示确认对话框。"
-            : "关闭应用程序时不再显示确认对话框。",
-        });
+        toast(
+          value
+            ? t(
+                "settings.general.notifications.confirmBeforeClosing.enabled.title"
+              )
+            : t(
+                "settings.general.notifications.confirmBeforeClosing.disabled.title"
+              ),
+          {
+            description: value
+              ? t(
+                  "settings.general.notifications.confirmBeforeClosing.enabled.description"
+                )
+              : t(
+                  "settings.general.notifications.confirmBeforeClosing.disabled.description"
+                ),
+          }
+        );
       }
     } catch {
-      setError(`更改${setting}设置时出错`);
+      setError(
+        t("settings.general.errors.settingChangeFailed", {
+          params: { setting: String(setting) },
+        })
+      );
       // Use sonner toast.error
-      toast.error("设置更新失败", {
-        description: `无法更改${setting}设置，请重试。`,
+      toast.error(t("settings.general.notifications.updateFailed.title"), {
+        description: t(
+          "settings.general.notifications.updateFailed.description",
+          { params: { setting: String(setting) } }
+        ),
       });
     }
   };
@@ -202,9 +243,8 @@ export function GeneralSettings({
       const response = await fetch("/api/system/update/check", {
         method: "GET",
       });
-
       if (!response.ok) {
-        throw new Error("无法连接到更新服务器");
+        throw new Error(t("settings.general.update.errors.connectionFailed"));
       }
 
       const data = await response.json();
@@ -212,14 +252,21 @@ export function GeneralSettings({
       if (data.hasUpdate) {
         setUpdateStatus("available");
         // Use sonner toast directly
-        toast("发现新更新", {
-          description: `版本 ${data.version} 可用。点击更新按钮开始下载。`,
+        toast(t("settings.general.update.notifications.updateFound.title"), {
+          description: t(
+            "settings.general.update.notifications.updateFound.description",
+            {
+              params: { version: data.version },
+            }
+          ),
         });
       } else {
         setUpdateStatus("up-to-date");
         // Use sonner toast directly
-        toast("已是最新版本", {
-          description: "您正在运行最新版本的应用程序。",
+        toast(t("settings.general.update.notifications.upToDate.title"), {
+          description: t(
+            "settings.general.update.notifications.upToDate.description"
+          ),
         });
 
         // Reset status after showing "up-to-date" for a while
@@ -229,11 +276,16 @@ export function GeneralSettings({
       }
     } catch {
       setUpdateStatus("error");
-      setError("检查更新时出错");
+      setError(t("settings.general.update.errors.checkFailed"));
       // Use sonner toast.error
-      toast.error("更新检查失败", {
-        description: "无法连接到更新服务器，请检查您的网络连接。",
-      });
+      toast.error(
+        t("settings.general.update.notifications.checkFailed.title"),
+        {
+          description: t(
+            "settings.general.update.notifications.checkFailed.description"
+          ),
+        }
+      );
     }
   };
 
@@ -245,11 +297,11 @@ export function GeneralSettings({
       // 将设置保存到后端 API
       await generalApi.updateGeneralSettings(settings.general);
 
-      setShowSuccess(true);
-
-      // Use sonner toast directly
-      toast("所有设置已保存", {
-        description: "您的常规设置已成功更新和应用。",
+      setShowSuccess(true); // Use sonner toast directly
+      toast(t("settings.general.notifications.settingsSaved.title"), {
+        description: t(
+          "settings.general.notifications.settingsSaved.description"
+        ),
         action: (
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
@@ -265,10 +317,10 @@ export function GeneralSettings({
         setShowSuccess(false);
       }, 2000);
     } catch {
-      setError("保存设置时出错");
+      setError(t("settings.general.errors.saveFailed"));
       // Use sonner toast.error
-      toast.error("保存失败", {
-        description: "无法保存常规设置，请重试。",
+      toast.error(t("settings.general.notifications.saveFailed.title"), {
+        description: t("settings.general.notifications.saveFailed.description"),
       });
     } finally {
       setIsSaving(false);
@@ -276,7 +328,7 @@ export function GeneralSettings({
   };
 
   if (isLoading) {
-    return <LoadingIndicator message="加载常规设置..." />;
+    return <LoadingIndicator message={t("settings.general.loading")} />;
   }
 
   // Ensure settings is checked before accessing its properties
@@ -286,14 +338,13 @@ export function GeneralSettings({
 
   // Ensure settings is available before rendering content
   if (!settings) {
-    return <LoadingIndicator message="加载常规设置..." />; // Or some other placeholder
+    return <LoadingIndicator message={t("settings.general.loading")} />; // Or some other placeholder
   }
-
   // Get human-readable name for update frequency
   const getUpdateFrequencyName = (freq: UpdateFrequency): string => {
     const names = {
-      startup: "每次启动",
-      daily: "每天",
+      startup: t("settings.general.updateFrequency.startup"),
+      daily: t("settings.general.updateFrequency.daily"),
       weekly: "每周",
       monthly: "每月",
       never: "从不",
@@ -311,6 +362,7 @@ export function GeneralSettings({
       <AnimatedCard>
         <Card>
           <CardHeader>
+            {" "}
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -318,8 +370,10 @@ export function GeneralSettings({
               className="flex justify-between items-start"
             >
               <div>
-                <CardTitle>常规设置</CardTitle>
-                <CardDescription>管理常规应用程序设置和首选项</CardDescription>
+                <CardTitle>{t("settings.general.title")}</CardTitle>
+                <CardDescription>
+                  {t("settings.general.description")}
+                </CardDescription>
               </div>
               <Settings className="h-6 w-6 text-muted-foreground" />
             </motion.div>
@@ -330,14 +384,17 @@ export function GeneralSettings({
                 variants={slideUp}
                 className="flex items-center justify-between"
               >
+                {" "}
                 <div className="flex space-x-3">
                   <div className="mt-1 text-muted-foreground">
                     <BookUp className="h-5 w-5" /> {/* Corrected icon */}
                   </div>
                   <div className="space-y-0.5">
-                    <Label htmlFor="start-on-boot">系统启动时自动启动</Label>
+                    <Label htmlFor="start-on-boot">
+                      {t("settings.general.startOnBoot.label")}
+                    </Label>
                     <p className="text-sm text-muted-foreground">
-                      计算机启动时自动启动应用程序
+                      {t("settings.general.startOnBoot.description")}
                     </p>
                   </div>
                 </div>
@@ -355,7 +412,7 @@ export function GeneralSettings({
                     onCheckedChange={(checked) =>
                       handleSettingChange("startOnBoot", checked)
                     }
-                    aria-label="启用或禁用系统启动时自动启动应用程序"
+                    aria-label={t("settings.general.startOnBoot.ariaLabel")}
                   />
                 </motion.div>
               </motion.div>
@@ -368,14 +425,17 @@ export function GeneralSettings({
                 variants={slideUp}
                 className="flex items-center justify-between"
               >
+                {" "}
                 <div className="flex space-x-3">
                   <div className="mt-1 text-muted-foreground">
                     <RefreshCw className="h-5 w-5" />
                   </div>
                   <div className="space-y-0.5">
-                    <Label htmlFor="check-for-updates">自动检查更新</Label>
+                    <Label htmlFor="check-for-updates">
+                      {t("settings.general.checkForUpdates.label")}
+                    </Label>
                     <p className="text-sm text-muted-foreground">
-                      定期检查软件更新
+                      {t("settings.general.checkForUpdates.description")}
                     </p>
                   </div>
                 </div>

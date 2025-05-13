@@ -42,6 +42,7 @@ import type {
   ToolResult as ToolResultType,
 } from "@/types/tool";
 import { VARIANTS, DURATION, EASE } from "./animation-constants";
+import { useTranslations } from "@/components/i18n";
 
 interface ToolResultProps {
   tool: Tool | null;
@@ -63,6 +64,7 @@ export function ToolResult({
   onClear,
 }: ToolResultProps) {
   const [copiedOutputId, setCopiedOutputId] = useState<string | null>(null);
+  const { t } = useTranslations();
 
   // 使用 useCallback 优化复制函数
   const handleCopyOutput = useCallback(
@@ -100,8 +102,7 @@ export function ToolResult({
               transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
             >
               <RefreshCw className="h-8 w-8 mx-auto text-primary" />
-            </motion.div>
-            <p className="text-base md:text-lg font-medium">正在处理...</p>
+            </motion.div>            <p className="text-base md:text-lg font-medium">处理中...</p>
             {progress > 0 && (
               <div className="w-full max-w-xs mx-auto space-y-1">
                 <Progress value={progress} className="h-2" />
@@ -122,7 +123,7 @@ export function ToolResult({
             </div>
             <div>
               <p className="text-base md:text-lg font-medium text-red-600 dark:text-red-400">
-                执行错误
+                {t("toolResult.executionError")}
               </p>
               <p className="mt-1 text-xs md:text-sm">{error}</p>
               {onRetry && (
@@ -133,7 +134,7 @@ export function ToolResult({
                   size="sm"
                 >
                   <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                  重试
+                  {t("toolList.retry")}
                 </Button>
               )}
             </div>
@@ -146,8 +147,7 @@ export function ToolResult({
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.2 }}
           >
-            <Play className="h-7 w-7 md:h-8 md:w-8 mx-auto text-muted-foreground" />
-            <p className="text-sm md:text-base">运行工具以查看结果</p>
+            <Play className="h-7 w-7 md:h-8 md:w-8 mx-auto text-muted-foreground" />            <p className="text-sm md:text-base">{t("toolResult.runToolToSeeResults")}</p>
           </motion.div>
         )}
       </div>
@@ -190,13 +190,12 @@ export function ToolResult({
                   animate={{ scale: 1 }}
                   transition={{ duration: 0.3, ease: EASE.bounce }}
                   className="flex items-center"
-                >
-                  {result.status === "completed" ? (
+                >                  {result.status === "completed" ? (
                     <Check className="h-3 w-3 mr-1" />
                   ) : (
                     <AlertCircle className="h-3 w-3 mr-1" />
                   )}
-                  {result.status === "completed" ? "已完成" : "失败"}
+                  {result.status === "completed" ? t("toolResult.completed") : t("toolResult.failed")}
                 </motion.div>
               </Badge>
               <div className="flex items-center gap-2">

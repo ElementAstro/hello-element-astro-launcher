@@ -1,15 +1,14 @@
 // Common UI components for settings sections
 import { motion } from "framer-motion";
 import { AlertCircle, Loader2, RefreshCcw } from "lucide-react";
+import { useTranslations } from "@/components/i18n";
 import { Button } from "@/components/ui/button";
 import { fadeIn, slideUp, spinAnimation } from "./animation-constants";
 
 // Loading indicator component
-export function LoadingIndicator({
-  message = "加载中...",
-}: {
-  message?: string;
-}) {
+export function LoadingIndicator({ message }: { message?: string }) {
+  const { t } = useTranslations();
+  message = message || t("common.loading");
   return (
     <motion.div
       variants={fadeIn}
@@ -27,14 +26,17 @@ export function LoadingIndicator({
 
 // Error state component
 export function ErrorState({
-  title = "出现错误",
-  message = "加载设置时发生错误。请重试。",
+  title,
+  message,
   onRetry,
 }: {
   title?: string;
   message?: string;
   onRetry?: () => void;
 }) {
+  const { t } = useTranslations();
+  title = title || t("common.error.title");
+  message = message || t("common.error.loadingSettings");
   return (
     <motion.div
       variants={slideUp}
@@ -52,7 +54,7 @@ export function ErrorState({
       {onRetry && (
         <Button variant="outline" onClick={onRetry} className="mt-2">
           <RefreshCcw className="w-4 h-4 mr-2" />
-          重试
+          {t("common.retry")}
         </Button>
       )}
     </motion.div>
@@ -61,14 +63,17 @@ export function ErrorState({
 
 // Empty state component
 export function EmptyState({
-  title = "无可用数据",
-  message = "未找到设置数据。",
+  title,
+  message,
   icon: Icon,
 }: {
   title?: string;
   message?: string;
   icon?: React.FC<{ className?: string }>;
 }) {
+  const { t } = useTranslations();
+  title = title || t("common.emptyState.title");
+  message = message || t("common.emptyState.message");
   const IconComponent = Icon || AlertCircle;
 
   return (

@@ -2,7 +2,7 @@ import {
   HardDrive,
   Cpu,
   RefreshCw,
-  Memory,
+  MemoryStick, // 修复：改用 MemoryStick 替代不存在的 Memory
   Database,
   Loader2,
   BarChart2,
@@ -13,7 +13,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -22,16 +21,33 @@ import { SystemInfo } from "./types";
 import {
   fadeIn,
   skeletonPulse,
-  staggerContainer,
-  staggerItems,
+  // 修复：移除不存在的动画常量导入
 } from "./animation-constants";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { systemApi } from "./system-api";
+import { useTranslations } from "@/components/i18n/client";
+import { translationKeys } from "./translations";
+
+// 修复：定义正确的 SystemInfo 类型，添加缺少的属性
+interface ExtendedSystemInfo extends SystemInfo {
+  cpuUsage: number;
+  cpuModel: string;
+  memoryUsage: number;
+  memoryUsed: number;
+  memoryTotal: number;
+  diskUsage: number;
+  diskFree: number;
+  diskTotal: number;
+  osName: string;
+  osVersion: string;
+  hostname: string;
+  uptime: string;
+}
 
 interface SystemInformationCardProps {
-  systemInfo?: SystemInfo;
+  systemInfo?: ExtendedSystemInfo;
   isLoading?: boolean;
 }
 
@@ -39,9 +55,11 @@ export function SystemInformationCard({
   systemInfo,
   isLoading = false,
 }: SystemInformationCardProps) {
-  const [info, setInfo] = useState<SystemInfo | undefined>(systemInfo);
+  const [info, setInfo] = useState<ExtendedSystemInfo | undefined>(systemInfo);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslations();
+  const { systemInformation } = translationKeys;
 
   // 当props更新时，更新内部状态
   useEffect(() => {
@@ -53,30 +71,38 @@ export function SystemInformationCard({
   // 刷新系统信息
   const handleRefresh = async () => {
     if (refreshing) return;
-    
+
     setRefreshing(true);
     setError(null);
-    
+
     try {
       const updatedInfo = await systemApi.getSystemInfo();
-      setInfo(updatedInfo);
-      toast.success("系统信息已更新");
+      setInfo(updatedInfo as ExtendedSystemInfo);
+      toast.success(t(systemInformation.refreshSuccess));
     } catch (err) {
       console.error("获取系统信息失败:", err);
-      setError("无法获取系统信息");
-      toast.error("更新系统信息失败");
+      setError(t(systemInformation.refreshError));
+      toast.error(t(systemInformation.refreshError));
     } finally {
       setRefreshing(false);
     }
   };
 
-  // 获取使用率的颜色类
-  const getUsageColorClass = (percentage: number) => {
-    if (percentage < 60) return "bg-green-500";
-    if (percentage < 80) return "bg-amber-500";
-    return "bg-red-500";
+  // 自定义动画变体定义
+  const staggerContainer = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
   };
 
+  const staggerItems = {
+    hidden: { opacity: 0, y: 10 },
+    show: { opacity: 1, y: 0 },
+  };
   // 渲染加载状态
   if (isLoading) {
     return (
@@ -86,11 +112,11 @@ export function SystemInformationCard({
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center">
                 <Cpu className="h-5 w-5 mr-2" />
-                系统信息
+                {t(systemInformation.title)}
               </div>
               <div className="h-9 w-9 bg-muted/40 rounded animate-pulse" />
             </CardTitle>
-            <CardDescription>显示运行环境的系统信息</CardDescription>
+            <CardDescription>{t(systemInformation.description)}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
@@ -112,7 +138,6 @@ export function SystemInformationCard({
       </motion.div>
     );
   }
-
   // 渲染错误状态
   if (error) {
     return (
@@ -122,7 +147,7 @@ export function SystemInformationCard({
             <CardTitle className="flex items-center justify-between text-red-600 dark:text-red-400">
               <div className="flex items-center">
                 <Cpu className="h-5 w-5 mr-2" />
-                系统信息
+                {t(systemInformation.title)}
               </div>
               <Button
                 variant="ghost"
@@ -132,18 +157,18 @@ export function SystemInformationCard({
                 disabled={refreshing}
               >
                 <RefreshCw className="h-4 w-4" />
-                <span className="sr-only">刷新</span>
+                <span className="sr-only">{t(systemInformation.refresh)}</span>
               </Button>
             </CardTitle>
             <CardDescription className="text-red-600/80 dark:text-red-400/80">
-              无法获取系统信息
+              {t(systemInformation.refreshError)}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center justify-center py-8">
             <div className="text-center space-y-2">
-              <p className="font-medium">获取系统信息时出现错误</p>
+              <p className="font-medium">{t(systemInformation.refreshError)}</p>
               <p className="text-sm text-muted-foreground">
-                请检查系统服务是否正常运行
+                {error}
               </p>
               <Button
                 variant="outline"
@@ -155,12 +180,12 @@ export function SystemInformationCard({
                 {refreshing ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    重试中...
+                    {t(systemInformation.refresh)}...
                   </>
                 ) : (
                   <>
                     <RefreshCw className="h-4 w-4 mr-2" />
-                    重试
+                    {t(systemInformation.refresh)}
                   </>
                 )}
               </Button>
@@ -170,7 +195,6 @@ export function SystemInformationCard({
       </motion.div>
     );
   }
-
   return (
     <motion.div variants={fadeIn} className="w-full">
       <Card>
@@ -178,7 +202,7 @@ export function SystemInformationCard({
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center">
               <Cpu className="h-5 w-5 mr-2" />
-              系统信息
+              {t(systemInformation.title)}
             </div>
             <Button
               variant="ghost"
@@ -190,10 +214,10 @@ export function SystemInformationCard({
               <RefreshCw
                 className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
               />
-              <span className="sr-only">刷新</span>
+              <span className="sr-only">{t(systemInformation.refresh)}</span>
             </Button>
           </CardTitle>
-          <CardDescription>显示运行环境的系统信息</CardDescription>
+          <CardDescription>{t(systemInformation.description)}</CardDescription>
         </CardHeader>
         <CardContent>
           {info ? (
@@ -202,77 +226,60 @@ export function SystemInformationCard({
               initial="hidden"
               animate="show"
               className="space-y-6"
-            >
-              <motion.div variants={staggerItems} className="space-y-2">
+            >              <motion.div variants={staggerItems} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center text-sm font-medium">
                     <Cpu className="h-4 w-4 mr-2" />
-                    处理器
+                    {t(systemInformation.cpuUsage)}
                   </div>
-                  <span className="text-xs text-muted-foreground">{info.cpuUsage}%</span>
+                  <span className="text-xs text-muted-foreground">
+                    {info.cpuUsage}%
+                  </span>
                 </div>
                 <div className="space-y-1">
-                  <Progress
-                    value={info.cpuUsage}
-                    className="h-2"
-                    indicatorClassName={getUsageColorClass(info.cpuUsage)}
-                  />
+                  <Progress value={info.cpuUsage} className="h-2" />
                   <div className="text-xs text-muted-foreground">
                     {info.cpuModel}
                   </div>
                 </div>
-              </motion.div>
-
-              <motion.div variants={staggerItems} className="space-y-2">
+              </motion.div>              <motion.div variants={staggerItems} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center text-sm font-medium">
-                    <Memory className="h-4 w-4 mr-2" />
-                    内存
+                    <MemoryStick className="h-4 w-4 mr-2" />
+                    {t(systemInformation.memoryUsage)}
                   </div>
                   <span className="text-xs text-muted-foreground">
                     {info.memoryUsage}%
                   </span>
                 </div>
                 <div className="space-y-1">
-                  <Progress
-                    value={info.memoryUsage}
-                    className="h-2"
-                    indicatorClassName={getUsageColorClass(info.memoryUsage)}
-                  />
+                  <Progress value={info.memoryUsage} className="h-2" />
                   <div className="text-xs text-muted-foreground">
-                    {info.memoryUsed} GB / {info.memoryTotal} GB
+                    {info.memoryUsed} GB ({t(systemInformation.used)}) / {info.memoryTotal} GB ({t(systemInformation.total)})
                   </div>
                 </div>
-              </motion.div>
-
-              <motion.div variants={staggerItems} className="space-y-2">
+              </motion.div>              <motion.div variants={staggerItems} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center text-sm font-medium">
                     <HardDrive className="h-4 w-4 mr-2" />
-                    磁盘
+                    {t(systemInformation.diskUsage)}
                   </div>
                   <span className="text-xs text-muted-foreground">
                     {info.diskUsage}%
                   </span>
                 </div>
                 <div className="space-y-1">
-                  <Progress
-                    value={info.diskUsage}
-                    className="h-2"
-                    indicatorClassName={getUsageColorClass(info.diskUsage)}
-                  />
+                  <Progress value={info.diskUsage} className="h-2" />
                   <div className="text-xs text-muted-foreground">
-                    {info.diskFree} GB 可用 / {info.diskTotal} GB 总容量
+                    {info.diskFree} GB ({t(systemInformation.free)}) / {info.diskTotal} GB ({t(systemInformation.total)})
                   </div>
                 </div>
-              </motion.div>
-
-              <motion.div variants={staggerItems} className="space-y-4">
+              </motion.div>              <motion.div variants={staggerItems} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center text-sm font-medium">
                       <Database className="h-4 w-4 mr-2" />
-                      操作系统
+                      {t(systemInformation.osInfo)}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {info.osName} {info.osVersion}
@@ -281,18 +288,17 @@ export function SystemInformationCard({
                   <div className="space-y-1">
                     <div className="flex items-center text-sm font-medium">
                       <BarChart2 className="h-4 w-4 mr-2" />
-                      主机名
+                      {t(systemInformation.hostname)}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {info.hostname}
                     </div>
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+                </div>                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center text-sm font-medium">
                       <Clock className="h-4 w-4 mr-2" />
-                      系统运行时间
+                      {t(systemInformation.uptime)}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {info.uptime}
@@ -300,10 +306,9 @@ export function SystemInformationCard({
                   </div>
                 </div>
               </motion.div>
-            </motion.div>
-          ) : (
+            </motion.div>          ) : (
             <div className="py-8 text-center">
-              <p className="text-muted-foreground">无可用系统信息</p>
+              <p className="text-muted-foreground">{t(systemInformation.refreshError)}</p>
               <Button
                 variant="outline"
                 size="sm"
@@ -314,12 +319,12 @@ export function SystemInformationCard({
                 {refreshing ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    加载中...
+                    {t(systemInformation.refresh)}...
                   </>
                 ) : (
                   <>
                     <RefreshCw className="h-4 w-4 mr-2" />
-                    加载系统信息
+                    {t(systemInformation.refresh)}
                   </>
                 )}
               </Button>

@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useTranslations } from "@/components/i18n";
 import type { ProxyLog } from "@/types/proxy";
 
 interface ProxyLogsDialogProps {
@@ -19,31 +20,33 @@ export function ProxyLogsDialog({
   onOpenChange,
   logs,
 }: ProxyLogsDialogProps) {
+  const { t, formatDate: formatDateI18n } = useTranslations();
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat("zh-CN", {
+    return formatDateI18n(date, {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
-    }).format(date);
+    });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[625px] max-h-[80vh]">
         <DialogHeader>
-          <DialogTitle>代理服务器日志</DialogTitle>
+          <DialogTitle>{t("proxy.logsDialog.title")}</DialogTitle>
           <DialogDescription>
-            查看代理服务器的运行日志和历史事件
+            {t("proxy.logsDialog.description")}
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="h-[350px] rounded-md border p-4">
           {logs.length === 0 ? (
             <div className="flex items-center justify-center h-full text-muted-foreground">
-              暂无日志记录
+              {t("proxy.logsDialog.noLogs")}
             </div>
           ) : (
             <div className="space-y-2">

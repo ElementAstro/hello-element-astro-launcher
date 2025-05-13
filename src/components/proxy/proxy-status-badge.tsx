@@ -1,5 +1,6 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "@/components/i18n";
 
 const statusBadgeVariants = cva(
   "inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
@@ -25,10 +26,12 @@ interface ProxyStatusBadgeProps
 }
 
 export function ProxyStatusBadge({ status, className }: ProxyStatusBadgeProps) {
+  const { t } = useTranslations();
+
   const statusLabels = {
-    running: "运行中",
-    idle: "空闲",
-    error: "错误",
+    running: t("proxy.status.running"),
+    idle: t("proxy.status.idle"),
+    error: t("proxy.status.error"),
   };
 
   return (

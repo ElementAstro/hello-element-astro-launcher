@@ -15,6 +15,7 @@ import { ANIMATION_DURATION } from "./animation-constants";
 import type { ChangeHandler } from "./types";
 import { cn } from "@/lib/utils";
 import { useMemo, useCallback, useState, useEffect } from "react";
+import { useTranslations } from "@/components/i18n";
 
 interface PaginationControlsProps {
   currentPage: number;
@@ -33,6 +34,8 @@ export function PaginationControls({
   itemsPerPage,
   totalItems,
 }: PaginationControlsProps) {
+  const { t } = useTranslations();
+
   const handlePageChange = useCallback(
     (page: number) => {
       if (isLoading || page < 1 || page > totalPages || page === currentPage)
@@ -50,58 +53,102 @@ export function PaginationControls({
     typeof window !== "undefined" ? window.innerWidth < 640 : false
   );
 
+  // 检测屏幕宽度变化以调整移动模式
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    if (typeof window === "undefined") return;
+
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // 生成分页按钮
   const pageButtons = useMemo(() => {
     const buttons = [];
-    // 在小屏幕上显示更少的页码按钮
-    const maxButtons = isMobile ? 3 : 5;
-    const totalShown = Math.min(maxButtons, totalPages);
+    const maxVisibleButtons = isMobile ? 3 : 5;
+    let startPage = 1;
+    let endPage = totalPages;
 
-    let startPage;
-    if (totalPages <= maxButtons) {
-      startPage = 1;
-    } else if (currentPage <= Math.ceil(maxButtons / 2)) {
-      startPage = 1;
-    } else if (currentPage >= totalPages - Math.floor(maxButtons / 2)) {
-      startPage = totalPages - maxButtons + 1;
-    } else {
-      startPage = currentPage - Math.floor(maxButtons / 2);
+    if (totalPages > maxVisibleButtons) {
+      const halfVisible = Math.floor(maxVisibleButtons / 2);
+
+      if (currentPage <= halfVisible + 1) {
+        // 靠近起始页
+        endPage = maxVisibleButtons;
+      } else if (currentPage >= totalPages - halfVisible) {
+        // 靠近末页
+        startPage = totalPages - maxVisibleButtons + 1;
+      } else {
+        // 在中间
+        startPage = currentPage - halfVisible;
+        endPage = currentPage + halfVisible;
+      }
     }
 
-    for (let i = 0; i < totalShown; i++) {
-      const pageNumber = startPage + i;
-      if (pageNumber > 0 && pageNumber <= totalPages) {
+    // 生成页码按钮
+    for (let pageNumber = startPage; pageNumber <= endPage; pageNumber++) {
+      if (pageNumber < 1 || pageNumber > totalPages) continue;
+
+      // 为当前页使用不同的样式
+      const isActive = currentPage === pageNumber;
+      if (isActive) {
         buttons.push(
           <motion.div
             key={pageNumber}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: ANIMATION_DURATION.fast }}
+          >
+            {" "}
+            <Button
+              variant="default"
+              size="sm"
+              disabled={isLoading}
+              className={cn(
+                "h-7 w-7 p-0 font-medium text-xs",
+                isLoading && "opacity-70"
+              )}
+              aria-current="page"
+              aria-label={t("launcher.pagination.currentPage", {
+                params: { pageNumber },
+                defaultValue: `当前页 ${pageNumber}`,
+              })}
+            >
+              {pageNumber}
+            </Button>
+          </motion.div>
+        );
+      } else {
+        buttons.push(
+          <motion.div
+            key={pageNumber}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: ANIMATION_DURATION.fast }}
           >
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant={currentPage === pageNumber ? "default" : "outline"}
-                  size="icon"
+                  variant="outline"
+                  size="sm"
                   onClick={() => handlePageChange(pageNumber)}
                   disabled={isLoading}
-                  className={cn(
-                    "w-7 h-7 text-xs",
-                    currentPage === pageNumber && "pointer-events-none"
-                  )}
-                  aria-label={`第 ${pageNumber} 页`}
+                  className="h-7 w-7 p-0 text-xs"
                   aria-current={currentPage === pageNumber ? "page" : undefined}
                 >
                   {pageNumber}
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">
-                跳转到第 {pageNumber} 页
+                {t("launcher.pagination.goToPage", {
+                  params: { pageNumber },
+                  defaultValue: `跳转到第 ${pageNumber} 页`,
+                })}
               </TooltipContent>
             </Tooltip>
           </motion.div>
@@ -110,7 +157,7 @@ export function PaginationControls({
     }
 
     return buttons;
-  }, [isMobile, totalPages, currentPage, isLoading, handlePageChange]);
+  }, [isMobile, totalPages, currentPage, isLoading, handlePageChange, t]);
 
   // 计算当前显示的项目范围
   const rangeInfo = useMemo(() => {
@@ -125,7 +172,9 @@ export function PaginationControls({
     <div
       className="px-2 py-3 sm:px-4 sm:py-3 border-t flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3"
       role="navigation"
-      aria-label="分页导航"
+      aria-label={t("launcher.pagination.navigation", {
+        defaultValue: "分页导航",
+      })}
     >
       <div className="flex items-center gap-1 sm:gap-2">
         {/* 移动端隐藏首页/尾页按钮，只保留箭头按钮 */}
@@ -137,15 +186,19 @@ export function PaginationControls({
                 size="sm"
                 onClick={() => handlePageChange(1)}
                 disabled={currentPage === 1 || isLoading}
-                aria-label="第一页"
+                aria-label={t("launcher.pagination.firstPage", {
+                  defaultValue: "首页",
+                })}
                 className="h-7 text-xs px-2"
               >
                 <ChevronsLeft className="h-3.5 w-3.5 mr-1" />
-                首页
+                {t("launcher.pagination.first", { defaultValue: "首页" })}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">
-              跳转到第一页
+              {t("launcher.pagination.goToFirstPage", {
+                defaultValue: "跳转到第一页",
+              })}
             </TooltipContent>
           </Tooltip>
         </div>
@@ -154,52 +207,53 @@ export function PaginationControls({
           <TooltipTrigger asChild>
             <Button
               variant="outline"
-              size="icon"
-              onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+              size="sm"
+              onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1 || isLoading}
-              aria-label="上一页"
-              className="w-7 h-7"
+              aria-label={t("launcher.pagination.previousPage", {
+                defaultValue: "上一页",
+              })}
+              className="h-7 text-xs"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline ml-1">
+                {t("launcher.pagination.previous", { defaultValue: "上一页" })}
+              </span>
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top" className="text-xs">
-            上一页
+            {t("launcher.pagination.goToPreviousPage", {
+              defaultValue: "跳转到上一页",
+            })}
           </TooltipContent>
         </Tooltip>
 
-        <div className="flex items-center gap-1">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={currentPage} // 当页码改变时触发动画
-              className="flex items-center gap-1"
-              initial={{ opacity: 0, x: -5 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 5 }}
-              transition={{ duration: ANIMATION_DURATION.fast }}
-            >
-              {pageButtons}
-            </motion.div>
-          </AnimatePresence>
+        <div className="flex gap-1">
+          <AnimatePresence mode="popLayout">{pageButtons}</AnimatePresence>
         </div>
 
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="outline"
-              size="icon"
-              onClick={() =>
-                handlePageChange(Math.min(currentPage + 1, totalPages))
-              }
+              size="sm"
+              onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages || isLoading}
-              aria-label="下一页"
-              className="w-7 h-7"
+              aria-label={t("launcher.pagination.nextPage", {
+                defaultValue: "下一页",
+              })}
+              className="h-7 text-xs"
             >
+              <span className="hidden sm:inline mr-1">
+                {t("launcher.pagination.next", { defaultValue: "下一页" })}
+              </span>
               <ChevronRight className="h-3.5 w-3.5" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top" className="text-xs">
-            下一页
+            {t("launcher.pagination.goToNextPage", {
+              defaultValue: "跳转到下一页",
+            })}
           </TooltipContent>
         </Tooltip>
 
@@ -211,40 +265,32 @@ export function PaginationControls({
                 size="sm"
                 onClick={() => handlePageChange(totalPages)}
                 disabled={currentPage === totalPages || isLoading}
-                aria-label="最后一页"
+                aria-label={t("launcher.pagination.lastPage", {
+                  defaultValue: "末页",
+                })}
                 className="h-7 text-xs px-2"
               >
-                <ChevronsRight className="h-3.5 w-3.5 mr-1" />
-                末页
+                {t("launcher.pagination.last", { defaultValue: "末页" })}
+                <ChevronsRight className="h-3.5 w-3.5 ml-1" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">
-              跳转到最后一页
+              {t("launcher.pagination.goToLastPage", {
+                defaultValue: "跳转到最后一页",
+              })}
             </TooltipContent>
           </Tooltip>
         </div>
       </div>
 
-      <div className="flex items-center text-center">
-        {/* 加载指示器 */}
-        {isLoading && (
-          <div className="flex items-center">
-            <div className="h-3 w-3 border-2 border-r-transparent rounded-full animate-spin mr-1.5" />
-            <span className="text-xs text-muted-foreground">加载中...</span>
-          </div>
-        )}
-
-        {/* 显示项目范围信息 */}
-        {!isLoading && rangeInfo && (
-          <div className="text-xs text-muted-foreground">{rangeInfo}</div>
-        )}
-
-        {!isLoading && !rangeInfo && (
-          <div className="text-xs text-muted-foreground whitespace-nowrap">
-            {currentPage} / {totalPages} 页
-          </div>
-        )}
-      </div>
+      {rangeInfo && (
+        <div className="text-xs text-muted-foreground">
+          {t("launcher.pagination.showing", {
+            params: { range: rangeInfo },
+            defaultValue: `显示 ${rangeInfo}`,
+          })}
+        </div>
+      )}
     </div>
   );
 }
