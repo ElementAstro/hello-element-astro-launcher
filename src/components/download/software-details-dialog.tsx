@@ -61,7 +61,7 @@ interface SoftwareDetailsDialogProps {
     additionalOptions?: AdditionalOption[];
     systemRequirements?: Record<string, string>;
   };
-  onDownload: (options?: { priority?: string; installPath?: string }) => void;
+  onDownload: (options?: { priority?: "low" | "normal" | "high"; installPath?: string }) => void;
   isDownloading?: boolean;
   trigger?: React.ReactNode;
 }
@@ -77,7 +77,7 @@ export function SoftwareDetailsDialog({
   const [installPath, setInstallPath] = useState<string>(
     software.defaultInstallPath || ""
   );
-  const [downloadPriority, setDownloadPriority] = useState<string>("normal");
+  const [downloadPriority, setDownloadPriority] = useState<"low" | "normal" | "high">("normal");
   const [copied, setCopied] = useState(false);
   const { t } = useTranslations(); // 使用 i18n hook
 
@@ -492,7 +492,7 @@ ${t("download.software.releaseDate", { defaultValue: "发布日期" })}: ${
                       </Label>
                       <Select
                         value={downloadPriority}
-                        onValueChange={setDownloadPriority}
+                        onValueChange={(value) => setDownloadPriority(value as "low" | "normal" | "high")}
                       >
                         <SelectTrigger id="priority">
                           <SelectValue />

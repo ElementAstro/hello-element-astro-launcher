@@ -36,8 +36,11 @@ import { SearchAndFilter } from "@/components/tools/search-and-filter";
 import { ToolList } from "@/components/tools/tool-list";
 import { ToolInputField } from "@/components/tools/tool-input-field";
 import { ToolResult } from "@/components/tools/tool-result";
+import { TranslationProvider } from "@/components/i18n";
+import { commonTranslations } from "@/components/i18n/common-translations";
+import { translations } from "@/components/tools/translations";
 
-export default function ToolsPage() {
+function ToolsPageContent() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -197,145 +200,167 @@ export default function ToolsPage() {
 
   return (
     <AppLayout>
-      <div className="flex-1 overflow-auto pb-12 md:pb-0">
-        <div className="container max-w-6xl py-4 md:py-6 space-y-4 md:space-y-6">
-          {/* 标题区域 */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold tracking-tight">
-                工具
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                天文计算和工具集合
-              </p>
+        <div className="flex-1 overflow-auto pb-12 md:pb-0">
+          <div className="container max-w-6xl py-4 md:py-6 space-y-4 md:space-y-6">
+            {/* 标题区域 */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold tracking-tight">
+                  工具
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  天文计算和工具集合
+                </p>
+              </div>
+              <Button
+                onClick={() => router.push("/tools/create")}
+                className="w-full sm:w-auto group"
+                aria-label="创建工具"
+              >
+                <Plus className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" />
+                创建工具
+              </Button>
             </div>
-            <Button
-              onClick={() => router.push("/tools/create")}
-              className="w-full sm:w-auto group"
-              aria-label="创建工具"
-            >
-              <Plus className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" />
-              创建工具
-            </Button>
+
+            {/* 搜索和筛选 */}
+            <SearchAndFilter
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              onRefresh={handleRefresh}
+            />
+
+            {/* 工具列表 */}
+            <ToolList
+              tools={filteredTools}
+              isLoading={isToolLoading}
+              searchQuery={searchQuery}
+              onRunTool={handleOpenRunDialog}
+              onDeleteTool={(id) => {
+                setToolToDelete(id);
+                setIsDeleteDialogOpen(true);
+              }}
+              onToggleFavorite={handleToggleFavorite}
+            />
           </div>
-
-          {/* 搜索和筛选 */}
-          <SearchAndFilter
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
-            onRefresh={handleRefresh}
-          />
-
-          {/* 工具列表 */}
-          <ToolList
-            tools={filteredTools}
-            isLoading={isToolLoading}
-            searchQuery={searchQuery}
-            onRunTool={handleOpenRunDialog}
-            onDeleteTool={(id) => {
-              setToolToDelete(id);
-              setIsDeleteDialogOpen(true);
-            }}
-            onToggleFavorite={handleToggleFavorite}
-          />
         </div>
-      </div>
 
-      {/* 删除确认对话框 */}
-      <AlertDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-      >
-        <AlertDialogContent className="max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle>确定要删除吗？</AlertDialogTitle>
-            <AlertDialogDescription>
-              此操作无法撤消。这将永久删除该工具及其所有数据。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 sm:gap-0">
-            <AlertDialogCancel onClick={() => setToolToDelete(null)}>
-              取消
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteTool}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              删除
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        {/* 删除确认对话框 */}
+        <AlertDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+        >
+          <AlertDialogContent className="max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle>确定要删除吗？</AlertDialogTitle>
+              <AlertDialogDescription>
+                此操作无法撤消。这将永久删除该工具及其所有数据。
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-2 sm:gap-0">
+              <AlertDialogCancel onClick={() => setToolToDelete(null)}>
+                取消
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteTool}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                删除
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
-      {/* 运行工具对话框 */}
-      <Dialog open={isRunDialogOpen} onOpenChange={setIsRunDialogOpen}>
-        <DialogContent className="sm:max-w-xl lg:max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle>{selectedTool?.name}</DialogTitle>
-            <DialogDescription>{selectedTool?.description}</DialogDescription>
-          </DialogHeader>
+        {/* 运行工具对话框 */}
+        <Dialog open={isRunDialogOpen} onOpenChange={setIsRunDialogOpen}>
+          <DialogContent className="sm:max-w-xl lg:max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle>{selectedTool?.name}</DialogTitle>
+              <DialogDescription>{selectedTool?.description}</DialogDescription>
+            </DialogHeader>
 
-          <div className="flex-1 overflow-auto py-3 md:py-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-              {/* 输入部分 */}
-              <div className="space-y-3 md:space-y-4">
-                <h3 className="text-sm font-medium">输入</h3>
+            <div className="flex-1 overflow-auto py-3 md:py-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                {/* 输入部分 */}
+                <div className="space-y-3 md:space-y-4">
+                  <h3 className="text-sm font-medium">输入</h3>
 
-                {selectedTool?.inputs.map((input) => (
-                  <ToolInputField
-                    key={input.id}
-                    input={input}
-                    value={toolInputs[input.name]}
-                    onChange={(value) =>
-                      setToolInputs((prev) => ({
-                        ...prev,
-                        [input.name]: value,
-                      }))
-                    }
+                  {selectedTool?.inputs.map((input) => (
+                    <ToolInputField
+                      key={input.id}
+                      input={input}
+                      value={toolInputs[input.name]}
+                      onChange={(value) =>
+                        setToolInputs((prev) => ({
+                          ...prev,
+                          [input.name]: value,
+                        }))
+                      }
+                    />
+                  ))}
+
+                  <div className="pt-3 md:pt-4">
+                    <Button
+                      onClick={handleRunTool}
+                      disabled={isRunning}
+                      className="w-full transition-all"
+                    >
+                      {isRunning ? (
+                        <>
+                          <span className="loading loading-spinner"></span>
+                          正在运行...
+                        </>
+                      ) : (
+                        "运行工具"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* 结果部分 */}
+                <div className="space-y-3 md:space-y-4">
+                  <h3 className="text-sm font-medium">结果</h3>
+                  <ToolResult
+                    tool={selectedTool}
+                    result={toolResult}
+                    isRunning={isRunning}
                   />
-                ))}
-
-                <div className="pt-3 md:pt-4">
-                  <Button
-                    onClick={handleRunTool}
-                    disabled={isRunning}
-                    className="w-full transition-all"
-                  >
-                    {isRunning ? (
-                      <>
-                        <span className="loading loading-spinner"></span>
-                        正在运行...
-                      </>
-                    ) : (
-                      "运行工具"
-                    )}
-                  </Button>
                 </div>
               </div>
-
-              {/* 结果部分 */}
-              <div className="space-y-3 md:space-y-4">
-                <h3 className="text-sm font-medium">结果</h3>
-                <ToolResult
-                  tool={selectedTool}
-                  result={toolResult}
-                  isRunning={isRunning}
-                />
-              </div>
             </div>
-          </div>
 
-          <DialogFooter className="mt-3 md:mt-4">
-            <Button variant="outline" onClick={() => setIsRunDialogOpen(false)}>
-              关闭
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter className="mt-3 md:mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setIsRunDialogOpen(false)}
+              >
+                关闭
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-      <Toaster />
-    </AppLayout>
+        <Toaster />
+      </AppLayout>
+  );
+}
+
+export default function ToolsPage() {
+  // 检测浏览器语言，设置为英文或中文
+  const userLanguage = typeof navigator !== 'undefined' ? 
+    (navigator.language.startsWith('zh') ? 'zh-CN' : 'en-US') : 'en-US';
+  
+  // 从用户区域确定地区
+  const userRegion = userLanguage === 'zh-CN' ? 'CN' : 'US';
+  
+  return (
+    <TranslationProvider 
+      initialDictionary={{...commonTranslations[userLanguage], ...translations}}
+      lang={userLanguage.split('-')[0]}
+      initialRegion={userRegion}
+    >
+      <ToolsPageContent />
+    </TranslationProvider>
   );
 }

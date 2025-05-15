@@ -5,3 +5,4 @@ export * from "./proxy-card";
 export * from "./proxy-status-badge";
 export * from "./delete-proxy-dialog";
 export * from "./proxy-logs-dialog";
+export * from "./translations";

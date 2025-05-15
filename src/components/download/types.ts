@@ -16,6 +16,7 @@ export interface ImportableSoftware
     | "dependencies"
     | "tags"
     | "releaseNotes"
+    | "systemRequirements"
   > {
   rating?: number;
 }

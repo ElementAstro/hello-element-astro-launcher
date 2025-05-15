@@ -25,7 +25,7 @@ import { useTranslations } from "@/components/i18n/client"; // 引入 i18n hook
 
 interface BatchDownloadDialogProps {
   software: Software[];
-  onBatchDownload: (ids: number[], options?: { priority?: string }) => void;
+  onBatchDownload: (ids: number[], options?: { priority?: "low" | "normal" | "high" }) => void;
   isDownloading?: boolean;
   trigger?: React.ReactNode;
 }

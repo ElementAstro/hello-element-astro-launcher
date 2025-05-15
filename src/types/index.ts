@@ -40,6 +40,8 @@ export interface DownloadItem {
   speed?: string;
   url?: string;
   checksum?: string;
+  priority?: "low" | "normal" | "high";
+  installPath?: string;
 }
 
 // Equipment types

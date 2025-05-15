@@ -6,6 +6,8 @@ import { toast, Toaster } from "sonner";
 
 import { AppLayout } from "@/components/app-layout";
 import type { Proxy, ProxyLog } from "@/types/proxy";
+import { TranslationProvider, useTranslations } from "@/components/i18n";
+import { proxyPageTranslations } from "./translations-loader";
 
 import { ProxyHeader } from "@/components/proxy/proxy-header";
 import { ProxySearchAndFilter } from "@/components/proxy/proxy-search-and-filter";
@@ -14,6 +16,26 @@ import { DeleteProxyDialog } from "@/components/proxy/delete-proxy-dialog";
 import { ProxyLogsDialog } from "@/components/proxy/proxy-logs-dialog";
 
 export default function ProxyPage() {
+  // 检测浏览器语言，设置为英文或中文
+  const userLanguage = typeof navigator !== 'undefined' ? 
+    (navigator.language.startsWith('zh') ? 'zh-CN' : 'en-US') : 'en-US';
+  
+  // 从用户区域确定地区
+  const userRegion = userLanguage === 'zh-CN' ? 'CN' : 'US';
+  
+  return (
+    <TranslationProvider 
+      initialDictionary={proxyPageTranslations[userLanguage] || proxyPageTranslations['en-US']}
+      lang={userLanguage.split('-')[0]}
+      initialRegion={userRegion}
+    >
+      <ProxyPageContent />
+    </TranslationProvider>
+  );
+}
+
+function ProxyPageContent() {
+  const { t } = useTranslations();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTab, setSelectedTab] = useState("all");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -110,14 +132,14 @@ export default function ProxyPage() {
                 {
                   time: new Date().toISOString(),
                   level: "info",
-                  message: "代理服务已启动",
+                  message: t('proxy.status.running'),
                 },
               ],
             }
           : proxy
       )
     );
-    toast.success("代理已启动");
+    toast.success(t('proxy.card.tooltips.start'));
   };
 
   const stopProxy = (id: string) => {
@@ -132,14 +154,14 @@ export default function ProxyPage() {
                 {
                   time: new Date().toISOString(),
                   level: "info",
-                  message: "代理服务已停止",
+                  message: t('proxy.status.idle'),
                 },
               ],
             }
           : proxy
       )
     );
-    toast.success("代理已停止");
+    toast.success(t('proxy.card.tooltips.stop'));
   };
 
   const deleteProxy = () => {
@@ -147,7 +169,7 @@ export default function ProxyPage() {
     setProxies((prev) => prev.filter((proxy) => proxy.id !== proxyToDelete));
     setIsDeleteDialogOpen(false);
     setProxyToDelete(null);
-    toast.success("代理已删除");
+    toast.success(t('proxy.deleteDialog.confirm'));
   };
 
   const handleViewLogs = (proxy: Proxy) => {
@@ -156,8 +178,12 @@ export default function ProxyPage() {
   };
 
   const handleRefresh = () => {
-    toast.success("代理列表已刷新");
+    toast.success(t('proxy.search.placeholder'));
     // 实际应用中，这里会重新获取代理列表
+  };
+
+  const handleCreateProxy = () => {
+    toast.info(t('proxy.list.addNew'));
   };
 
   return (
@@ -169,7 +195,7 @@ export default function ProxyPage() {
       >
         <div className="container py-6 space-y-6">
           <ProxyHeader
-            onCreateProxy={() => toast.info("创建新代理功能即将推出")}
+            onCreateProxy={handleCreateProxy}
           />
 
           <ProxySearchAndFilter
@@ -186,13 +212,13 @@ export default function ProxyPage() {
             searchQuery={searchQuery}
             onStartProxy={startProxy}
             onStopProxy={stopProxy}
-            onEditProxy={(id: string) => toast.info(`编辑代理 ${id}`)}
+            onEditProxy={(id: string) => toast.info(`${t('proxy.card.tooltips.edit')} ${id}`)}
             onDeleteProxy={(id: string) => {
               setProxyToDelete(id);
               setIsDeleteDialogOpen(true);
             }}
             onViewLogs={handleViewLogs}
-            onCreateProxy={() => toast.info("创建新代理功能即将推出")}
+            onCreateProxy={handleCreateProxy}
           />
         </div>
       </motion.div>

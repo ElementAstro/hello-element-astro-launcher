@@ -8,6 +8,8 @@ import { toast, Toaster } from "sonner";
 import { AppLayout } from "@/components/app-layout";
 import { useAppStore } from "@/store/store";
 import type { Agent } from "@/types/agent";
+import { TranslationProvider } from "@/components/i18n";
+import { commonTranslations } from "@/components/i18n/common-translations";
 import {
   AgentHeader,
   AgentSearchAndFilter,
@@ -16,7 +18,7 @@ import {
   AgentLogsDialog,
 } from "@/components/agents";
 
-export default function AgentsPage() {
+function AgentsPageContent() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTab, setSelectedTab] = useState("all");
@@ -176,5 +178,24 @@ export default function AgentsPage() {
 
       <Toaster />
     </AppLayout>
+  );
+}
+
+export default function AgentsPage() {
+  // 检测浏览器语言，设置为英文或中文
+  const userLanguage = typeof navigator !== 'undefined' ? 
+    (navigator.language.startsWith('zh') ? 'zh-CN' : 'en-US') : 'en-US';
+  
+  // 从用户区域确定地区
+  const userRegion = userLanguage === 'zh-CN' ? 'CN' : 'US';
+  
+  return (
+    <TranslationProvider 
+      initialDictionary={commonTranslations[userLanguage] || commonTranslations['en-US']}
+      lang={userLanguage.split('-')[0]}
+      initialRegion={userRegion}
+    >
+      <AgentsPageContent />
+    </TranslationProvider>
   );
 }

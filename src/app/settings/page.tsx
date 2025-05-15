@@ -7,6 +7,8 @@ import { useAppStore } from "@/store/store";
 import { toast, Toaster } from "sonner";
 import type { Theme, Settings } from "@/components/settings";
 import { assertSettings } from "@/components/settings";
+import { TranslationProvider } from "@/components/i18n";
+import { commonTranslations } from "@/components/i18n/common-translations";
 import {
   SettingsHeader,
   SettingsNavigation,
@@ -20,7 +22,7 @@ import {
   AdvancedSettings,
 } from "@/components/settings";
 
-export default function SettingsPage() {
+function SettingsPageContent() {
   const store = useAppStore();
   const settings = assertSettings(store.settings);
   const [activeTab, setActiveTab] = useState("general");
@@ -191,5 +193,24 @@ export default function SettingsPage() {
       </div>
       <Toaster />
     </AppLayout>
+  );
+}
+
+export default function SettingsPage() {
+  // 检测浏览器语言，设置为英文或中文
+  const userLanguage = typeof navigator !== 'undefined' ? 
+    (navigator.language.startsWith('zh') ? 'zh-CN' : 'en-US') : 'en-US';
+  
+  // 从用户区域确定地区
+  const userRegion = userLanguage === 'zh-CN' ? 'CN' : 'US';
+  
+  return (
+    <TranslationProvider 
+      initialDictionary={commonTranslations[userLanguage] || commonTranslations['en-US']}
+      lang={userLanguage.split('-')[0]}
+      initialRegion={userRegion}
+    >
+      <SettingsPageContent />
+    </TranslationProvider>
   );
 }

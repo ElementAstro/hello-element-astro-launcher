@@ -8,6 +8,9 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/app-layout";
+import { TranslationProvider } from "@/components/i18n";
+import { commonTranslations } from "@/components/i18n/common-translations";
+import { translations } from "@/components/tools/translations";
 import {
   Form,
   FormControl,
@@ -77,7 +80,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export default function ToolCreatePage() {
+function ToolCreatePageContent() {
   const router = useRouter();
   const { createTool } = useAppStore();
 
@@ -647,8 +650,26 @@ export default function ToolCreatePage() {
               </>
             )}
           </div>
-        </div>
-      </div>
+        </div>      </div>
     </AppLayout>
+  );
+}
+
+export default function ToolCreatePage() {
+  // 检测浏览器语言，设置为英文或中文
+  const userLanguage = typeof navigator !== 'undefined' ? 
+    (navigator.language.startsWith('zh') ? 'zh-CN' : 'en-US') : 'en-US';
+  
+  // 从用户区域确定地区
+  const userRegion = userLanguage === 'zh-CN' ? 'CN' : 'US';
+  
+  return (
+    <TranslationProvider 
+      initialDictionary={{...commonTranslations[userLanguage], ...translations}}
+      lang={userLanguage.split('-')[0]}
+      initialRegion={userRegion}
+    >
+      <ToolCreatePageContent />
+    </TranslationProvider>
   );
 }
