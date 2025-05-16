@@ -131,35 +131,40 @@ function AgentsPageContent() {
   return (
     <AppLayout>
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex-1 overflow-auto pb-16 md:pb-0"
+        transition={{ duration: 0.2 }}
+        className="flex-1 h-full overflow-hidden"
       >
-        <div className="container py-6 space-y-6">
+        <div className="container h-full flex flex-col py-2 px-3 max-h-full">
           <AgentHeader onCreateAgent={() => router.push("/agents/create")} />
 
-          <AgentSearchAndFilter
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            selectedTab={selectedTab}
-            onTabChange={setSelectedTab}
-            onRefresh={handleRefresh}
-          />
+          <div className="mb-1.5">
+            <AgentSearchAndFilter
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              selectedTab={selectedTab}
+              onTabChange={setSelectedTab}
+              onRefresh={handleRefresh}
+            />
+          </div>
 
-          <AgentList
-            agents={filteredAgents}
-            isLoading={isAgentLoading}
-            searchQuery={searchQuery}
-            onRunAgent={handleRunAgent}
-            onStopAgent={handleStopAgent}
-            onEditAgent={(id) => router.push(`/agents/edit/${id}`)}
-            onDeleteAgent={(id) => {
-              setAgentToDelete(id);
-              setIsDeleteDialogOpen(true);
-            }}
-            onViewLogs={handleViewLogs}
-            onCreateAgent={() => router.push("/agents/create")}
-          />
+          <div className="flex-1 min-h-0 overflow-auto pr-1 -mr-1">
+            <AgentList
+              agents={filteredAgents}
+              isLoading={isAgentLoading}
+              searchQuery={searchQuery}
+              onRunAgent={handleRunAgent}
+              onStopAgent={handleStopAgent}
+              onEditAgent={(id) => router.push(`/agents/edit/${id}`)}
+              onDeleteAgent={(id) => {
+                setAgentToDelete(id);
+                setIsDeleteDialogOpen(true);
+              }}
+              onViewLogs={handleViewLogs}
+              onCreateAgent={() => router.push("/agents/create")}
+            />
+          </div>
         </div>
       </motion.div>
 

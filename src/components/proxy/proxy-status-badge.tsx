@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { useTranslations } from "@/components/i18n";
 
 const statusBadgeVariants = cva(
-  "inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
+  "inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium",
   {
     variants: {
       variant: {
@@ -34,8 +34,7 @@ export function ProxyStatusBadge({ status, className }: ProxyStatusBadgeProps) {
     error: t("proxy.status.error"),
   };
 
-  return (
-    <span
+  return (    <span
       className={cn(
         statusBadgeVariants({
           variant: status,
@@ -43,16 +42,16 @@ export function ProxyStatusBadge({ status, className }: ProxyStatusBadgeProps) {
         className
       )}
     >
-      <span className="mr-1">
+      <span className="mr-0.5">
         <span
-          className={cn("inline-block h-1.5 w-1.5 rounded-full", {
+          className={cn("inline-block h-1 w-1 rounded-full", {
             "bg-green-600": status === "running",
             "bg-amber-600": status === "idle",
             "bg-red-600": status === "error",
           })}
         />
       </span>
-      {statusLabels[status]}
+      <span className="text-[10px]">{statusLabels[status]}</span>
     </span>
   );
 }

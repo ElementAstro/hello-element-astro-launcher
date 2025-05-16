@@ -43,11 +43,11 @@ export function AgentList({
   const { t } = useTranslations();
   const [expandedError, setExpandedError] = useState(false);
   const [runningAgents, setRunningAgents] = useState<Set<string>>(new Set());
-  
+
   // 初始化运行中的代理状态
   useEffect(() => {
     const running = new Set<string>();
-    agents.forEach(agent => {
+    agents.forEach((agent) => {
       if (agent.status === "running") {
         running.add(agent.id);
       }
@@ -58,23 +58,25 @@ export function AgentList({
   // 处理代理运行
   const handleRunAgent = async (id: string) => {
     try {
-      setRunningAgents(prev => new Set(prev).add(id));
-      
+      setRunningAgents((prev) => new Set(prev).add(id));
+
       // 调用代理 API
       await agentsApi.runAgent(id);
-      
+
       // 如果提供了回调，调用回调
       if (onRunAgent) await onRunAgent(id);
-      
     } catch (err) {
-      setRunningAgents(prev => {
+      setRunningAgents((prev) => {
         const newSet = new Set(prev);
         newSet.delete(id);
         return newSet;
       });
-      
+
       toast.error(t("agent.run.error", { defaultValue: "启动代理失败" }), {
-        description: err instanceof Error ? err.message : t("common.tryAgain", { defaultValue: "请重试" }),
+        description:
+          err instanceof Error
+            ? err.message
+            : t("common.tryAgain", { defaultValue: "请重试" }),
       });
     }
   };
@@ -84,18 +86,21 @@ export function AgentList({
     try {
       // 调用代理 API
       await agentsApi.stopAgent(id);
-      
+
       // 如果提供了回调，调用回调
       if (onStopAgent) await onStopAgent(id);
-      
-      setRunningAgents(prev => {
+
+      setRunningAgents((prev) => {
         const newSet = new Set(prev);
         newSet.delete(id);
         return newSet;
       });
     } catch (err) {
       toast.error(t("agent.stop.error", { defaultValue: "停止代理失败" }), {
-        description: err instanceof Error ? err.message : t("common.tryAgain", { defaultValue: "请重试" }),
+        description:
+          err instanceof Error
+            ? err.message
+            : t("common.tryAgain", { defaultValue: "请重试" }),
       });
     }
   };
@@ -105,18 +110,29 @@ export function AgentList({
     try {
       // 调用代理 API
       const duplicatedAgent = await agentsApi.duplicateAgent(id);
-      
-      toast.success(t("agent.duplicate.success", { defaultValue: "代理复制成功" }), {
-        description: t("agent.duplicate.description", { params: { name: duplicatedAgent.name }, defaultValue: `已创建代理副本 "${duplicatedAgent.name}"` }),
-      });
-      
+
+      toast.success(
+        t("agent.duplicate.success", { defaultValue: "代理复制成功" }),
+        {
+          description: t("agent.duplicate.description", {
+            params: { name: duplicatedAgent.name },
+            defaultValue: `已创建代理副本 "${duplicatedAgent.name}"`,
+          }),
+        }
+      );
+
       // 如果提供了回调，调用回调
       if (onDuplicateAgent) await onDuplicateAgent(id);
-      
     } catch (err) {
-      toast.error(t("agent.duplicate.error", { defaultValue: "复制代理失败" }), {
-        description: err instanceof Error ? err.message : t("common.tryAgain", { defaultValue: "请重试" }),
-      });
+      toast.error(
+        t("agent.duplicate.error", { defaultValue: "复制代理失败" }),
+        {
+          description:
+            err instanceof Error
+              ? err.message
+              : t("common.tryAgain", { defaultValue: "请重试" }),
+        }
+      );
     }
   };
 
@@ -210,9 +226,13 @@ export function AgentList({
       <div className="rounded-full bg-destructive/10 text-destructive p-3 mb-4">
         <ServerOff className="h-6 w-6" />
       </div>
-      <h3 className="text-lg font-medium">{t("agent.list.loadError", { defaultValue: "加载代理失败" })}</h3>
+      <h3 className="text-lg font-medium">
+        {t("agent.list.loadError", { defaultValue: "加载代理失败" })}
+      </h3>
       <p className="text-muted-foreground mt-2 mb-4 max-w-md">
-        {t("agent.list.errorMessage", { defaultValue: "加载代理时发生错误，请重试。" })}
+        {t("agent.list.errorMessage", {
+          defaultValue: "加载代理时发生错误，请重试。",
+        })}
       </p>
 
       {error && (
@@ -240,12 +260,16 @@ export function AgentList({
             size="sm"
             onClick={() => setExpandedError(!expandedError)}
           >
-            {expandedError ? 
-              t("common.hideDetails", { defaultValue: "隐藏详情" }) : 
-              t("common.showDetails", { defaultValue: "显示详情" })}
+            {expandedError
+              ? t("common.hideDetails", { defaultValue: "隐藏详情" })
+              : t("common.showDetails", { defaultValue: "显示详情" })}
           </Button>
         )}
-        {onRetry && <Button onClick={onRetry}>{t("common.retry", { defaultValue: "重试" })}</Button>}
+        {onRetry && (
+          <Button onClick={onRetry}>
+            {t("common.retry", { defaultValue: "重试" })}
+          </Button>
+        )}
       </div>
     </motion.div>
   );
@@ -267,11 +291,18 @@ export function AgentList({
       >
         <Terminal className="h-6 w-6 text-muted-foreground" />
       </motion.div>
-      <h3 className="text-lg font-medium">{t("agent.list.notFound", { defaultValue: "未找到代理" })}</h3>
+      <h3 className="text-lg font-medium">
+        {t("agent.list.notFound", { defaultValue: "未找到代理" })}
+      </h3>
       <p className="text-muted-foreground mt-2 mb-4 max-w-md">
         {searchQuery
-          ? t("agent.list.noMatchSearch", { defaultValue: "没有代理匹配您的搜索条件。请尝试不同的搜索词。" })
-          : t("agent.list.noAgentsCreated", { defaultValue: "您尚未创建任何代理。创建您的第一个代理以自动化您的天文工作流程。" })}
+          ? t("agent.list.noMatchSearch", {
+              defaultValue: "没有代理匹配您的搜索条件。请尝试不同的搜索词。",
+            })
+          : t("agent.list.noAgentsCreated", {
+              defaultValue:
+                "您尚未创建任何代理。创建您的第一个代理以自动化您的天文工作流程。",
+            })}
       </p>
       <motion.div
         whileHover={{ scale: 1.03 }}
@@ -293,7 +324,7 @@ export function AgentList({
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="space-y-4"
+      className="space-y-2"
     >
       {agents.map((agent) => (
         <motion.div

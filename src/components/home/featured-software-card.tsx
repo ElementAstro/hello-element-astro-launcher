@@ -21,6 +21,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface FeaturedSoftwareCardProps {
   title: string;
@@ -39,6 +40,7 @@ export function FeaturedSoftwareCard({
   category,
   isLoading = false,
 }: FeaturedSoftwareCardProps) {
+  const t = useTranslations("home.featuredSoftwareCard");
   const [imageError, setImageError] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [isLaunching, setIsLaunching] = useState(false);
@@ -59,20 +61,21 @@ export function FeaturedSoftwareCard({
   if (isLoading) {
     return (
       <Card className="overflow-hidden h-full">
-        <CardHeader className="p-4 flex flex-row items-center gap-4">
-          <Skeleton className="w-[60px] h-[60px] rounded-md" />
-          <div className="space-y-2">
-            <Skeleton className="h-5 w-32" />
-            <Skeleton className="h-4 w-16" />
+        <CardHeader className="p-2 flex flex-row items-center gap-2">
+          {" "}
+          <Skeleton className="w-[32px] h-[32px] rounded-md" />
+          <div className="space-y-1">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-3 w-14" />
           </div>
         </CardHeader>
-        <CardContent className="p-4 pt-0">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-[80%] mt-2" />
+        <CardContent className="p-2 pt-0">
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-[80%] mt-1" />
         </CardContent>
-        <CardFooter className="p-4 border-t flex justify-between items-center">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-9 w-20 rounded-md" />
+        <CardFooter className="p-2 border-t flex justify-between items-center">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-7 w-16 rounded-md" />
         </CardFooter>
       </Card>
     );
@@ -95,13 +98,15 @@ export function FeaturedSoftwareCard({
           hovered && "shadow-lg"
         )}
       >
-        <CardHeader className="p-4 flex flex-row items-center gap-4">
+        {" "}
+        <CardHeader className="p-2 flex flex-row items-center gap-2">
           <div className="relative">
+            {" "}
             <Image
               src={imageError ? "/placeholder.svg" : icon || "/placeholder.svg"}
               alt={title}
-              width={60}
-              height={60}
+              width={32}
+              height={32}
               className="rounded-md"
               onError={handleImageError}
             />
@@ -120,27 +125,27 @@ export function FeaturedSoftwareCard({
             >
               <Star className="h-3 w-3" />
             </motion.div>
-          </div>
+          </div>{" "}
           <div>
-            <CardTitle>{title}</CardTitle>
+            <CardTitle className="text-sm text-xs">{title}</CardTitle>
             <motion.div
               initial={{ scale: 0.8, opacity: 0, x: -10 }}
               animate={{ scale: 1, opacity: 1, x: 0 }}
               transition={{ duration: 0.3, delay: 0.1 }}
             >
-              <Badge variant="secondary" className="mt-1">
+              <Badge variant="secondary" className="mt-0.5 text-[10px]">
                 {category}
               </Badge>
             </motion.div>
           </div>
         </CardHeader>
-        <CardContent className="p-4 pt-0 flex-1">
-          <CardDescription className="line-clamp-2">
+        <CardContent className="p-2 pt-0 flex-1">
+          {" "}
+          <CardDescription className="line-clamp-1 text-xs">
             {description}
           </CardDescription>
-
           <motion.div
-            className="flex items-center justify-between mt-3 text-xs text-muted-foreground"
+            className="flex items-center justify-between mt-1 text-xs text-muted-foreground"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: DURATION.normal, delay: 0.2 }}
@@ -148,29 +153,29 @@ export function FeaturedSoftwareCard({
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex items-center cursor-help">
+                  {" "}
                   <Info className="h-3 w-3 mr-1 text-muted-foreground" />
-                  <span>Release: 2024.2</span>
+                  <span>{t("releaseVersion", { version: "2024.2" })}</span>
                 </div>
-              </TooltipTrigger>
+              </TooltipTrigger>{" "}
               <TooltipContent>
-                <p>最近版本发布日期</p>
+                <p>{t("releaseInfo")}</p>
               </TooltipContent>
-            </Tooltip>
-
+            </Tooltip>{" "}
             <div className="flex items-center">
               <Star className="h-3 w-3 text-amber-500 fill-amber-500 mr-1" />
-              <span>4.8/5</span>
+              <span>{t("rating", { rating: "4.8/5" })}</span>
             </div>
-          </motion.div>
+          </motion.div>{" "}
         </CardContent>
-        <CardFooter className="p-4 flex justify-between items-center border-t">
+        <CardFooter className="p-2 flex justify-between items-center border-t">
           <motion.div
-            className="text-sm text-muted-foreground"
+            className="text-xs text-muted-foreground"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
           >
-            {downloads} downloads
+            {downloads} {t("downloads")}
           </motion.div>
           <AnimatePresence mode="wait">
             {isLaunching ? (
@@ -190,9 +195,9 @@ export function FeaturedSoftwareCard({
                     initial={{ width: 0 }}
                     animate={{ width: "100%" }}
                     transition={{ duration: 1.5, ease: "linear" }}
-                  />
+                  />{" "}
                   <Loader2 className="h-3 w-3 mr-2 animate-spin" />
-                  启动中
+                  {t("launching")}
                 </Button>
               </motion.div>
             ) : (
@@ -206,6 +211,7 @@ export function FeaturedSoftwareCard({
                     title.toLowerCase()
                   )}`}
                 >
+                  {" "}
                   <Button
                     variant="outline"
                     size="sm"
@@ -216,7 +222,7 @@ export function FeaturedSoftwareCard({
                       handleLaunch();
                     }}
                   >
-                    Launch
+                    {t("launch")}
                   </Button>
                 </Link>
               </motion.div>

@@ -34,22 +34,21 @@ export function DeleteProxyDialog({
     onConfirm();
   };
 
-  return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{t("proxy.deleteDialog.title")}</AlertDialogTitle>
-          <AlertDialogDescription>
+  return (    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent className="max-w-[400px]">
+        <AlertDialogHeader className="pb-2">
+          <AlertDialogTitle className="text-base">{t("proxy.deleteDialog.title")}</AlertDialogTitle>
+          <AlertDialogDescription className="text-xs">
             {t("proxy.deleteDialog.description")}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleCancel}>
+        <AlertDialogFooter className="gap-2">
+          <AlertDialogCancel onClick={handleCancel} className="h-8 text-xs">
             {t("proxy.deleteDialog.cancel")}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            className="h-8 text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             {t("proxy.deleteDialog.confirm")}
           </AlertDialogAction>

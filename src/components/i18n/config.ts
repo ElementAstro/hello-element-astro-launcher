@@ -1,5 +1,5 @@
 // Central configuration for i18n system
-export const locales = ["en", "fr", "es", "de", "ja", "ar"];
+export const locales = ["en", "fr", "es", "de", "ja", "ar", "zh-CN"];
 export const defaultLocale = "en";
 
 // Define language regions for regional variations
@@ -10,6 +10,7 @@ export const regions = {
   de: ["DE", "AT", "CH"],
   ja: ["JP"],
   ar: ["SA", "EG", "AE"],
+  "zh-CN": ["CN"],
 };
 
 // Define writing directions for languages
@@ -20,6 +21,7 @@ export const directions = {
   de: "ltr",
   ja: "ltr",
   ar: "rtl",
+  "zh-CN": "ltr",
 };
 
 // Define pluralization rules for each language

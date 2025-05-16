@@ -4,8 +4,7 @@ import { ANIMATION_DURATION } from "./animation-constants";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import type { Category, ChangeHandler } from "./types";
 import { CATEGORIES } from "./constants";
-import { useRef, useEffect, useState, useCallback } from "react";
-import { cn } from "@/lib/utils";
+import { useRef, useEffect, useState } from "react";
 import * as launcherApi from "./launcher-api";
 import { useTranslations } from "@/components/i18n";
 
@@ -107,14 +106,7 @@ export function CategoryTabs({
 
     fetchCategories();
   }, [t]); // 当t(翻译函数)改变时重新获取分类
-
-  const handleTabChange = useCallback(
-    (value: string) => {
-      if (isLoading || isLoadingCategories) return;
-      onTabChange(value as Category);
-    },
-    [isLoading, isLoadingCategories, onTabChange]
-  );
+  // 不需要单独的handleTabChange函数，直接在onValueChange中调用
 
   // 当标签更改时滚动到视图 - 使用更高效的方案
   useEffect(() => {
@@ -145,89 +137,35 @@ export function CategoryTabs({
     }
   }, [categories, currentTab, onTabChange]);
 
-  return (
-    <Tabs
-      value={currentTab}
-      onValueChange={handleTabChange}
-      className="flex-1 overflow-hidden"
+  return (    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: ANIMATION_DURATION.normal }}
+      className="border-b py-0.5"
     >
-      <div className="border-b relative">
-        <ScrollArea className="w-full" type="scroll">
-          <div
-            ref={tabsRef}
-            className="px-2 overflow-x-auto no-scrollbar"
-            style={{ scrollbarWidth: "none" }} // Firefox
-          >
-            <TabsList className="h-12 w-full justify-start bg-transparent">
-              {categories.map(({ value, label }) => (
-                <TabsTrigger
-                  key={value}
-                  value={value}
-                  className={cn(
-                    "relative h-9 px-2.5 py-1.5 text-xs sm:text-sm transition-all outline-none focus-visible:ring-2 focus-visible:ring-offset-0",
-                    (isLoading || isLoadingCategories) &&
-                      "opacity-70 cursor-not-allowed",
-                    currentTab === value
-                      ? "text-primary"
-                      : "text-muted-foreground"
-                  )}
-                  disabled={isLoading || isLoadingCategories}
-                  ref={currentTab === value ? activeTabRef : undefined}
-                >
-                  <span className="relative z-10">{label}</span>
-                  {currentTab === value && (
-                    <motion.span
-                      className="absolute inset-0 rounded-md bg-primary/10"
-                      layoutId="activeTabBackground"
-                      transition={{
-                        type: "spring",
-                        stiffness: 300,
-                        damping: 30,
-                        duration: ANIMATION_DURATION.normal,
-                      }}
-                    />
-                  )}
-                  {currentTab === value && (
-                    <motion.span
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-                      layoutId="activeTabIndicator"
-                      transition={{
-                        type: "spring",
-                        stiffness: 300,
-                        damping: 30,
-                        duration: ANIMATION_DURATION.normal,
-                      }}
-                    />
-                  )}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </div>
-          <ScrollBar orientation="horizontal" className="h-1.5" />
-        </ScrollArea>
-
-        {/* 加载指示器 */}
-        {(isLoading || isLoadingCategories) && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary/40"
-          >
-            <motion.div
-              className="h-full bg-primary"
-              animate={{
-                x: ["0%", "100%"],
-                width: ["10%", "30%"],
-              }}
-              transition={{
-                duration: 1,
-                repeat: Infinity,
-                ease: "linear",
-              }}
-            />
-          </motion.div>
-        )}
-      </div>
-    </Tabs>
+      <ScrollArea className="w-full whitespace-nowrap px-0.5">
+        <Tabs
+          ref={tabsRef}
+          value={currentTab}
+          onValueChange={(value) => onTabChange(value as Category)}
+          className="w-full"
+        >
+          <TabsList className="h-6 bg-transparent">
+            {categories.map((tab) => (
+              <TabsTrigger
+                ref={tab.value === currentTab ? activeTabRef : undefined}
+                key={tab.value}
+                value={tab.value}
+                disabled={isLoading || isLoadingCategories}
+                className="h-5 text-xs px-2 data-[state=active]:shadow-sm"
+              >
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+        <ScrollBar orientation="horizontal" className="h-1" />
+      </ScrollArea>
+    </motion.div>
   );
 }

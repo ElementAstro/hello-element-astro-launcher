@@ -88,19 +88,19 @@ export function AvailableSoftwareCard({
     if (!software.rating) return null;
 
     return (
-      <div className="flex items-center gap-1 mt-1">
+      <div className="flex items-center gap-0.5 mt-0.5">
         {Array.from({ length: 5 }).map((_, i) => (
           <Star
             key={i}
             className={cn(
-              "h-3.5 w-3.5",
+              "h-3 w-3",
               i < Math.floor(software.rating || 0)
                 ? "text-amber-500 fill-amber-500"
                 : "text-muted-foreground"
             )}
           />
         ))}
-        <span className="text-xs text-muted-foreground ml-1">
+        <span className="text-[10px] text-muted-foreground ml-1">
           {software.rating.toFixed(1)}
         </span>
       </div>
@@ -125,13 +125,14 @@ export function AvailableSoftwareCard({
           hovered && "shadow-lg"
         )}
       >
-        <CardHeader className="p-4 flex flex-row items-center gap-4">
+        {" "}
+        <CardHeader className="p-2 flex flex-row items-center gap-2">
           <div className="relative">
             <Image
               src={software.icon || "/placeholder.svg"}
               alt={software.name}
-              width={40}
-              height={40}
+              width={32}
+              height={32}
               className="rounded"
             />
             {software.installed && (
@@ -140,13 +141,14 @@ export function AvailableSoftwareCard({
                 animate={{ scale: 1, opacity: 1 }}
                 className="absolute -bottom-1 -right-1 bg-green-500 text-white rounded-full p-0.5"
               >
-                <Check className="h-3 w-3" />
+                <Check className="h-2.5 w-2.5" />
               </motion.div>
             )}
           </div>
           <div className="flex-1">
+            {" "}
             <div className="flex items-start justify-between gap-2">
-              <CardTitle className="text-lg">{software.name}</CardTitle>
+              <CardTitle className="text-sm">{software.name}</CardTitle>
               {software.isNew && (
                 <motion.div
                   initial={{ scale: 0.8, opacity: 0 }}
@@ -156,13 +158,13 @@ export function AvailableSoftwareCard({
                     ease: EASE.bounce,
                   }}
                 >
-                  <Badge className="bg-blue-500 hover:bg-blue-600">
+                  <Badge className="bg-blue-500 hover:bg-blue-600 text-[9px] h-3.5 px-1 py-0">
                     {t("download.software.new", { defaultValue: "新" })}
                   </Badge>
                 </motion.div>
               )}
             </div>
-            <div className="text-sm text-muted-foreground flex items-center">
+            <div className="text-[10px] text-muted-foreground flex items-center">
               <span>
                 {t("download.software.version", { defaultValue: "版本" })}{" "}
                 {software.version}
@@ -170,7 +172,7 @@ export function AvailableSoftwareCard({
               {software.lastUpdated && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="text-xs ml-2 text-muted-foreground/70 cursor-help">
+                    <span className="text-[10px] ml-1.5 text-muted-foreground/70 cursor-help">
                       ({software.lastUpdated})
                     </span>
                   </TooltipTrigger>
@@ -186,9 +188,9 @@ export function AvailableSoftwareCard({
             </div>
             {renderRating()}
           </div>
-        </CardHeader>
-        <CardContent className="p-4 pt-0 flex-1">
-          <CardDescription className="line-clamp-2 mb-2">
+        </CardHeader>{" "}
+        <CardContent className="p-2 pt-0 flex-1">
+          <CardDescription className="text-[10px] line-clamp-2 mb-1.5">
             {software.description}
           </CardDescription>
 
@@ -197,105 +199,107 @@ export function AvailableSoftwareCard({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.1, duration: DURATION.normal }}
-              className="flex flex-wrap gap-1.5 mt-2"
+              className="flex flex-wrap gap-1 mt-1"
             >
-              {software.tags.map((tag, index) => (
-                <Badge
-                  key={index}
-                  variant="outline"
-                  className="text-xs py-0 h-5 px-1.5 font-normal"
+              {software.tags.map((tag) => (
+                <motion.div
+                  key={tag}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{
+                    duration: DURATION.normal,
+                    ease: EASE.bounce,
+                  }}
                 >
-                  <Tag className="h-3 w-3 mr-1" />
-                  {tag}
-                </Badge>
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] h-4 px-1 flex items-center gap-0.5"
+                  >
+                    <Tag className="h-2.5 w-2.5" />
+                    <span>{tag}</span>
+                  </Badge>
+                </motion.div>
               ))}
             </motion.div>
           )}
         </CardContent>
-        <CardFooter className="p-4 flex justify-between items-center border-t">
-          <div className="text-sm text-muted-foreground">{software.size}</div>
-          <div className="flex items-center gap-2">
+        <CardFooter className="p-2.5 pt-1.5 flex justify-between items-center">
+          <div className="flex items-center gap-1.5">
+            <Badge variant="outline" className="text-[10px] h-5 py-0">
+              {software.category}
+            </Badge>
+            <span className="text-[10px] text-muted-foreground">
+              {software.size}
+            </span>
+          </div>
+          <div className="flex gap-1.5">
             {onViewDetails && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  {" "}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={onViewDetails}
-                    aria-label={t("download.software.viewDetails", {
-                      defaultValue: "查看软件详情",
-                    })}
-                  >
-                    <Info className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>{" "}
-                <TooltipContent>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onViewDetails}
+                className="h-6 px-1.5"
+              >
+                <Info className="h-3.5 w-3.5" />
+                <span className="sr-only">
                   {t("download.software.viewDetails", {
                     defaultValue: "查看详情",
                   })}
-                </TooltipContent>
-              </Tooltip>
+                </span>
+              </Button>
             )}
             <Button
               onClick={handleDownload}
               disabled={isDownloading || alreadyDownloading}
-              aria-label={
-                software.installed
-                  ? t("download.software.reinstall", {
-                      defaultValue: "重新下载",
-                    })
-                  : t("download.software.startDownload", {
-                      defaultValue: "开始下载",
-                    })
-              }
+              size="sm"
+              className="h-6 px-2 text-xs flex gap-1.5"
             >
               {isDownloading || alreadyDownloading ? (
-                <>
-                  {" "}
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {t("download.software.downloading", {
-                    defaultValue: "下载中",
-                  })}
-                </>
+                <Loader2 className="h-3 w-3 animate-spin" />
               ) : (
-                <>
-                  <Download className="h-4 w-4 mr-2" />
-                  {software.installed
-                    ? t("download.software.reinstall", {
-                        defaultValue: "重新下载",
-                      })
-                    : t("download.software.download", { defaultValue: "下载" })}
-                </>
+                <Download className="h-3 w-3" />
               )}
+              <span>
+                {software.installed
+                  ? t("download.software.reinstall", {
+                      defaultValue: "重新安装",
+                    })
+                  : t("download.software.download", {
+                      defaultValue: "下载",
+                    })}
+              </span>
             </Button>
           </div>
         </CardFooter>
       </Card>
-      {/* 重新下载确认对话框 */}
+
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {t("download.software.reinstallConfirmTitle", {
-                defaultValue: "重新下载软件？",
+              {t("download.software.reinstallTitle", {
+                defaultValue: "确定要重新安装？",
               })}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {t("download.software.reinstallConfirmDescription", {
-                params: { softwareName: software.name },
-                defaultValue: `${software.name} 已经安装在您的系统上。您确定要重新下载吗？`,
+              {t("download.software.reinstallDescription", {
+                defaultValue:
+                  "该软件已经安装过了，重新安装可能会覆盖当前版本。确定继续吗？",
               })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>
+            <AlertDialogCancel className="text-xs h-7">
               {t("common.cancel", { defaultValue: "取消" })}
             </AlertDialogCancel>
-            <AlertDialogAction onClick={startDownload}>
-              {t("download.software.confirmReinstall", {
-                defaultValue: "确认下载",
-              })}
+            <AlertDialogAction
+              className="text-xs h-7"
+              onClick={() => {
+                setShowConfirmDialog(false);
+                startDownload();
+              }}
+            >
+              {t("common.confirm", { defaultValue: "确认" })}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

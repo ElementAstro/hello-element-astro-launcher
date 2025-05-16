@@ -35,9 +35,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* 在非移动设备上显示主导航 */}
       {!isMobile && <MainNav />}
       <div className="flex-1 flex flex-col">
-        <div className="flex-1 w-full h-full overflow-auto px-4 py-4">
-          {children}
-        </div>
+        <div className="flex-1 w-full h-full overflow-hidden">{children}</div>
       </div>
       {/* 只在移动设备上显示移动导航 */}
       {isMobile && <MobileNav />}

@@ -56,6 +56,12 @@ export const launcherTranslations = {
         installed: "已安装",
         separator: "、",
         noFilters: "无过滤器",
+        featuredOnly: "只显示精选项目",
+        showAllSoftware: "显示所有软件",
+        showFeaturedSoftware: "只显示精选软件",
+        installedOnly: "只显示已安装项目",
+        showAllInstalled: "显示所有软件",
+        showInstalledSoftware: "只显示已安装软件",
       },
 
       // 分页控制相关翻译
@@ -115,10 +121,26 @@ export const launcherTranslations = {
       error: {
         installProgress: "无法获取安装进度信息",
       },
+
+      // 自动滚动控件相关翻译
+      autoScroll: {
+        auto: "自动",
+        pause: "暂停",
+        pauseAutoScroll: "停止自动滚动页面",
+        enableAutoScroll: "启用自动滚动页面",
+        seconds: "秒",
+        adjustSpeed: "调整自动滚动速度（秒/页）",
+        itemsPerPage: "每页:",
+        setItemsPerPage: "设置每页显示的软件数量",
+        setItemsCount: "设置每页显示的项目数",
+        veryFast: "很快",
+        medium: "中等",
+        slow: "较慢",
+        verySlow: "很慢",
+      },
     },
   },
-
-  "en-US": {
+  en: {
     launcher: {
       // Software item related translations
       software: {
@@ -170,6 +192,12 @@ export const launcherTranslations = {
         installed: "Installed",
         separator: ", ",
         noFilters: "No Filters",
+        featuredOnly: "Show only featured items",
+        showAllSoftware: "Show all software",
+        showFeaturedSoftware: "Show only featured software",
+        installedOnly: "Show only installed items",
+        showAllInstalled: "Show all software",
+        showInstalledSoftware: "Show only installed software",
       },
 
       // Pagination controls related translations
@@ -230,6 +258,23 @@ export const launcherTranslations = {
       // Error messages related translations
       error: {
         installProgress: "Unable to fetch installation progress information",
+      },
+
+      // Auto-scroll controls related translations
+      autoScroll: {
+        auto: "Auto",
+        pause: "Pause",
+        pauseAutoScroll: "Stop auto-scrolling pages",
+        enableAutoScroll: "Enable auto-scrolling pages",
+        seconds: "sec",
+        adjustSpeed: "Adjust auto-scroll speed (seconds/page)",
+        itemsPerPage: "Per page:",
+        setItemsPerPage: "Set number of software items per page",
+        setItemsCount: "Set number of items per page",
+        veryFast: "Very Fast",
+        medium: "Medium",
+        slow: "Slow",
+        verySlow: "Very Slow",
       },
     },
   },

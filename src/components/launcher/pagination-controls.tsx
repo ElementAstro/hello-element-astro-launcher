@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/tooltip";
 import { ANIMATION_DURATION } from "./animation-constants";
 import type { ChangeHandler } from "./types";
-import { cn } from "@/lib/utils";
+
 import { useMemo, useCallback, useState, useEffect } from "react";
 import { useTranslations } from "@/components/i18n";
 
@@ -41,9 +41,6 @@ export function PaginationControls({
       if (isLoading || page < 1 || page > totalPages || page === currentPage)
         return;
       onPageChange(page);
-
-      // 滚动到页面顶部 (可选)
-      // window.scrollTo({ top: 0, behavior: 'smooth' });
     },
     [isLoading, totalPages, currentPage, onPageChange]
   );
@@ -103,20 +100,16 @@ export function PaginationControls({
             exit={{ opacity: 0 }}
             transition={{ duration: ANIMATION_DURATION.fast }}
           >
-            {" "}
             <Button
               variant="default"
               size="sm"
-              disabled={isLoading}
-              className={cn(
-                "h-7 w-7 p-0 font-medium text-xs",
-                isLoading && "opacity-70"
-              )}
-              aria-current="page"
+              disabled
+              className="h-6 w-6 text-[11px] px-0"
               aria-label={t("launcher.pagination.currentPage", {
-                params: { pageNumber },
+                params: { page: pageNumber },
                 defaultValue: `当前页 ${pageNumber}`,
               })}
+              aria-current="page"
             >
               {pageNumber}
             </Button>
@@ -131,26 +124,19 @@ export function PaginationControls({
             exit={{ opacity: 0 }}
             transition={{ duration: ANIMATION_DURATION.fast }}
           >
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(pageNumber)}
-                  disabled={isLoading}
-                  className="h-7 w-7 p-0 text-xs"
-                  aria-current={currentPage === pageNumber ? "page" : undefined}
-                >
-                  {pageNumber}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">
-                {t("launcher.pagination.goToPage", {
-                  params: { pageNumber },
-                  defaultValue: `跳转到第 ${pageNumber} 页`,
-                })}
-              </TooltipContent>
-            </Tooltip>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(pageNumber)}
+              disabled={isLoading}
+              className="h-6 w-6 text-[11px] px-0"
+              aria-label={t("launcher.pagination.goToPage", {
+                params: { page: pageNumber },
+                defaultValue: `跳转到第 ${pageNumber} 页`,
+              })}
+            >
+              {pageNumber}
+            </Button>
           </motion.div>
         );
       }
@@ -169,16 +155,9 @@ export function PaginationControls({
   }, [currentPage, itemsPerPage, totalItems]);
 
   return (
-    <div
-      className="px-2 py-3 sm:px-4 sm:py-3 border-t flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3"
-      role="navigation"
-      aria-label={t("launcher.pagination.navigation", {
-        defaultValue: "分页导航",
-      })}
-    >
-      <div className="flex items-center gap-1 sm:gap-2">
-        {/* 移动端隐藏首页/尾页按钮，只保留箭头按钮 */}
-        <div className="hidden sm:block">
+    <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-1 px-1">
+      <div className="flex items-center gap-1">
+        <div className="hidden xs:block">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -189,13 +168,13 @@ export function PaginationControls({
                 aria-label={t("launcher.pagination.firstPage", {
                   defaultValue: "首页",
                 })}
-                className="h-7 text-xs px-2"
+                className="h-6 text-[11px] px-1"
               >
-                <ChevronsLeft className="h-3.5 w-3.5 mr-1" />
+                <ChevronsLeft className="h-3 w-3 mr-0.5" />
                 {t("launcher.pagination.first", { defaultValue: "首页" })}
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="text-xs">
+            <TooltipContent side="top" className="text-[11px]">
               {t("launcher.pagination.goToFirstPage", {
                 defaultValue: "跳转到第一页",
               })}
@@ -213,22 +192,22 @@ export function PaginationControls({
               aria-label={t("launcher.pagination.previousPage", {
                 defaultValue: "上一页",
               })}
-              className="h-7 text-xs"
+              className="h-6 text-[11px] px-1.5"
             >
-              <ChevronLeft className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline ml-1">
+              <ChevronLeft className="h-3 w-3" />
+              <span className="hidden sm:inline ml-0.5">
                 {t("launcher.pagination.previous", { defaultValue: "上一页" })}
               </span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top" className="text-xs">
+          <TooltipContent side="top" className="text-[11px]">
             {t("launcher.pagination.goToPreviousPage", {
               defaultValue: "跳转到上一页",
             })}
           </TooltipContent>
         </Tooltip>
 
-        <div className="flex gap-1">
+        <div className="flex gap-0.5">
           <AnimatePresence mode="popLayout">{pageButtons}</AnimatePresence>
         </div>
 
@@ -242,22 +221,22 @@ export function PaginationControls({
               aria-label={t("launcher.pagination.nextPage", {
                 defaultValue: "下一页",
               })}
-              className="h-7 text-xs"
+              className="h-6 text-[11px] px-1.5"
             >
-              <span className="hidden sm:inline mr-1">
+              <span className="hidden sm:inline mr-0.5">
                 {t("launcher.pagination.next", { defaultValue: "下一页" })}
               </span>
-              <ChevronRight className="h-3.5 w-3.5" />
+              <ChevronRight className="h-3 w-3" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top" className="text-xs">
+          <TooltipContent side="top" className="text-[11px]">
             {t("launcher.pagination.goToNextPage", {
               defaultValue: "跳转到下一页",
             })}
           </TooltipContent>
         </Tooltip>
 
-        <div className="hidden sm:block">
+        <div className="hidden xs:block">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -268,13 +247,13 @@ export function PaginationControls({
                 aria-label={t("launcher.pagination.lastPage", {
                   defaultValue: "末页",
                 })}
-                className="h-7 text-xs px-2"
+                className="h-6 text-[11px] px-1.5"
               >
                 {t("launcher.pagination.last", { defaultValue: "末页" })}
-                <ChevronsRight className="h-3.5 w-3.5 ml-1" />
+                <ChevronsRight className="h-3 w-3 ml-0.5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="text-xs">
+            <TooltipContent side="top" className="text-[11px]">
               {t("launcher.pagination.goToLastPage", {
                 defaultValue: "跳转到最后一页",
               })}
@@ -284,7 +263,7 @@ export function PaginationControls({
       </div>
 
       {rangeInfo && (
-        <div className="text-xs text-muted-foreground">
+        <div className="text-[11px] text-muted-foreground">
           {t("launcher.pagination.showing", {
             params: { range: rangeInfo },
             defaultValue: `显示 ${rangeInfo}`,

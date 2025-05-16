@@ -86,6 +86,8 @@ function DownloadPageContent() {
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [categories, setCategories] = useState<FilterOption[]>([]);
   const [statuses, setStatuses] = useState<FilterOption[]>([]);
+  // 用于控制导入对话框的状态
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const {
     software,
@@ -494,29 +496,23 @@ function DownloadPageContent() {
 
     return (
       <>
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-1.5 mb-1.5 shrink-0">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">下载中心</h1>
-            <p className="text-muted-foreground">管理您的下载并发现新软件</p>
+            <h1 className="text-lg font-bold tracking-tight">下载中心</h1>
+            <p className="text-xs text-muted-foreground">
+              管理您的下载并发现新软件
+            </p>
           </div>
-          <div className="w-full md:w-auto flex flex-wrap gap-2">
-            <div className="relative flex-1 md:flex-none">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="搜索软件..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 md:w-[280px]"
-              />
-            </div>
-            <ImportDialog
-              onImport={handleImport}
-              open={false}
-              onOpenChange={() => {}}
-            />
+
+          <div className="flex items-center gap-2 shrink-0">
             <BatchDownloadDialog
-              software={software.filter((s) => !s.installed)}
               onBatchDownload={handleBatchDownload}
+              isDownloading={false}
+            />
+            <ImportDialog
+              open={importDialogOpen}
+              onOpenChange={setImportDialogOpen}
+              onImport={handleImport}
             />
             <DownloadSettingsDialog
               settings={downloadSettings}
@@ -525,227 +521,258 @@ function DownloadPageContent() {
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="w-full md:w-3/4">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="active">
+        <div className="flex flex-col md:flex-row gap-2 h-full max-h-full overflow-hidden">
+          <div className="w-full md:w-3/4 flex flex-col h-full overflow-hidden">
+            <div className="mb-1 flex flex-col md:flex-row gap-1.5 shrink-0">
+              <div className="flex-1 flex gap-1.5">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder={
+                      activeTab === "available"
+                        ? "搜索可下载软件..."
+                        : "搜索下载任务..."
+                    }
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-8 h-7 text-sm"
+                  />
+                </div>
+
+                <DownloadFilter
+                  categories={categories}
+                  statuses={statuses}
+                  selectedCategory={selectedCategory}
+                  selectedStatus={selectedStatus}
+                  onCategoryChange={setSelectedCategory}
+                  onStatusChange={setSelectedStatus}
+                />
+              </div>
+            </div>
+
+            <Tabs
+              defaultValue="active"
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="flex flex-col h-full overflow-hidden"
+            >
+              <TabsList className="h-7 shrink-0">
+                <TabsTrigger value="active" className="text-xs h-6 py-0">
                   活跃下载
                   {downloads.length > 0 && (
-                    <span className="ml-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                    <Badge
+                      variant="secondary"
+                      className="ml-1 h-4 bg-muted font-normal text-xs"
+                    >
                       {downloads.length}
-                    </span>
+                    </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="history">
+                <TabsTrigger value="history" className="text-xs h-6 py-0">
                   下载历史
                   {downloadHistory.length > 0 && (
-                    <span className="ml-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                    <Badge
+                      variant="secondary"
+                      className="ml-1 h-4 bg-muted font-normal text-xs"
+                    >
                       {downloadHistory.length}
-                    </span>
+                    </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="available">可用软件</TabsTrigger>
+                <TabsTrigger value="available" className="text-xs h-6 py-0">
+                  可用软件
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 h-4 bg-muted font-normal text-xs"
+                  >
+                    {software.length}
+                  </Badge>
+                </TabsTrigger>
               </TabsList>
 
-              <div className="my-4">
-                {activeTab === "active" && (
-                  <DownloadFilter
-                    categories={categories}
-                    statuses={statuses}
-                    selectedCategory={selectedCategory}
-                    selectedStatus={selectedStatus}
-                    onCategoryChange={setSelectedCategory}
-                    onStatusChange={setSelectedStatus}
-                  />
-                )}
-                {activeTab === "available" && (
-                  <DownloadFilter
-                    categories={categories}
-                    selectedCategory={selectedCategory}
-                    onCategoryChange={setSelectedCategory}
-                  />
-                )}
-                {activeTab === "history" && searchQuery && (
-                  <div className="flex items-center">
-                    <Badge variant="outline" className="bg-muted">
-                      搜索: {searchQuery}
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSearchQuery("")}
-                      className="h-8 px-2 text-xs ml-2"
-                    >
-                      清除
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              <TabsContent value="active" className="space-y-4">
-                {filteredDownloads.length === 0 ? (
-                  <NoActiveDownloads
-                    onBrowse={() => setActiveTab("available")}
-                  />
-                ) : (
-                  <motion.div
-                    initial="hidden"
-                    animate="visible"
-                    variants={downloadListVariants}
-                    className="space-y-4"
-                  >
-                    {filteredDownloads.map((download) => (
-                      <DownloadItemComponent
-                        key={download.id}
-                        download={download}
-                        onCancel={() => removeDownload(download.id)}
-                        onPause={() =>
-                          updateDownload(download.id, {
-                            status: "paused" as const,
-                            speed: "0 MB/s",
-                          })
-                        }
-                        onResume={() =>
-                          updateDownload(download.id, {
-                            status: "downloading" as const,
-                            speed: "2.5 MB/s",
-                            estimatedTimeRemaining: `${Math.ceil(
-                              (100 - (download.progress || 0)) / 20
-                            )} min`,
-                          })
-                        }
-                        onRetry={() => {
-                          updateDownload(download.id, {
-                            status: "downloading" as const,
-                            progress: 0,
-                            speed: "2.5 MB/s",
-                            estimatedTimeRemaining: "5 min",
-                          });
-                        }}
-                        onRemove={() => removeDownload(download.id)}
-                      />
-                    ))}
-                  </motion.div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="history" className="space-y-4">
-                {downloadHistory.length === 0 ? (
-                  <NoDownloadHistory
-                    onBrowse={() => setActiveTab("available")}
-                  />
-                ) : filteredHistory.length === 0 ? (
-                  <NoSearchResults
-                    query={searchQuery}
-                    onClear={clearSearchAndFilters}
-                  />
-                ) : (
-                  <>
-                    <div className="flex justify-end">
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            清除历史
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>清除下载历史</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              确定要清除所有下载历史记录吗？此操作无法撤销。
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>取消</AlertDialogCancel>
-                            <AlertDialogAction onClick={clearDownloadHistory}>
-                              清除历史
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-
-                    <motion.div
-                      initial="hidden"
-                      animate="visible"
-                      variants={downloadListVariants}
-                      className="space-y-4"
-                    >
-                      {filteredHistory.map((download) => (
-                        <DownloadItemComponent
-                          key={download.id}
-                          download={download}
-                          onRemove={() => removeDownload(download.id)}
-                          onShowDetails={() => {
-                            // 查找对应的软件并显示详情
-                            const relatedSoftware = software.find(
-                              (s) =>
-                                s.name === download.name &&
-                                s.version === download.version
-                            );
-
-                            if (relatedSoftware) {
-                              toast.info("功能开发中", {
-                                description: `将显示 ${download.name} 的详细信息`,
-                              });
-                            }
-                          }}
-                        />
-                      ))}
-                    </motion.div>
-                  </>
-                )}
-              </TabsContent>
-
-              <TabsContent value="available" className="mt-2">
-                {filteredSoftware.length === 0 ? (
-                  <div className="col-span-full">
+              <div className="flex-1 overflow-hidden border-t">
+                <TabsContent
+                  value="active"
+                  className="h-full overflow-y-auto p-2 m-0"
+                >
+                  {downloads.length === 0 ? (
+                    <NoActiveDownloads
+                      onBrowse={() => setActiveTab("available")}
+                    />
+                  ) : filteredDownloads.length === 0 ? (
                     <NoSearchResults
                       query={searchQuery}
                       onClear={clearSearchAndFilters}
                     />
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredSoftware.map((softwareItem) => (
-                      <AvailableSoftwareCard
-                        key={softwareItem.id}
-                        software={softwareItem}
-                        onDownload={() => handleDownload(softwareItem.id)}
-                        onViewDetails={() => (
-                          <SoftwareDetailsDialog
-                            software={{
-                              ...softwareItem,
-                              systemRequirements:
-                                (softwareItem.systemRequirements
-                                  ? Object.fromEntries(
-                                      Object.entries(
-                                        softwareItem.systemRequirements
-                                      ).map(([k, v]) => [k, String(v)])
-                                    )
-                                  : {}) as Record<string, string>,
+                  ) : (
+                    <motion.div
+                      initial="hidden"
+                      animate="visible"
+                      variants={downloadListVariants}
+                      className="space-y-2"
+                    >
+                      {filteredDownloads.map((download) => (
+                        <DownloadItemComponent
+                          key={download.id}
+                          download={download}
+                          onCancel={() => removeDownload(download.id)}
+                          onPause={() =>
+                            updateDownload(download.id, {
+                              status: "paused" as const,
+                              speed: "0 MB/s",
+                            })
+                          }
+                          onResume={() =>
+                            updateDownload(download.id, {
+                              status: "downloading" as const,
+                              speed: "2.5 MB/s",
+                              estimatedTimeRemaining: `${Math.ceil(
+                                (100 - (download.progress || 0)) / 20
+                              )} min`,
+                            })
+                          }
+                          onRetry={() => {
+                            updateDownload(download.id, {
+                              status: "downloading" as const,
+                              progress: 0,
+                              speed: "2.5 MB/s",
+                              estimatedTimeRemaining: "5 min",
+                            });
+                          }}
+                          onRemove={() => removeDownload(download.id)}
+                        />
+                      ))}
+                    </motion.div>
+                  )}
+                </TabsContent>
+
+                <TabsContent
+                  value="history"
+                  className="h-full overflow-y-auto p-2 m-0"
+                >
+                  {downloadHistory.length === 0 ? (
+                    <NoDownloadHistory
+                      onBrowse={() => setActiveTab("available")}
+                    />
+                  ) : filteredHistory.length === 0 ? (
+                    <NoSearchResults
+                      query={searchQuery}
+                      onClear={clearSearchAndFilters}
+                    />
+                  ) : (
+                    <>
+                      <div className="flex justify-end mb-2">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                            >
+                              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                              清除历史
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>清除下载历史</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                确定要清除所有下载历史记录吗？此操作无法撤销。
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>取消</AlertDialogCancel>
+                              <AlertDialogAction onClick={clearDownloadHistory}>
+                                清除历史
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+
+                      <motion.div
+                        initial="hidden"
+                        animate="visible"
+                        variants={downloadListVariants}
+                        className="space-y-2"
+                      >
+                        {filteredHistory.map((download) => (
+                          <DownloadItemComponent
+                            key={download.id}
+                            download={download}
+                            onRemove={() => removeDownload(download.id)}
+                            onShowDetails={() => {
+                              // 查找对应的软件并显示详情
+                              const relatedSoftware = software.find(
+                                (s) =>
+                                  s.name === download.name &&
+                                  s.version === download.version
+                              );
+
+                              if (relatedSoftware) {
+                                toast.info("功能开发中", {
+                                  description: `将显示 ${download.name} 的详细信息`,
+                                });
+                              }
                             }}
-                            onDownload={(options) =>
-                              handleDownload(softwareItem.id, options)
-                            }
                           />
-                        )}
-                        alreadyDownloading={downloads.some(
-                          (d) =>
-                            d.name === softwareItem.name &&
-                            d.version === softwareItem.version
-                        )}
+                        ))}
+                      </motion.div>
+                    </>
+                  )}
+                </TabsContent>
+
+                <TabsContent
+                  value="available"
+                  className="h-full overflow-y-auto p-2 m-0"
+                >
+                  {filteredSoftware.length === 0 ? (
+                    <div className="col-span-full">
+                      <NoSearchResults
+                        query={searchQuery}
+                        onClear={clearSearchAndFilters}
                       />
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {filteredSoftware.map((softwareItem) => (
+                        <AvailableSoftwareCard
+                          key={softwareItem.id}
+                          software={softwareItem}
+                          onDownload={() => handleDownload(softwareItem.id)}
+                          onViewDetails={() => (
+                            <SoftwareDetailsDialog
+                              software={{
+                                ...softwareItem,
+                                systemRequirements:
+                                  (softwareItem.systemRequirements
+                                    ? Object.fromEntries(
+                                        Object.entries(
+                                          softwareItem.systemRequirements
+                                        ).map(([k, v]) => [k, String(v)])
+                                      )
+                                    : {}) as Record<string, string>,
+                              }}
+                              onDownload={(options) =>
+                                handleDownload(softwareItem.id, options)
+                              }
+                            />
+                          )}
+                          alreadyDownloading={downloads.some(
+                            (d) =>
+                              d.name === softwareItem.name &&
+                              d.version === softwareItem.version
+                          )}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+              </div>
             </Tabs>
           </div>
 
-          <div className="w-full md:w-1/4">
+          <div className="w-full md:w-1/4 shrink-0 flex flex-col">
             <DownloadStatsCard
               activeDownloads={downloadStats.activeDownloads}
               completedDownloads={downloadStats.completedDownloads}
@@ -766,8 +793,10 @@ function DownloadPageContent() {
 
   return (
     <AppLayout>
-      <div className="flex-1 overflow-auto pb-16 md:pb-0">
-        <div className="container py-6 space-y-6">{renderPageContent()}</div>
+      <div className="flex-1 overflow-hidden">
+        <div className="container h-full pt-1 pb-0 max-h-full overflow-hidden">
+          {renderPageContent()}
+        </div>
       </div>
     </AppLayout>
   );
@@ -775,16 +804,22 @@ function DownloadPageContent() {
 
 export default function DownloadPage() {
   // 检测浏览器语言，设置为英文或中文
-  const userLanguage = typeof navigator !== 'undefined' ? 
-    (navigator.language.startsWith('zh') ? 'zh-CN' : 'en-US') : 'en-US';
-  
+  const userLanguage =
+    typeof navigator !== "undefined"
+      ? navigator.language.startsWith("zh")
+        ? "zh-CN"
+        : "en-US"
+      : "en-US";
+
   // 从用户区域确定地区
-  const userRegion = userLanguage === 'zh-CN' ? 'CN' : 'US';
-  
+  const userRegion = userLanguage === "zh-CN" ? "CN" : "US";
+
   return (
-    <TranslationProvider 
-      initialDictionary={commonTranslations[userLanguage] || commonTranslations['en-US']}
-      lang={userLanguage.split('-')[0]}
+    <TranslationProvider
+      initialDictionary={
+        commonTranslations[userLanguage] || commonTranslations["en-US"]
+      }
+      lang={userLanguage.split("-")[0]}
       initialRegion={userRegion}
     >
       <DownloadPageContent />

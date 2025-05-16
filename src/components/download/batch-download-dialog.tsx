@@ -21,11 +21,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { Software } from "@/types";
+import { useAppStore } from "@/store/store";
 import { useTranslations } from "@/components/i18n/client"; // 引入 i18n hook
 
 interface BatchDownloadDialogProps {
-  software: Software[];
-  onBatchDownload: (ids: number[], options?: { priority?: "low" | "normal" | "high" }) => void;
+  onBatchDownload: (
+    ids: number[],
+    options?: { priority?: "low" | "normal" | "high" }
+  ) => void;
   isDownloading?: boolean;
   trigger?: React.ReactNode;
 }
@@ -35,11 +38,12 @@ interface SelectableSoftware extends Software {
 }
 
 export function BatchDownloadDialog({
-  software,
   onBatchDownload,
   isDownloading = false,
   trigger,
 }: BatchDownloadDialogProps) {
+  // 使用全局状态中的software
+  const { software } = useAppStore();
   const [open, setOpen] = useState(false);
   const [selectableSoftware, setSelectableSoftware] = useState<
     SelectableSoftware[]
@@ -179,28 +183,27 @@ export function BatchDownloadDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button size="sm" className="gap-2">
-            <DownloadCloud className="h-4 w-4" />
+          <Button size="sm" className="gap-1.5 h-7 text-xs">
+            <DownloadCloud className="h-3.5 w-3.5" />
             {t("download.batch.button", { defaultValue: "批量下载" })}
           </Button>
-        )}
+        )}{" "}
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col overflow-hidden p-3">
+        <DialogHeader className="pb-1.5">
+          <DialogTitle className="text-base">
             {t("download.batch.title", { defaultValue: "批量下载软件" })}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs">
             {t("download.batch.description", {
               defaultValue:
                 "选择要批量下载的软件，可以一次性添加多个下载任务到队列",
             })}
           </DialogDescription>
         </DialogHeader>
-
         <div className="flex-1 overflow-hidden">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-2">
+          <div className="flex justify-between items-center mb-2">
+            <div className="flex items-center gap-1.5">
               <Checkbox
                 id="select-all"
                 checked={
@@ -208,15 +211,16 @@ export function BatchDownloadDialog({
                   selectableSoftware.every((s) => s.selected)
                 }
                 onCheckedChange={(checked) => toggleSelectAll(!!checked)}
+                className="h-3.5 w-3.5"
               />
               <label
                 htmlFor="select-all"
-                className="text-sm cursor-pointer select-none"
+                className="text-xs cursor-pointer select-none"
               >
                 {t("download.batch.selectAll", { defaultValue: "全选" })}
               </label>
 
-              <Separator orientation="vertical" className="mx-2 h-4" />
+              <Separator orientation="vertical" className="mx-1.5 h-3.5" />
 
               <div className="flex items-center gap-1 text-muted-foreground">
                 <span className="text-xs">
@@ -226,7 +230,7 @@ export function BatchDownloadDialog({
                   variant="ghost"
                   size="sm"
                   onClick={() => changeSortBy("name")}
-                  className="h-7 px-2 text-xs font-normal"
+                  className="h-6 px-1.5 text-xs font-normal"
                 >
                   {t("download.batch.sortName", { defaultValue: "名称" })}{" "}
                   {getSortIndicator("name")}
@@ -235,7 +239,7 @@ export function BatchDownloadDialog({
                   variant="ghost"
                   size="sm"
                   onClick={() => changeSortBy("size")}
-                  className="h-7 px-2 text-xs font-normal"
+                  className="h-6 px-1.5 text-xs font-normal"
                 >
                   {t("download.batch.sortSize", { defaultValue: "大小" })}{" "}
                   {getSortIndicator("size")}
@@ -244,7 +248,7 @@ export function BatchDownloadDialog({
                   variant="ghost"
                   size="sm"
                   onClick={() => changeSortBy("category")}
-                  className="h-7 px-2 text-xs font-normal"
+                  className="h-6 px-1.5 text-xs font-normal"
                 >
                   {t("download.batch.sortCategory", { defaultValue: "分类" })}{" "}
                   {getSortIndicator("category")}
@@ -252,8 +256,8 @@ export function BatchDownloadDialog({
               </div>
             </div>
 
-            <div className="flex-shrink-0 flex items-center gap-2">
-              <span className="text-sm">
+            <div className="flex-shrink-0 flex items-center gap-1.5">
+              <span className="text-xs">
                 {t("download.batch.priority", { defaultValue: "下载优先级:" })}
               </span>
               <div className="flex">
@@ -263,7 +267,7 @@ export function BatchDownloadDialog({
                       variant={priority === "low" ? "default" : "outline"}
                       size="sm"
                       onClick={() => setPriority("low")}
-                      className="rounded-r-none h-8"
+                      className="rounded-r-none h-6 text-xs"
                     >
                       {t("download.batch.priorityLow", { defaultValue: "低" })}
                     </Button>
@@ -280,7 +284,7 @@ export function BatchDownloadDialog({
                       variant={priority === "normal" ? "default" : "outline"}
                       size="sm"
                       onClick={() => setPriority("normal")}
-                      className="rounded-none border-x-0 h-8"
+                      className="rounded-none border-x-0 h-6 text-xs"
                     >
                       {t("download.batch.priorityNormal", {
                         defaultValue: "中",
@@ -299,7 +303,7 @@ export function BatchDownloadDialog({
                       variant={priority === "high" ? "default" : "outline"}
                       size="sm"
                       onClick={() => setPriority("high")}
-                      className="rounded-l-none h-8"
+                      className="rounded-l-none h-6 text-xs"
                     >
                       {t("download.batch.priorityHigh", { defaultValue: "高" })}
                     </Button>
@@ -312,14 +316,13 @@ export function BatchDownloadDialog({
                 </Tooltip>
               </div>
             </div>
-          </div>
-
-          <ScrollArea className="h-[300px] border rounded-md">
-            <div className="p-4 space-y-2">
+          </div>{" "}
+          <ScrollArea className="h-[220px] border rounded-md">
+            <div className="p-1.5 space-y-1">
               {selectableSoftware.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-32 text-center">
-                  <DownloadCloud className="h-12 w-12 text-muted-foreground mb-2 opacity-50" />
-                  <p className="text-sm text-muted-foreground">
+                <div className="flex flex-col items-center justify-center h-24 text-center">
+                  <DownloadCloud className="h-8 w-8 text-muted-foreground mb-1.5 opacity-50" />
+                  <p className="text-xs text-muted-foreground">
                     {t("download.batch.noSoftware", {
                       defaultValue: "没有可用的软件下载",
                     })}
@@ -329,7 +332,7 @@ export function BatchDownloadDialog({
                 selectableSoftware.map((item) => (
                   <div
                     key={item.id}
-                    className={`flex items-center p-3 rounded-md ${
+                    className={`flex items-center p-1.5 rounded-md ${
                       item.selected
                         ? "bg-primary/5 border border-primary/30"
                         : "border"
@@ -338,10 +341,10 @@ export function BatchDownloadDialog({
                     <Checkbox
                       checked={item.selected}
                       onCheckedChange={() => toggleSoftwareSelection(item.id)}
-                      className="mr-4"
+                      className="mr-2 h-3 w-3"
                     />
-                    <div className="flex-1 flex items-center gap-3">
-                      <div className="w-8 h-8 bg-background rounded-md flex items-center justify-center border overflow-hidden">
+                    <div className="flex-1 flex items-center gap-1.5">
+                      <div className="w-5 h-5 bg-background rounded-md flex items-center justify-center border overflow-hidden">
                         {item.icon ? (
                           <img
                             src={item.icon}
@@ -349,18 +352,23 @@ export function BatchDownloadDialog({
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <Download className="h-4 w-4 text-muted-foreground" />
+                          <Download className="h-3 w-3 text-muted-foreground" />
                         )}
                       </div>
                       <div className="flex-1">
-                        <div className="font-medium text-sm">{item.name}</div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="font-medium text-[11px]">
+                          {item.name}
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                           <span>v{item.version}</span>
                           <span>•</span>
                           <span>{item.size}</span>
                         </div>
                       </div>
-                      <Badge variant="outline" className="ml-auto">
+                      <Badge
+                        variant="outline"
+                        className="ml-auto text-[9px] h-4 px-1 py-0"
+                      >
                         {item.category}
                       </Badge>
                     </div>
@@ -369,12 +377,15 @@ export function BatchDownloadDialog({
               )}
             </div>
           </ScrollArea>
-        </div>
-
-        <div className="mt-4">
-          <Alert className={selectedCount > 0 ? "bg-primary/5" : "bg-muted"}>
-            <DownloadCloud className="h-4 w-4" />
-            <AlertTitle>
+        </div>{" "}
+        <div className="mt-2">
+          <Alert
+            className={`${
+              selectedCount > 0 ? "bg-primary/5" : "bg-muted"
+            } py-1 px-2`}
+          >
+            <DownloadCloud className="h-3 w-3" />
+            <AlertTitle className="text-[11px]">
               {t("download.batch.selectedCount", {
                 params: { count: selectedCount },
                 defaultValue: "已选择 {{count}} 个软件",
@@ -382,7 +393,7 @@ export function BatchDownloadDialog({
             </AlertTitle>
             <AlertDescription>
               {selectedCount > 0 ? (
-                <div className="text-sm">
+                <div className="text-[10px]">
                   {t("download.batch.totalSize", { defaultValue: "总大小" })}:{" "}
                   {getSelectedSize()}，
                   {t("download.batch.queue", {
@@ -390,7 +401,7 @@ export function BatchDownloadDialog({
                   })}
                 </div>
               ) : (
-                <div className="text-sm">
+                <div className="text-[10px]">
                   {t("download.batch.selectPrompt", {
                     defaultValue: "请选择要下载的软件",
                   })}
@@ -399,24 +410,29 @@ export function BatchDownloadDialog({
             </AlertDescription>
           </Alert>
         </div>
-
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => setOpen(false)}>
+        <DialogFooter className="gap-1.5 pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setOpen(false)}
+            className="h-7 text-xs"
+          >
             {t("common.cancel", { defaultValue: "取消" })}
           </Button>
           <Button
+            size="sm"
             onClick={handleBatchDownload}
             disabled={selectedCount === 0 || isDownloading}
-            className="min-w-[120px]"
+            className="min-w-[100px] h-7 text-xs"
           >
             {isDownloading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                 {t("download.batch.downloading", { defaultValue: "处理中..." })}
               </>
             ) : (
               <>
-                <Download className="mr-2 h-4 w-4" />
+                <Download className="mr-1.5 h-3.5 w-3.5" />
                 {t("download.batch.download", {
                   defaultValue: "开始下载",
                 })}{" "}

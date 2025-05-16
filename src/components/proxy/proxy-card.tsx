@@ -5,6 +5,8 @@ import {
   Pen,
   Trash2,
   BarChart,
+  Shield,
+  Network,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { ProxyStatusBadge } from "./proxy-status-badge";
@@ -46,53 +48,66 @@ export function ProxyCard({
   const { t } = useTranslations();
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <Card>
-        <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-          <div className="space-y-1">
-            <CardTitle className="text-lg flex items-center">
-              <Globe className="h-5 w-5 mr-2 text-primary" />
+      transition={{ duration: 0.2 }}
+    >      <Card className="overflow-hidden hover:shadow-sm transition-shadow" style={{ height: '105px' }}><CardHeader className="flex flex-row items-start justify-between space-y-0 py-1.5 px-3">
+          <div>            <CardTitle className="text-sm flex items-center font-medium">
+              {proxy.type === "http" ? (
+                <Globe className="h-3.5 w-3.5 mr-1 text-primary" />
+              ) : proxy.type === "socks5" ? (
+                <Network className="h-3.5 w-3.5 mr-1 text-indigo-500" />
+              ) : (
+                <Shield className="h-3.5 w-3.5 mr-1 text-amber-500" />
+              )}
               {proxy.name}
             </CardTitle>
-            <CardDescription>{proxy.description}</CardDescription>
+            <CardDescription className="text-[10px] line-clamp-1">{proxy.description}</CardDescription>
           </div>
           <ProxyStatusBadge status={proxy.status} />
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                {t("proxy.card.type")}:
+        <CardContent className="py-1.5 px-3">          <div className="grid gap-1">            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground/80">
+                {t("proxy.card.type")}
               </span>
-              <span className="font-medium">{proxy.type.toUpperCase()}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                {t("proxy.card.address")}:
+              <span className={`font-medium px-1.5 py-0.5 rounded text-[10px] ${
+                proxy.type === "http" 
+                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" 
+                  : proxy.type === "socks5" 
+                    ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400" 
+                    : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+              }`}>{proxy.type.toUpperCase()}</span>
+            </div>            <div className="flex items-center text-xs">
+              <span className="text-muted-foreground/80 w-12 flex-shrink-0">
+                {t("proxy.card.address")}
               </span>
-              <span className="font-medium">{proxy.address}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                {t("proxy.card.latency")}:
+              <span className="font-mono text-[10px] truncate ml-1 bg-muted/30 px-1 py-0.5 rounded w-full text-center">{proxy.address}</span>
+            </div><div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground/80">
+                {t("proxy.card.latency")}
               </span>
-              <span className="font-medium">{proxy.latency} ms</span>
+              <span className={`font-medium text-[10px] px-1 py-0.5 rounded ${
+                proxy.latency < 100 
+                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                  : proxy.latency < 150 
+                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' 
+                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+              }`}>
+                {proxy.latency} ms
+              </span>
             </div>
           </div>
         </CardContent>
-        <CardFooter className="flex justify-between">
-          <TooltipProvider>
+        <CardFooter className="flex justify-between py-1 px-3">          <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="icon"
+                  className="h-6 w-6"
                   onClick={() => onViewLogs(proxy)}
                 >
-                  <BarChart className="h-4 w-4" />
+                  <BarChart className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -101,17 +116,18 @@ export function ProxyCard({
             </Tooltip>
           </TooltipProvider>
 
-          <div className="flex space-x-2">
+          <div className="flex gap-1">
             {proxy.status !== "running" ? (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="icon"
+                      className="h-6 w-6"
                       onClick={() => onStartProxy(proxy.id)}
                     >
-                      <PlayCircle className="h-4 w-4 text-green-600" />
+                      <PlayCircle className="h-3.5 w-3.5 text-green-600" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -124,11 +140,12 @@ export function ProxyCard({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="icon"
+                      className="h-6 w-6"
                       onClick={() => onStopProxy(proxy.id)}
                     >
-                      <StopCircle className="h-4 w-4 text-amber-600" />
+                      <StopCircle className="h-3.5 w-3.5 text-amber-600" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -142,11 +159,12 @@ export function ProxyCard({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="icon"
+                    className="h-6 w-6"
                     onClick={() => onEditProxy(proxy.id)}
                   >
-                    <Pen className="h-4 w-4" />
+                    <Pen className="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>{t("proxy.card.tooltips.edit")}</TooltipContent>
@@ -157,11 +175,12 @@ export function ProxyCard({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="icon"
+                    className="h-6 w-6"
                     onClick={() => onDeleteProxy(proxy.id)}
                   >
-                    <Trash2 className="h-4 w-4 text-red-600" />
+                    <Trash2 className="h-3.5 w-3.5 text-red-600" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>

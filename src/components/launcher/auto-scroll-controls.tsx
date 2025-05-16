@@ -20,6 +20,7 @@ import { ANIMATION_DURATION } from "./animation-constants";
 import type { ChangeHandler } from "./types";
 import { cn } from "@/lib/utils";
 import { useCallback } from "react";
+import { useTranslations } from "@/components/i18n";
 
 interface AutoScrollControlsProps {
   autoScroll: boolean;
@@ -40,24 +41,26 @@ export function AutoScrollControls({
   onItemsPerPageChange,
   isLoading = false,
 }: AutoScrollControlsProps) {
+  const { t } = useTranslations();
+  
   // 速度描述文本
   const getSpeedLabel = useCallback((speed: number) => {
-    if (speed <= 2) return "很快";
-    if (speed <= 5) return "中等";
-    if (speed <= 8) return "较慢";
-    return "很慢";
-  }, []);
+    if (speed <= 2) return t("launcher.autoScroll.veryFast", { defaultValue: "很快" });
+    if (speed <= 5) return t("launcher.autoScroll.medium", { defaultValue: "中等" });
+    if (speed <= 8) return t("launcher.autoScroll.slow", { defaultValue: "较慢" });
+    return t("launcher.autoScroll.verySlow", { defaultValue: "很慢" });
+  }, [t]);
 
   const speedLabel = getSpeedLabel(scrollSpeed);
 
   return (
     <motion.div
-      className="px-2 py-1.5 sm:px-3 sm:py-2 border-b flex flex-wrap items-center justify-between gap-2"
+      className="px-1 py-0.5 border-b flex flex-wrap items-center justify-between gap-1.5"
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: ANIMATION_DURATION.normal }}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         <Tooltip>
           <TooltipTrigger asChild>
             <motion.div
@@ -71,10 +74,13 @@ export function AutoScrollControls({
                 onClick={onAutoScrollToggle}
                 disabled={isLoading}
                 className={cn(
-                  "h-7 px-2 text-xs",
+                  "h-6 px-1.5 text-xs",
                   isLoading && "opacity-70 cursor-not-allowed"
                 )}
-                aria-label={autoScroll ? "暂停自动滚动" : "开始自动滚动"}
+                aria-label={autoScroll 
+                  ? t("launcher.autoScroll.pauseAutoScroll", { defaultValue: "暂停自动滚动" }) 
+                  : t("launcher.autoScroll.enableAutoScroll", { defaultValue: "开始自动滚动" })
+                }
               >
                 <AnimatePresence mode="wait" initial={false}>
                   {autoScroll ? (
@@ -86,8 +92,8 @@ export function AutoScrollControls({
                       exit={{ opacity: 0, scale: 0.8 }}
                       transition={{ duration: ANIMATION_DURATION.fast }}
                     >
-                      <Pause className="h-3 w-3 mr-1.5" />
-                      暂停
+                      <Pause className="h-3 w-3 mr-1" />
+                      {t("launcher.autoScroll.pause", { defaultValue: "暂停" })}
                     </motion.div>
                   ) : (
                     <motion.div
@@ -98,8 +104,8 @@ export function AutoScrollControls({
                       exit={{ opacity: 0, scale: 0.8 }}
                       transition={{ duration: ANIMATION_DURATION.fast }}
                     >
-                      <Play className="h-3 w-3 mr-1.5" />
-                      自动
+                      <Play className="h-3 w-3 mr-1" />
+                      {t("launcher.autoScroll.auto", { defaultValue: "自动" })}
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -107,14 +113,17 @@ export function AutoScrollControls({
             </motion.div>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="text-xs">
-            {autoScroll ? "停止自动滚动页面" : "启用自动滚动页面"}
+            {autoScroll 
+              ? t("launcher.autoScroll.pauseAutoScroll", { defaultValue: "停止自动滚动页面" })
+              : t("launcher.autoScroll.enableAutoScroll", { defaultValue: "启用自动滚动页面" })
+            }
           </TooltipContent>
         </Tooltip>
 
         <AnimatePresence>
           {autoScroll && (
             <motion.div
-              className="flex items-center gap-1.5"
+              className="flex items-center gap-1"
               initial={{ opacity: 0, width: 0, overflow: "hidden" }}
               animate={{ opacity: 1, width: "auto", overflow: "visible" }}
               exit={{ opacity: 0, width: 0, overflow: "hidden" }}
@@ -122,31 +131,31 @@ export function AutoScrollControls({
             >
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1">
                     <Clock className="h-3 w-3 text-muted-foreground hidden xs:block" />
                     <Slider
                       value={[scrollSpeed]}
                       min={1}
                       max={10}
                       step={1}
-                      className="w-16 xs:w-20"
+                      className="w-14 xs:w-16"
                       onValueChange={(value) => onScrollSpeedChange(value[0])}
                       disabled={isLoading}
-                      aria-label="自动滚动速度"
-                      aria-valuetext={`${scrollSpeed}秒，${speedLabel}`}
+                      aria-label={t("launcher.autoScroll.adjustSpeed", { defaultValue: "自动滚动速度" })}
+                      aria-valuetext={`${scrollSpeed}${t("launcher.autoScroll.seconds", { defaultValue: "秒" })}，${speedLabel}`}
                     />
-                    <div className="flex flex-row xs:flex-col text-[10px] xs:text-xs min-w-[40px]">
+                    <div className="flex flex-row xs:flex-col text-[9px] xs:text-[10px] min-w-[30px]">
                       <span className="text-muted-foreground whitespace-nowrap">
-                        {scrollSpeed}秒
+                        {scrollSpeed}{t("launcher.autoScroll.seconds", { defaultValue: "秒" })}
                       </span>
-                      <span className="text-muted-foreground/70 text-[10px] hidden xs:block">
+                      <span className="text-muted-foreground/70 text-[9px] hidden xs:block">
                         {speedLabel}
                       </span>
                     </div>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs">
-                  调整自动滚动速度（秒/页）
+                  {t("launcher.autoScroll.adjustSpeed", { defaultValue: "调整自动滚动速度（秒/页）" })}
                 </TooltipContent>
               </Tooltip>
             </motion.div>
@@ -154,9 +163,9 @@ export function AutoScrollControls({
         </AnimatePresence>
       </div>
 
-      <div className="flex items-center gap-1.5">
-        <Label htmlFor="items-per-page" className="text-xs whitespace-nowrap">
-          每页:
+      <div className="flex items-center gap-1">
+        <Label htmlFor="items-per-page" className="text-[10px] whitespace-nowrap">
+          {t("launcher.autoScroll.itemsPerPage", { defaultValue: "每页:" })}
         </Label>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -168,10 +177,10 @@ export function AutoScrollControls({
               <SelectTrigger
                 id="items-per-page"
                 className={cn(
-                  "w-12 h-7 text-xs",
+                  "w-10 h-6 text-xs pl-1.5 pr-1",
                   isLoading && "opacity-70 cursor-not-allowed"
                 )}
-                aria-label="设置每页显示的项目数"
+                aria-label={t("launcher.autoScroll.setItemsCount", { defaultValue: "设置每页显示的项目数" })}
               >
                 <SelectValue placeholder="10" />
               </SelectTrigger>
@@ -195,7 +204,7 @@ export function AutoScrollControls({
             </Select>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="text-xs">
-            设置每页显示的软件数量
+            {t("launcher.autoScroll.setItemsPerPage", { defaultValue: "设置每页显示的软件数量" })}
           </TooltipContent>
         </Tooltip>
       </div>

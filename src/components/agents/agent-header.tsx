@@ -8,18 +8,23 @@ interface AgentHeaderProps {
 
 export function AgentHeader({ onCreateAgent }: AgentHeaderProps) {
   const { t } = useTranslations();
-  
+
   return (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="flex flex-row justify-between items-center gap-2 mb-2">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t("agent.title", { defaultValue: "Agents" })}</h1>
-        <p className="text-muted-foreground">
-          {t("agent.description", { defaultValue: "Create and manage automated agents for your astronomy workflow" })}
+        <h1 className="text-xl font-bold tracking-tight">
+          {t("agent.title", { defaultValue: "Agents" })}
+        </h1>
+        <p className="text-xs text-muted-foreground">
+          {t("agent.description", {
+            defaultValue:
+              "Create and manage automated agents for your astronomy workflow",
+          })}
         </p>
       </div>
       <div className="flex gap-2">
-        <Button onClick={onCreateAgent}>
-          <Plus className="h-4 w-4 mr-2" />
+        <Button onClick={onCreateAgent} size="sm" className="h-8">
+          <Plus className="h-3.5 w-3.5 mr-1.5" />
           {t("agent.create", { defaultValue: "Create Agent" })}
         </Button>
       </div>

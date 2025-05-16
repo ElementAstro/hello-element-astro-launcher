@@ -30,35 +30,39 @@ export function SettingsHeader({
   const { t } = useTranslations();
 
   return (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+      {" "}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">
+        <h1 className="text-lg font-bold tracking-tight">
           {t("settings.header.title")}
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           {t("settings.header.description")}
         </p>
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-1.5">
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
+            <Button variant="outline" className="h-7 text-xs">
+              <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
               {t("settings.header.reset")}
             </Button>
           </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
+          <AlertDialogContent className="max-w-md">
+            <AlertDialogHeader className="space-y-1">
+              <AlertDialogTitle className="text-base">
                 {t("settings.header.resetDialog.title")}
               </AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogDescription className="text-sm">
                 {t("settings.header.resetDialog.description")}
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogFooter className="gap-1.5">
+              <AlertDialogCancel className="h-7 text-xs">
+                {t("common.cancel")}
+              </AlertDialogCancel>
               <AlertDialogAction
+                className="h-7 text-xs"
                 onClick={() => {
                   onReset();
                   toast.info(t("settings.header.resetNotification.title"), {
@@ -74,8 +78,8 @@ export function SettingsHeader({
           </AlertDialogContent>
         </AlertDialog>
 
-        <Button onClick={onSave} disabled={isSaving}>
-          <Save className="h-4 w-4 mr-2" />
+        <Button onClick={onSave} disabled={isSaving} className="h-7 text-xs">
+          <Save className="h-3.5 w-3.5 mr-1.5" />
           {isSaving
             ? t("settings.header.savingButton")
             : t("settings.header.saveButton")}

@@ -4,26 +4,25 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function ProxyLoading() {
   return (
     <AppLayout>
-      <div className="container px-4 py-4 sm:py-6 max-w-7xl mx-auto">
+      <div className="container max-w-[1600px] py-3 px-3 sm:px-4 space-y-2">
         {/* 标题和按钮区域 */}
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4 sm:mb-6">
-          <Skeleton className="h-8 sm:h-10 w-[180px] sm:w-[250px]" />
-          <Skeleton className="h-8 sm:h-10 w-[100px] sm:w-[120px]" />
+        <div className="flex items-center justify-between gap-2">
+          <Skeleton className="h-6 w-[150px]" />
+          <Skeleton className="h-8 w-[100px]" />
         </div>
 
         {/* 搜索和筛选区域 */}
-        <div className="flex flex-wrap gap-3 mb-4 sm:mb-6">
-          <Skeleton className="h-9 w-full sm:w-[250px]" />
-          <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
-            <Skeleton className="h-9 w-full sm:w-[250px]" />
-            <Skeleton className="h-9 w-9 shrink-0" />
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-8 w-[180px]" />
+          <div className="flex items-center gap-2 ml-auto">
+            <Skeleton className="h-8 w-[240px]" />
+            <Skeleton className="h-8 w-8 shrink-0" />
           </div>
         </div>
 
-        {/* 代理卡片列表区域 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-[160px] sm:h-[180px] w-full rounded-lg" />
+        {/* 代理卡片列表区域 */}        <div className="grid gap-2 grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <Skeleton key={i} className="h-[105px] w-full rounded-md" />
           ))}
         </div>
       </div>

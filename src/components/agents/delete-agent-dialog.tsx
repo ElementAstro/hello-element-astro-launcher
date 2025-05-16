@@ -90,18 +90,17 @@ export function DeleteAgentDialog({
     onCancel();
     onOpenChange(false);
   };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            <div className="p-2 bg-destructive/10 text-destructive rounded-full">
-              <Trash2 className="h-4 w-4" />
+      <DialogContent className="max-w-md">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <div className="p-1.5 bg-destructive/10 text-destructive rounded-full">
+              <Trash2 className="h-3.5 w-3.5" />
             </div>
             {t("agents.delete.title", { defaultValue: "删除代理" })}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs">
             {t("agents.delete.confirmation", {
               params: { agentName },
               defaultValue: `您确定要删除${
@@ -109,8 +108,7 @@ export function DeleteAgentDialog({
               }吗？此操作无法撤销。`,
             })}
           </DialogDescription>
-        </DialogHeader>
-
+        </DialogHeader>{" "}
         <AnimatePresence>
           {error && (
             <motion.div
@@ -118,19 +116,20 @@ export function DeleteAgentDialog({
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
-              className="p-3 bg-destructive/10 text-destructive rounded-md text-sm flex items-center gap-2 mt-4"
+              className="p-2 bg-destructive/10 text-destructive rounded-md text-xs flex items-center gap-1.5 mt-3"
             >
-              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
               <span>{error}</span>
             </motion.div>
           )}
         </AnimatePresence>
-
-        <DialogFooter className="mt-4">
+        <DialogFooter className="mt-3 gap-2">
           <Button
             variant="outline"
             onClick={handleCancel}
             disabled={isDeleting}
+            size="sm"
+            className="h-7 text-xs"
           >
             {t("common.cancel", { defaultValue: "取消" })}
           </Button>
@@ -138,10 +137,12 @@ export function DeleteAgentDialog({
             variant="destructive"
             onClick={handleDelete}
             disabled={isDeleting}
+            size="sm"
+            className="h-7 text-xs"
           >
             {isDeleting ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
                 {t("agents.delete.inProgress", { defaultValue: "删除中..." })}
               </>
             ) : (

@@ -31,11 +31,9 @@ export function ProxySearchAndFilter({
     onRefresh();
     setTimeout(() => setIsRefreshing(false), 750);
   };
-
   return (
-    <div className="flex flex-col sm:flex-row gap-3">
-      <div className="relative w-full sm:w-auto sm:min-w-[200px] flex-grow sm:flex-grow-0 sm:max-w-[260px]">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+    <div className="flex flex-row gap-2 items-center">      <div className="relative w-full max-w-[160px]">
+        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
         <Input
           type="search"
           placeholder={
@@ -43,59 +41,59 @@ export function ProxySearchAndFilter({
               ? t("proxy.search.placeholder").substring(0, 4) + "..."
               : t("proxy.search.placeholder")
           }
-          className="pl-8 h-9 sm:h-10"
+          className="pl-7 h-7 text-[10px] rounded-md"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           aria-label={t("proxy.search.placeholder")}
         />
       </div>
 
-      <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:ml-auto">
-        <Tabs
+      <div className="flex items-center gap-2 ml-auto">        <Tabs
           defaultValue={selectedTab}
           value={selectedTab}
           onValueChange={onTabChange}
-          className="flex-1 sm:flex-initial"
+          className="flex-initial"
         >
-          <TabsList className="grid grid-cols-4 h-9 sm:h-10 min-w-[280px]">
+          <TabsList className="grid grid-cols-4 h-7 p-0.5 gap-0.5">
             <TabsTrigger
               value="all"
-              className="text-xs sm:text-sm px-1 sm:px-3"
+              className="text-[10px] px-1.5 h-6"
             >
               {t("proxy.search.allStatuses")}
             </TabsTrigger>
             <TabsTrigger
               value="running"
-              className="text-xs sm:text-sm px-1 sm:px-3"
+              className="text-[10px] px-1.5 h-6 flex items-center gap-1"
             >
+              <span className="h-1.5 w-1.5 rounded-full bg-green-500 inline-block"></span>
               {t("proxy.status.running")}
             </TabsTrigger>
             <TabsTrigger
               value="idle"
-              className="text-xs sm:text-sm px-1 sm:px-3"
+              className="text-[10px] px-1.5 h-6 flex items-center gap-1"
             >
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500 inline-block"></span>
               {t("proxy.status.idle")}
             </TabsTrigger>
             <TabsTrigger
               value="error"
-              className="text-xs sm:text-sm px-1 sm:px-3"
+              className="text-[10px] px-1.5 h-6 flex items-center gap-1"
             >
+              <span className="h-1.5 w-1.5 rounded-full bg-red-500 inline-block"></span>
               {t("proxy.status.error")}
             </TabsTrigger>
           </TabsList>
-        </Tabs>
-
-        <Button
+        </Tabs>        <Button
           size="icon"
           variant="outline"
           onClick={handleRefresh}
-          className={`h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 transition-all ${
+          className={`h-7 w-7 flex-shrink-0 transition-all rounded-md ${
             isRefreshing ? "animate-spin" : ""
           }`}
           aria-label={t("proxy.search.placeholder")}
           disabled={isRefreshing}
         >
-          <RefreshCw className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <RefreshCw className="h-3 w-3" />
         </Button>
       </div>
     </div>

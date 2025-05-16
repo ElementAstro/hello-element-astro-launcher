@@ -136,12 +136,12 @@ export function DownloadItem({
               variant="outline"
               size="sm"
               onClick={onRetry}
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 h-6 text-xs"
               aria-label={t("download.item.retryAriaLabel", {
                 defaultValue: "重试下载",
               })}
             >
-              <RefreshCw className="h-3.5 w-3.5" />
+              <RefreshCw className="h-3 w-3" />
               <span>{t("download.item.retry", { defaultValue: "重试" })}</span>
             </Button>
           </TooltipTrigger>
@@ -160,12 +160,12 @@ export function DownloadItem({
               variant="outline"
               size="sm"
               onClick={onResume}
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 h-6 text-xs"
               aria-label={t("download.item.resumeAriaLabel", {
                 defaultValue: "继续下载",
               })}
             >
-              <Play className="h-3.5 w-3.5" />
+              <Play className="h-3 w-3" />
               <span>{t("download.item.resume", { defaultValue: "继续" })}</span>
             </Button>
           </TooltipTrigger>
@@ -184,12 +184,12 @@ export function DownloadItem({
               variant="outline"
               size="sm"
               onClick={onPause}
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 h-6 text-xs"
               aria-label={t("download.item.pauseAriaLabel", {
                 defaultValue: "暂停下载",
               })}
             >
-              <Pause className="h-3.5 w-3.5" />
+              <Pause className="h-3 w-3" />
               <span>{t("download.item.pause", { defaultValue: "暂停" })}</span>
             </Button>
           </TooltipTrigger>
@@ -223,13 +223,14 @@ export function DownloadItem({
             )}
           >
             <CardContent className="p-0">
-              <div className="flex items-center p-4">
-                <div className="mr-4 relative">
+              {" "}
+              <div className="flex items-center p-2">
+                <div className="mr-2 relative">
                   <Image
                     src={download.icon || "/placeholder.svg"}
                     alt={download.name}
-                    width={40}
-                    height={40}
+                    width={32}
+                    height={32}
                     className="rounded"
                   />
                   {download.status === "completed" && (
@@ -239,19 +240,20 @@ export function DownloadItem({
                       transition={{ delay: 0.2 }}
                       className="absolute -bottom-1 -right-1 bg-green-500 text-white rounded-full p-0.5"
                     >
-                      <CheckCircle className="h-3.5 w-3.5" />
+                      <CheckCircle className="h-3 w-3" />
                     </motion.div>
                   )}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-medium">{download.name}</h3>
-                      <div className="text-sm text-muted-foreground">
+                      {" "}
+                      <h3 className="font-medium text-xs">{download.name}</h3>
+                      <div className="text-[10px] text-muted-foreground">
                         Version {download.version} • {download.size}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <motion.div
                         initial="initial"
                         animate="animate"
@@ -261,11 +263,11 @@ export function DownloadItem({
                         <Badge
                           variant="outline"
                           className={cn(
-                            "flex items-center gap-1",
+                            "flex items-center gap-1 text-[10px] h-5 py-0",
                             getStatusClass(download.status)
                           )}
                         >
-                          {getStatusIcon(download.status)}
+                          {getStatusIcon(download.status, "h-2.5 w-2.5")}
                           {getStatusText(download.status, t)}
                         </Badge>
                       </motion.div>
@@ -275,13 +277,14 @@ export function DownloadItem({
                           <TooltipTrigger asChild>
                             <Button
                               variant="ghost"
-                              size="icon"
+                              size="sm"
                               onClick={onCancel}
+                              className="h-6 w-6 p-0"
                               aria-label={t("download.item.cancelAriaLabel", {
                                 defaultValue: "取消下载",
                               })}
                             >
-                              <X className="h-4 w-4" />
+                              <X className="h-3.5 w-3.5" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
@@ -297,13 +300,14 @@ export function DownloadItem({
                           <TooltipTrigger asChild>
                             <Button
                               variant="ghost"
-                              size="icon"
+                              size="sm"
                               onClick={() => setShowRemoveDialog(true)}
+                              className="h-6 w-6 p-0"
                               aria-label={t("download.item.removeAriaLabel", {
                                 defaultValue: "从列表中移除",
                               })}
                             >
-                              <Trash2 className="h-4 w-4 text-muted-foreground" />
+                              <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
@@ -317,8 +321,8 @@ export function DownloadItem({
                   </div>
 
                   {isActiveDownload && (
-                    <div className="mt-2 space-y-1">
-                      <div className="flex justify-between text-xs">
+                    <div className="mt-1 space-y-0.5">
+                      <div className="flex justify-between text-[9px]">
                         {" "}
                         <span>
                           {download.progress !== undefined
@@ -339,7 +343,7 @@ export function DownloadItem({
                       </div>
                       <div
                         ref={progressBarRef}
-                        className="relative h-2 bg-muted rounded-full overflow-hidden"
+                        className="relative h-1 bg-muted rounded-full overflow-hidden"
                       >
                         <motion.div
                           custom={download.progress || 0}
@@ -349,16 +353,15 @@ export function DownloadItem({
                           className="absolute h-full rounded-full bg-primary"
                           style={{ width: `${download.progress || 0}%` }}
                         />
-                      </div>
-
-                      <div className="flex justify-between items-center mt-2">
+                      </div>{" "}
+                      <div className="flex justify-between items-center mt-1">
                         {formattedSpeed && (
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-[9px] text-muted-foreground">
                             {formattedSpeed}
                           </span>
                         )}
 
-                        <div className="flex gap-2">
+                        <div className="flex gap-1.5">
                           {getActionButton()}
 
                           {onShowDetails && (
@@ -368,10 +371,10 @@ export function DownloadItem({
                                   variant="ghost"
                                   size="sm"
                                   onClick={onShowDetails}
-                                  className="h-8 w-8 p-0"
+                                  className="h-6 w-6 p-0"
                                   aria-label="Show details"
                                 >
-                                  <Info className="h-4 w-4" />
+                                  <Info className="h-3.5 w-3.5" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
@@ -392,33 +395,10 @@ export function DownloadItem({
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       transition={{ duration: DURATION.normal }}
-                      className="mt-2 bg-red-50 dark:bg-red-900/20 rounded-md p-2 text-sm text-red-600 dark:text-red-400 flex items-start gap-2"
+                      className="mt-1.5 bg-red-50 dark:bg-red-900/20 rounded-md p-1.5 text-xs text-red-600 dark:text-red-400 flex items-start gap-1.5"
                     >
-                      <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                      <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
                       <span>{errorMessage}</span>
-                    </motion.div>
-                  )}
-
-                  {/* Completed status additional info */}
-                  {download.status === "completed" && onShowDetails && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="mt-2 flex justify-end"
-                    >
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onShowDetails}
-                        className="text-xs flex items-center gap-1 h-7"
-                      >
-                        <Info className="h-3.5 w-3.5" />
-                        <span>
-                          {t("download.item.details", {
-                            defaultValue: "查看详情",
-                          })}
-                        </span>
-                      </Button>
                     </motion.div>
                   )}
                 </div>
@@ -431,26 +411,29 @@ export function DownloadItem({
             open={showRemoveDialog}
             onOpenChange={setShowRemoveDialog}
           >
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>
-                  {t("download.item.removeConfirmTitle", {
-                    defaultValue: "删除下载记录？",
+            <AlertDialogContent className="max-w-md">
+              <AlertDialogHeader className="space-y-1">
+                <AlertDialogTitle className="text-base">
+                  {t("download.item.removeDialogTitle", {
+                    defaultValue: "删除下载项",
                   })}
                 </AlertDialogTitle>
-                <AlertDialogDescription>
-                  {t("download.item.removeConfirmDescription", {
-                    params: { downloadName: download.name },
-                    defaultValue: `您确定要删除"${download.name}"的下载记录吗？此操作不会删除已下载的文件。`,
+                <AlertDialogDescription className="text-sm">
+                  {t("download.item.removeDialogDescription", {
+                    defaultValue:
+                      "确定要从下载列表中移除此项？此操作不能撤销。",
                   })}
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>
+              <AlertDialogFooter className="gap-1.5">
+                <AlertDialogCancel className="text-xs h-7">
                   {t("common.cancel", { defaultValue: "取消" })}
                 </AlertDialogCancel>
-                <AlertDialogAction onClick={handleRemove}>
-                  {t("download.item.confirmRemove", { defaultValue: "删除" })}
+                <AlertDialogAction
+                  onClick={handleRemove}
+                  className="text-xs h-7"
+                >
+                  {t("common.confirm", { defaultValue: "确认" })}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

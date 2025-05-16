@@ -42,7 +42,7 @@ import type {
   ToolResult as ToolResultType,
 } from "@/types/tool";
 import { VARIANTS, DURATION, EASE } from "./animation-constants";
-import { useTranslations } from "@/components/i18n";
+import { useToolsTranslations } from "./i18n-provider";
 
 interface ToolResultProps {
   tool: Tool | null;
@@ -64,7 +64,7 @@ export function ToolResult({
   onClear,
 }: ToolResultProps) {
   const [copiedOutputId, setCopiedOutputId] = useState<string | null>(null);
-  const { t } = useTranslations();
+  const { t } = useToolsTranslations();
 
   // 使用 useCallback 优化复制函数
   const handleCopyOutput = useCallback(
@@ -102,7 +102,8 @@ export function ToolResult({
               transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
             >
               <RefreshCw className="h-8 w-8 mx-auto text-primary" />
-            </motion.div>            <p className="text-base md:text-lg font-medium">处理中...</p>
+            </motion.div>{" "}
+            <p className="text-base md:text-lg font-medium">处理中...</p>
             {progress > 0 && (
               <div className="w-full max-w-xs mx-auto space-y-1">
                 <Progress value={progress} className="h-2" />
@@ -147,7 +148,10 @@ export function ToolResult({
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.2 }}
           >
-            <Play className="h-7 w-7 md:h-8 md:w-8 mx-auto text-muted-foreground" />            <p className="text-sm md:text-base">{t("toolResult.runToolToSeeResults")}</p>
+            <Play className="h-7 w-7 md:h-8 md:w-8 mx-auto text-muted-foreground" />{" "}
+            <p className="text-sm md:text-base">
+              {t("toolResult.runToolToSeeResults")}
+            </p>
           </motion.div>
         )}
       </div>
@@ -190,12 +194,16 @@ export function ToolResult({
                   animate={{ scale: 1 }}
                   transition={{ duration: 0.3, ease: EASE.bounce }}
                   className="flex items-center"
-                >                  {result.status === "completed" ? (
+                >
+                  {" "}
+                  {result.status === "completed" ? (
                     <Check className="h-3 w-3 mr-1" />
                   ) : (
                     <AlertCircle className="h-3 w-3 mr-1" />
                   )}
-                  {result.status === "completed" ? t("toolResult.completed") : t("toolResult.failed")}
+                  {result.status === "completed"
+                    ? t("toolResult.completed")
+                    : t("toolResult.failed")}
                 </motion.div>
               </Badge>
               <div className="flex items-center gap-2">

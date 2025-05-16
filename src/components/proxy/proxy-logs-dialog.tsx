@@ -34,26 +34,25 @@ export function ProxyLogsDialog({
     });
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[625px] max-h-[80vh]">
-        <DialogHeader>
-          <DialogTitle>{t("proxy.logsDialog.title")}</DialogTitle>
-          <DialogDescription>
+  return (    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh]">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="text-base">{t("proxy.logsDialog.title")}</DialogTitle>
+          <DialogDescription className="text-xs">
             {t("proxy.logsDialog.description")}
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="h-[350px] rounded-md border p-4">
+        <ScrollArea className="h-[300px] rounded-md border p-3">
           {logs.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
+            <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
               {t("proxy.logsDialog.noLogs")}
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {logs.map((log, index) => (
                 <div
                   key={index}
-                  className="text-sm border-l-2 pl-3 py-1"
+                  className="text-xs border-l-2 pl-2 py-0.5"
                   style={{
                     borderColor:
                       log.level === "error"
@@ -75,11 +74,11 @@ export function ProxyLogsDialog({
                     >
                       {log.level.toUpperCase()}
                     </span>
-                    <span className="text-muted-foreground text-xs">
+                    <span className="text-muted-foreground text-[10px]">
                       {formatDate(log.time)}
                     </span>
                   </div>
-                  <p className="mt-1">{log.message}</p>
+                  <p className="mt-0.5">{log.message}</p>
                 </div>
               ))}
             </div>

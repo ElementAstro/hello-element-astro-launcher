@@ -12,8 +12,10 @@ import {
   buttonVariants,
   DURATION,
 } from "./animation-constants";
+import { useTranslations } from "next-intl";
 
 export function FeaturedSection() {
+  const t = useTranslations("home.featured");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("popular");
@@ -32,14 +34,14 @@ export function FeaturedSection() {
       setIsLoading(false);
       // 随机生成错误状态来展示错误UI (5%概率)
       if (Math.random() < 0.05) {
-        setError("加载推荐软件数据时出错");
+        setError(t("loadingError"));
       } else {
         setSoftwareDisplayed((prev) => ({ ...prev, [activeTab]: true }));
       }
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [activeTab]);
+  }, [activeTab, t]);
 
   const handleRetry = () => {
     setError(null);
@@ -61,9 +63,8 @@ export function FeaturedSection() {
       }
     }
   };
-
   return (
-    <section className="w-full py-8 md:py-16 lg:py-24 transition-all relative">
+    <section className="w-full py-2 md:py-3 transition-all relative">
       <motion.div
         className="absolute inset-0 bg-background z-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 to-transparent"
         initial={{ opacity: 0 }}
@@ -71,24 +72,23 @@ export function FeaturedSection() {
         transition={{ duration: DURATION.slow }}
       />
 
-      <div className="container px-4 md:px-6 relative z-10">
+      <div className="container px-1 md:px-2 relative z-10">
+        {" "}
         <motion.div
           variants={staggerContainer}
           initial="hidden"
           animate="visible"
-          className="flex flex-col items-center justify-center space-y-4 text-center"
+          className="flex flex-col items-center justify-center space-y-2 text-center"
         >
-          <motion.div variants={fadeInUp} className="space-y-2">
-            <h2 className="text-3xl font-bold tracking-tighter md:text-4xl">
-              Featured Software
+          <motion.div variants={fadeInUp} className="space-y-1">
+            <h2 className="text-xl font-bold tracking-tighter md:text-2xl">
+              {t("title")}
             </h2>
-            <p className="max-w-[900px] text-muted-foreground md:text-xl">
-              Discover the most popular astronomy and astrophotography
-              applications
+            <p className="max-w-[900px] text-muted-foreground md:text-base">
+              {t("description")}
             </p>
-          </motion.div>
-
-          <motion.div variants={fadeInUp} className="w-full max-w-md mt-4">
+          </motion.div>{" "}
+          <motion.div variants={fadeInUp} className="w-full max-w-md mt-2">
             <Tabs
               defaultValue={activeTab}
               onValueChange={handleTabChange}
@@ -99,25 +99,26 @@ export function FeaturedSection() {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                 >
-                  <TabsTrigger value="popular">热门</TabsTrigger>
+                  <TabsTrigger value="popular">{t("tabs.popular")}</TabsTrigger>
                 </motion.div>
                 <motion.div
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                 >
-                  <TabsTrigger value="new">最新</TabsTrigger>
+                  <TabsTrigger value="new">{t("tabs.new")}</TabsTrigger>
                 </motion.div>
                 <motion.div
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                 >
-                  <TabsTrigger value="recommended">推荐</TabsTrigger>
+                  <TabsTrigger value="recommended">
+                    {t("tabs.recommended")}
+                  </TabsTrigger>
                 </motion.div>
               </TabsList>
             </Tabs>
           </motion.div>
         </motion.div>
-
         <AnimatePresence mode="wait">
           {error ? (
             <motion.div
@@ -129,7 +130,7 @@ export function FeaturedSection() {
             >
               <Alert variant="destructive" className="max-w-lg">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>加载错误</AlertTitle>
+                <AlertTitle>{t("loadError")}</AlertTitle>
                 <AlertDescription>{error}</AlertDescription>
                 <div className="mt-4">
                   <Button
@@ -139,45 +140,47 @@ export function FeaturedSection() {
                     className="w-full"
                   >
                     <RefreshCw className="h-3 w-3 mr-2" />
-                    重试加载
+                    {t("retryButton")}
                   </Button>
                 </div>
               </Alert>
             </motion.div>
           ) : (
             <AnimatePresence mode="wait">
+              {" "}
               <motion.div
                 key={activeTab}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: DURATION.normal }}
-                className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 mt-8"
+                className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 mt-4"
               >
                 {activeTab === "popular" && (
                   <>
+                    {" "}
                     <FeaturedSoftwareCard
-                      title="N.I.N.A"
-                      description="NIGHTTIME IMAGING 'N' ASTRONOMY - An astrophotography imaging suite"
+                      title={t("software.nina.title")}
+                      description={t("software.nina.description")}
                       icon="/placeholder.svg?height=60&width=60"
                       downloads="15,420"
-                      category="Imaging"
+                      category={t("software.categories.imaging")}
                       isLoading={isLoading}
-                    />
+                    />{" "}
                     <FeaturedSoftwareCard
-                      title="PixInsight"
-                      description="Advanced image processing software for astrophotography"
+                      title={t("software.pixInsight.title")}
+                      description={t("software.pixInsight.description")}
                       icon="/placeholder.svg?height=60&width=60"
                       downloads="8,760"
-                      category="Processing"
+                      category={t("software.categories.processing")}
                       isLoading={isLoading}
-                    />
+                    />{" "}
                     <FeaturedSoftwareCard
-                      title="Stellarium"
-                      description="Free open source planetarium for your computer"
+                      title={t("software.stellarium.title")}
+                      description={t("software.stellarium.description")}
                       icon="/placeholder.svg?height=60&width=60"
                       downloads="25,670"
-                      category="Planning"
+                      category={t("software.categories.planning")}
                       isLoading={isLoading}
                     />
                   </>
@@ -185,28 +188,29 @@ export function FeaturedSection() {
 
                 {activeTab === "new" && (
                   <>
+                    {" "}
                     <FeaturedSoftwareCard
-                      title="ASIStudio"
-                      description="ZWO's newest imaging and camera control platform"
+                      title={t("software.asiStudio.title")}
+                      description={t("software.asiStudio.description")}
                       icon="/placeholder.svg?height=60&width=60"
                       downloads="5,230"
-                      category="Imaging"
+                      category={t("software.categories.imaging")}
                       isLoading={isLoading}
-                    />
+                    />{" "}
                     <FeaturedSoftwareCard
-                      title="AstroPanel"
-                      description="The newest all-in-one astrophotography control panel"
+                      title={t("software.astroPanel.title")}
+                      description={t("software.astroPanel.description")}
                       icon="/placeholder.svg?height=60&width=60"
                       downloads="3,184"
-                      category="Control"
+                      category={t("software.categories.control")}
                       isLoading={isLoading}
-                    />
+                    />{" "}
                     <FeaturedSoftwareCard
-                      title="DeepSkyLab"
-                      description="Next generation deep sky image processing tool"
+                      title={t("software.deepSkyLab.title")}
+                      description={t("software.deepSkyLab.description")}
                       icon="/placeholder.svg?height=60&width=60"
                       downloads="7,390"
-                      category="Processing"
+                      category={t("software.categories.processing")}
                       isLoading={isLoading}
                     />
                   </>
@@ -214,28 +218,29 @@ export function FeaturedSection() {
 
                 {activeTab === "recommended" && (
                   <>
+                    {" "}
                     <FeaturedSoftwareCard
-                      title="PHD2"
-                      description="Push Here Dummy autoguiding software - the gold standard for guiding"
+                      title={t("software.phd2.title")}
+                      description={t("software.phd2.description")}
                       icon="/placeholder.svg?height=60&width=60"
                       downloads="32,574"
-                      category="Guiding"
+                      category={t("software.categories.guiding")}
                       isLoading={isLoading}
-                    />
+                    />{" "}
                     <FeaturedSoftwareCard
-                      title="SharpCap"
-                      description="Easy to use but powerful capture software for astronomy cameras"
+                      title={t("software.sharpCap.title")}
+                      description={t("software.sharpCap.description")}
                       icon="/placeholder.svg?height=60&width=60"
                       downloads="19,482"
-                      category="Capture"
+                      category={t("software.categories.capture")}
                       isLoading={isLoading}
-                    />
+                    />{" "}
                     <FeaturedSoftwareCard
-                      title="ASTAP"
-                      description="Astrometric STAcking Program with plate solving capabilities"
+                      title={t("software.astap.title")}
+                      description={t("software.astap.description")}
                       icon="/placeholder.svg?height=60&width=60"
                       downloads="12,157"
-                      category="Analysis"
+                      category={t("software.categories.analysis")}
                       isLoading={isLoading}
                     />
                   </>
@@ -243,13 +248,12 @@ export function FeaturedSection() {
               </motion.div>
             </AnimatePresence>
           )}
-        </AnimatePresence>
-
+        </AnimatePresence>{" "}
         <motion.div
           variants={fadeInUp}
           initial="hidden"
           animate="visible"
-          className="flex justify-center mt-8"
+          className="flex justify-center mt-3"
         >
           <Link href="/launcher">
             <motion.div
@@ -274,7 +278,7 @@ export function FeaturedSection() {
                     ease: "linear",
                   }}
                 />
-                View All Software
+                {t("viewAllButton")}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </motion.div>

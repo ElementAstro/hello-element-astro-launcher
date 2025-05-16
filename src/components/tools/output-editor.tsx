@@ -25,7 +25,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
 import type { ToolOutput } from "@/types/tool";
-import { useTranslations } from "@/components/i18n";
+import { useToolsTranslations } from "./i18n-provider";
 
 // 验证表单数据
 const outputSchema = z.object({
@@ -49,8 +49,8 @@ interface OutputEditorProps {
 }
 
 export function OutputEditor({ output, onChange }: OutputEditorProps) {
-  const { t } = useTranslations();
-  
+  const { t } = useToolsTranslations();
+
   const form = useForm<OutputFormValues>({
     resolver: zodResolver(outputSchema),
     defaultValues: {
@@ -112,7 +112,8 @@ export function OutputEditor({ output, onChange }: OutputEditorProps) {
           <FormField
             control={form.control}
             name="name"
-            render={({ field }) => (              <FormItem>
+            render={({ field }) => (
+              <FormItem>
                 <FormLabel>{t("editors.outputName")} *</FormLabel>
                 <FormControl>
                   <Input placeholder={t("editors.enterName")} {...field} />
@@ -127,7 +128,8 @@ export function OutputEditor({ output, onChange }: OutputEditorProps) {
           <FormField
             control={form.control}
             name="type"
-            render={({ field }) => (              <FormItem>
+            render={({ field }) => (
+              <FormItem>
                 <FormLabel>{t("editors.outputType")} *</FormLabel>
                 <Select
                   onValueChange={field.onChange}
@@ -140,7 +142,9 @@ export function OutputEditor({ output, onChange }: OutputEditorProps) {
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="text">{t("editors.text")}</SelectItem>
-                    <SelectItem value="number">{t("editors.number")}</SelectItem>
+                    <SelectItem value="number">
+                      {t("editors.number")}
+                    </SelectItem>
                     <SelectItem value="date">{t("editors.date")}</SelectItem>
                     <SelectItem value="image">{t("editors.image")}</SelectItem>
                     <SelectItem value="file">{t("editors.file")}</SelectItem>
@@ -159,10 +163,14 @@ export function OutputEditor({ output, onChange }: OutputEditorProps) {
         <FormField
           control={form.control}
           name="description"
-          render={({ field }) => (            <FormItem>
+          render={({ field }) => (
+            <FormItem>
               <FormLabel>{t("editors.description")} *</FormLabel>
               <FormControl>
-                <Textarea placeholder={t("editors.descriptionPlaceholder")} {...field} />
+                <Textarea
+                  placeholder={t("editors.descriptionPlaceholder")}
+                  {...field}
+                />
               </FormControl>
               <FormDescription className="text-xs">
                 {t("editors.descriptionHelpText")}
@@ -174,11 +182,15 @@ export function OutputEditor({ output, onChange }: OutputEditorProps) {
         {/* 输出类型的高级帮助信息 */}
         {["chart", "table"].includes(form.watch("type")) && (
           <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="typeHelp">              <AccordionTrigger>{t("editors.typeHelp")}</AccordionTrigger>
+            <AccordionItem value="typeHelp">
+              {" "}
+              <AccordionTrigger>{t("editors.typeHelp")}</AccordionTrigger>
               <AccordionContent>
                 {form.watch("type") === "chart" && (
                   <div className="space-y-3 pt-2">
-                    <h4 className="text-sm font-medium">{t("editors.chartOutput")}</h4>
+                    <h4 className="text-sm font-medium">
+                      {t("editors.chartOutput")}
+                    </h4>
                     <p className="text-sm text-muted-foreground">
                       {t("editors.chartDescription")}
                     </p>

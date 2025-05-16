@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { InterpolationParams } from "@/components/i18n/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, Info } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -20,7 +19,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { ToolInput, ToolInputValue } from "@/types/tool";
 import { VARIANTS, DURATION, EASE } from "./animation-constants";
-import { useTranslations } from "@/components/i18n";
+import { useToolsTranslations } from "./i18n-provider";
 
 interface ToolInputFieldProps {
   input: ToolInput;
@@ -38,7 +37,7 @@ export function ToolInputField({
   const [localError, setLocalError] = useState<string | null>(null);
   const [touched, setTouched] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const { t } = useTranslations();
+  const { t } = useToolsTranslations();
 
   // 使用 useCallback 优化验证逻辑
   const validate = useCallback((): boolean => {
@@ -47,24 +46,30 @@ export function ToolInputField({
       input.required &&
       (value === undefined || value === "" || value === null)
     ) {
-      setLocalError(t("tools.validation.requiredField", { name: input.description } as InterpolationParams));
+      setLocalError(
+        t("tools.validation.requiredField", { name: input.description })
+      );
       return false;
     }
 
     // 数字类型验证
     if (input.type === "number" && typeof value === "number") {
       if (input.validation?.min !== undefined && value < input.validation.min) {
-        setLocalError(t("tools.validation.minValue", {
-          name: input.description,
-          min: input.validation.min
-        } as InterpolationParams));
+        setLocalError(
+          t("tools.validation.minValue", {
+            name: input.description,
+            min: input.validation.min,
+          })
+        );
         return false;
       }
       if (input.validation?.max !== undefined && value > input.validation.max) {
-        setLocalError(t("tools.validation.maxValue", {
-          name: input.description,
-          max: input.validation.max
-        } as InterpolationParams));
+        setLocalError(
+          t("tools.validation.maxValue", {
+            name: input.description,
+            max: input.validation.max,
+          })
+        );
         return false;
       }
     }
@@ -77,7 +82,9 @@ export function ToolInputField({
     ) {
       const regex = new RegExp(input.validation.pattern);
       if (!regex.test(value)) {
-        setLocalError(t("tools.validation.invalidFormat", { name: input.description } as InterpolationParams));
+        setLocalError(
+          t("tools.validation.invalidFormat", { name: input.description })
+        );
         return false;
       }
     }
@@ -92,7 +99,9 @@ export function ToolInputField({
         const result = validatorFunc(value);
         if (result !== true) {
           setLocalError(
-            typeof result === "string" ? result : t("tools.validation.invalid", { name: input.description } as InterpolationParams)
+            typeof result === "string"
+              ? result
+              : t("tools.validation.invalid", { name: input.description })
           );
           return false;
         }
@@ -118,24 +127,27 @@ export function ToolInputField({
   };
 
   // 处理输入变化
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const { type, value: inputValue } = e.target;
-    let newValue: ToolInputValue;
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { type, value: inputValue } = e.target;
+      let newValue: ToolInputValue;
 
-    if (type === "number") {
-      newValue = inputValue === "" ? "" : Number(inputValue);
-    } else if (type === "checkbox") {
-      newValue = e.target.checked;
-    } else {
-      newValue = inputValue;
-    }
+      if (type === "number") {
+        newValue = inputValue === "" ? "" : Number(inputValue);
+      } else if (type === "checkbox") {
+        newValue = e.target.checked;
+      } else {
+        newValue = inputValue;
+      }
 
-    onChange(newValue);
+      onChange(newValue);
 
-    if (touched) {
-      setTimeout(() => validate(), 0);
-    }
-  }, [onChange, touched, validate]);
+      if (touched) {
+        setTimeout(() => validate(), 0);
+      }
+    },
+    [onChange, touched, validate]
+  );
 
   // 检查外部错误并更新本地错误状态
   useEffect(() => {
@@ -149,7 +161,9 @@ export function ToolInputField({
   const renderInput = () => {
     // 确定错误状态
     const hasError = touched && (localError || error);
-    const inputClass = `${hasError ? "border-red-500 focus-visible:ring-red-500" : ""} 
+    const inputClass = `${
+      hasError ? "border-red-500 focus-visible:ring-red-500" : ""
+    } 
                         ${isFocused ? "border-primary" : ""}
                         transition-all duration-200`;
 
@@ -316,7 +330,9 @@ export function ToolInputField({
                 aria-invalid={hasError ? "true" : "false"}
                 aria-describedby={hasError ? `${input.id}-error` : undefined}
               >
-                <SelectValue placeholder={input.placeholder || input.description} />
+                <SelectValue
+                  placeholder={input.placeholder || input.description}
+                />
               </SelectTrigger>
               <SelectContent className="max-h-[280px]">
                 {input.options?.map((option) => (
@@ -390,21 +406,25 @@ export function ToolInputField({
       <div className="flex items-center gap-1.5">
         <Label
           htmlFor={input.id}
-          className={`text-sm font-medium ${displayError ? "text-red-500" : ""} ${isFocused ? "text-primary" : ""} transition-colors`}
+          className={`text-sm font-medium ${
+            displayError ? "text-red-500" : ""
+          } ${isFocused ? "text-primary" : ""} transition-colors`}
         >
           {input.description}
-          {input.required && (
-            <span className="text-red-500 ml-0.5">*</span>
-          )}
+          {input.required && <span className="text-red-500 ml-0.5">*</span>}
         </Label>
-        
+
         {input.help && (
           <TooltipProvider>
             <Tooltip delayDuration={200}>
               <TooltipTrigger type="button" className="inline-flex">
                 <Info className="h-3.5 w-3.5 text-muted-foreground" />
               </TooltipTrigger>
-              <TooltipContent side="top" align="center" className="max-w-xs text-xs">
+              <TooltipContent
+                side="top"
+                align="center"
+                className="max-w-xs text-xs"
+              >
                 <p>{input.help}</p>
               </TooltipContent>
             </Tooltip>

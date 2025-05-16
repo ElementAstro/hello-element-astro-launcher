@@ -37,7 +37,7 @@ import {
 import type { Tool } from "@/types/tool";
 import { getCategoryIcon } from "./utils";
 import { VARIANTS, EASE } from "./animation-constants";
-import { useTranslations } from "@/components/i18n";
+import { useToolsTranslations } from "./i18n-provider";
 
 interface ToolCardProps {
   tool: Tool;
@@ -82,8 +82,8 @@ export function ToolCard({
   const handleTouchEnd = useCallback(() => {
     setIsPressing(false);
   }, []);
-  const { t } = useTranslations();
-          
+  const { t } = useToolsTranslations();
+
   return (
     <motion.div
       initial="hidden"
@@ -138,7 +138,11 @@ export function ToolCard({
                       onToggleFavorite();
                     }}
                     className="text-muted-foreground hover:text-foreground h-8 w-8"
-                    aria-label={tool.favorite ? t("toolCard.removeFromFavorites") : t("toolCard.addToFavorites")}
+                    aria-label={
+                      tool.favorite
+                        ? t("toolCard.removeFromFavorites")
+                        : t("toolCard.addToFavorites")
+                    }
                   >
                     <motion.div
                       whileHover={{ scale: 1.2 }}
@@ -158,7 +162,9 @@ export function ToolCard({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top" align="end">
-                  {tool.favorite ? t("toolCard.removeFromFavorites") : t("toolCard.addToFavorites")}
+                  {tool.favorite
+                    ? t("toolCard.removeFromFavorites")
+                    : t("toolCard.addToFavorites")}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -170,7 +176,8 @@ export function ToolCard({
               <>
                 <Clock className="h-3.5 w-3.5 mr-1.5" />
                 <span>
-                  {t("toolCard.lastUsed")}: {format(parseISO(tool.lastUsed), "yyyy-MM-dd")}
+                  {t("toolCard.lastUsed")}:{" "}
+                  {format(parseISO(tool.lastUsed), "yyyy-MM-dd")}
                 </span>
               </>
             ) : (
@@ -213,7 +220,9 @@ export function ToolCard({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <DropdownMenuContent align="start" className="w-48">              <DropdownMenuItem
+            <DropdownMenuContent align="start" className="w-48">
+              {" "}
+              <DropdownMenuItem
                 onClick={onEdit}
                 className="flex items-center cursor-pointer"
               >
@@ -277,7 +286,10 @@ export function ToolCard({
                   }}
                 >
                   <Play className="h-3.5 w-3.5 mr-1.5" />
-                </motion.div>                <span className="text-xs sm:text-sm">{t("toolCard.run")}中...</span>
+                </motion.div>{" "}
+                <span className="text-xs sm:text-sm">
+                  {t("toolCard.run")}中...
+                </span>
               </>
             ) : (
               <>

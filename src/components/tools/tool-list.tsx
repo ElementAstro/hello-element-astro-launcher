@@ -25,7 +25,7 @@ import {
 import type { Tool } from "@/types/tool";
 import { ToolCard } from "./tool-card";
 import { VARIANTS } from "./animation-constants";
-import { useTranslations } from "@/components/i18n";
+import { useToolsTranslations } from "./i18n-provider";
 
 interface ToolListProps {
   tools: Tool[];
@@ -51,7 +51,7 @@ export function ToolList({
   const router = useRouter();
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [columns, setColumns] = useState(3); // 默认列数
-  const { t } = useTranslations();
+  const { t } = useToolsTranslations();
 
   // 根据屏幕宽度调整布局列数
   useEffect(() => {
@@ -130,7 +130,9 @@ export function ToolList({
         animate="visible"
         variants={VARIANTS.fadeIn}
         className="flex flex-col items-center justify-center py-8 md:py-12 text-center px-4"
-      >        <div className="rounded-full bg-red-100 dark:bg-red-900/20 p-3 mb-4">
+      >
+        {" "}
+        <div className="rounded-full bg-red-100 dark:bg-red-900/20 p-3 mb-4">
           <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
         </div>
         <h3 className="text-lg font-medium">{t("toolList.loadingError")}</h3>
@@ -164,7 +166,8 @@ export function ToolList({
         <motion.div
           className="rounded-full bg-muted p-3 mb-4"
           whileHover={{ scale: 1.1, rotate: 5 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}        >
+          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+        >
           <Calculator className="h-6 w-6 text-muted-foreground" />
         </motion.div>
         <h3 className="text-lg font-medium">{t("toolList.noToolsFound")}</h3>
@@ -221,7 +224,8 @@ export function ToolList({
                     />
                   </div>
                 </TooltipTrigger>
-                {deletingIds.has(tool.id) && (                  <TooltipContent side="top">
+                {deletingIds.has(tool.id) && (
+                  <TooltipContent side="top">
                     <div className="flex items-center">
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       <span>{t("toolCard.delete")}中...</span>

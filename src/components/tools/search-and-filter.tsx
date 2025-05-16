@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { VARIANTS, DURATION } from "./animation-constants";
-import { useTranslations } from "@/components/i18n";
+import { useToolsTranslations } from "./i18n-provider";
 
 interface SearchAndFilterProps {
   searchQuery: string;
@@ -47,7 +47,7 @@ export function SearchAndFilter({
   const inputRef = useRef<HTMLInputElement>(null);
   const [isMobile, setIsMobile] = useState(false);
   // 修复重复声明的问题
-  const { t } = useTranslations();
+  const { t } = useToolsTranslations();
 
   // 检测屏幕尺寸以适应移动设备
   useEffect(() => {

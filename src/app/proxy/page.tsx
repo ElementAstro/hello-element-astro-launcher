@@ -187,13 +187,13 @@ function ProxyPageContent() {
   };
 
   return (
-    <AppLayout>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
+    <AppLayout>      <motion.div
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex-1 overflow-auto pb-16 md:pb-0"
+        transition={{ duration: 0.2 }}
+        className="flex-1 overflow-auto"
       >
-        <div className="container py-6 space-y-6">
+        <div className="container max-w-[1600px] py-3 px-3 sm:px-4 space-y-2">
           <ProxyHeader
             onCreateProxy={handleCreateProxy}
           />

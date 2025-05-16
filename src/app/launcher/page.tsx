@@ -21,7 +21,7 @@ import {
   type SortField,
   type SortDirection,
   type Software,
-  launcherTranslations
+  launcherTranslations,
 } from "@/components/launcher";
 import * as launcherApi from "@/components/launcher/launcher-api";
 import { TranslationProvider } from "@/components/i18n";
@@ -403,8 +403,8 @@ function LauncherPageContent() {
 
   return (
     <AppLayout>
-      <div className="flex-1 flex flex-col overflow-hidden pb-12 sm:pb-0">
-        {/* Search Bar Component */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden pb-0">
+        {/* Search Bar Component - 减小内边距 */}
         <SearchBar
           searchQuery={searchQuery}
           searchVisible={searchVisible}
@@ -413,14 +413,12 @@ function LauncherPageContent() {
           onRefresh={handleRefresh}
         />
 
-        {/* Filter Controls Component - Only shown when search is visible */}
+        {/* Filter Controls Component - 减小内边距，仅在搜索可见时显示 */}
         {searchVisible && (
           <FilterControls
-            currentTab={currentTab as Category}
             viewMode={viewMode as ViewMode}
             filterFeatured={filterFeatured}
             filterInstalled={filterInstalled}
-            onTabChange={setCurrentTab}
             onViewModeChange={setViewMode as (mode: ViewMode) => void}
             onFeaturedFilterChange={setFilterFeatured}
             onInstalledFilterChange={setFilterInstalled}
@@ -433,13 +431,13 @@ function LauncherPageContent() {
           />
         )}
 
-        {/* Category Tabs Component */}
+        {/* Category Tabs Component - 减小内边距 */}
         <CategoryTabs
           currentTab={currentTab as Category}
           onTabChange={setCurrentTab}
         />
 
-        {/* Auto Scroll Controls Component */}
+        {/* Auto Scroll Controls Component - 减小内边距 */}
         <AutoScrollControls
           autoScroll={autoScroll}
           scrollSpeed={scrollSpeed}
@@ -449,8 +447,8 @@ function LauncherPageContent() {
           onItemsPerPageChange={setItemsPerPage}
         />
 
-        {/* Software List */}
-        <div className="flex-1 overflow-y-auto p-2 sm:p-3">
+        {/* Software List - 只有这里允许滚动 */}
+        <div className="flex-1 overflow-y-auto p-1.5 border-t">
           {filteredSoftware.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
               <p className="text-sm">No software found matching the criteria</p>
@@ -469,8 +467,8 @@ function LauncherPageContent() {
             </div>
           ) : (
             <>
-              {/* Results Summary */}
-              <div className="text-xs text-muted-foreground mb-3">
+              {/* Results Summary - 减小间距 */}
+              <div className="text-xs text-muted-foreground mb-2">
                 Showing {startIndex + 1}-
                 {Math.min(startIndex + itemsPerPage, filteredSoftware.length)}{" "}
                 of {filteredSoftware.length} results
@@ -483,8 +481,8 @@ function LauncherPageContent() {
                 animate="visible"
                 className={`${
                   viewMode === "grid"
-                    ? "grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"
-                    : "space-y-3"
+                    ? "grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2"
+                    : "space-y-2"
                 }`}
               >
                 {paginatedSoftware.map((software) => (
@@ -508,14 +506,16 @@ function LauncherPageContent() {
           )}
         </div>
 
-        {/* Pagination Controls */}
-        <PaginationControls
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          itemsPerPage={itemsPerPage}
-          totalItems={filteredSoftware.length}
-        />
+        {/* Pagination Controls - 放在底部固定位置 */}
+        <div className="border-t py-1">
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={filteredSoftware.length}
+          />
+        </div>
 
         {/* Software Details Dialog */}
         <SoftwareDetailsDialog
@@ -533,16 +533,22 @@ function LauncherPageContent() {
 
 export default function LauncherPage() {
   // 检测浏览器语言，设置为英文或中文
-  const userLanguage = typeof navigator !== 'undefined' ? 
-    (navigator.language.startsWith('zh') ? 'zh-CN' : 'en-US') : 'en-US';
-  
+  const userLanguage =
+    typeof navigator !== "undefined"
+      ? navigator.language.startsWith("zh")
+        ? "zh-CN"
+        : "en"
+      : "en";
+
   // 从用户区域确定地区
-  const userRegion = userLanguage === 'zh-CN' ? 'CN' : 'US';
-  
+  const userRegion = userLanguage === "zh-CN" ? "CN" : "US";
+
   return (
-    <TranslationProvider 
-      initialDictionary={launcherTranslations[userLanguage] || launcherTranslations['en-US']}
-      lang={userLanguage.split('-')[0]}
+    <TranslationProvider
+      initialDictionary={
+        launcherTranslations[userLanguage] || launcherTranslations["en"]
+      }
+      lang={userLanguage.split("-")[0]}
       initialRegion={userRegion}
     >
       <LauncherPageContent />
