@@ -7,8 +7,6 @@ import { useAppStore } from "@/store/store";
 import { toast, Toaster } from "sonner";
 import type { Theme, Settings } from "@/components/settings";
 import { assertSettings } from "@/components/settings";
-import { TranslationProvider } from "@/components/i18n";
-import { commonTranslations } from "@/components/i18n/common-translations";
 import {
   SettingsHeader,
   SettingsNavigation,
@@ -197,20 +195,7 @@ function SettingsPageContent() {
 }
 
 export default function SettingsPage() {
-  // 检测浏览器语言，设置为英文或中文
-  const userLanguage = typeof navigator !== 'undefined' ? 
-    (navigator.language.startsWith('zh') ? 'zh-CN' : 'en-US') : 'en-US';
-  
-  // 从用户区域确定地区
-  const userRegion = userLanguage === 'zh-CN' ? 'CN' : 'US';
-  
-  return (
-    <TranslationProvider 
-      initialDictionary={commonTranslations[userLanguage] || commonTranslations['en-US']}
-      lang={userLanguage.split('-')[0]}
-      initialRegion={userRegion}
-    >
-      <SettingsPageContent />
-    </TranslationProvider>
-  );
+  // 现在使用统一的PageTranslationProvider
+  // 它在layout.tsx中配置，这里直接渲染内容
+  return <SettingsPageContent />;
 }

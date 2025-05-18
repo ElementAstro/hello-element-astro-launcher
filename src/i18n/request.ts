@@ -1,15 +1,12 @@
 import { getRequestConfig } from "next-intl/server";
-import { locales, defaultLocale } from "@/components/i18n";
-import { homeTranslations } from "@/components/home/translations";
+import { supportedLocales, defaultLocale, translations } from "@/i18n/loader";
 
 export default getRequestConfig(async ({ locale }) => {
   const validLocale =
-    locale && locales.includes(locale) ? locale : defaultLocale;
+    locale && supportedLocales.includes(locale) ? locale : defaultLocale;
 
-  // 合并所有组件的翻译
-  const mergedTranslations = {
-    ...(homeTranslations[validLocale as keyof typeof homeTranslations] || {}),
-  };
+  // 使用统一的翻译加载器获取所有翻译
+  const mergedTranslations = translations[validLocale as keyof typeof translations] || {};
 
   return {
     locale: validLocale,

@@ -3,6 +3,7 @@ import "@/app/globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
+import { translations } from "@/i18n/loader";
 
 export const metadata = {
   title: "Astronomy Software Hub",
@@ -17,6 +18,9 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const locale = await getLocale();
+  // 使用统一的翻译加载器获取消息
+  const messages = translations[locale as keyof typeof translations] || {};
+
   return (
     <html lang={locale} suppressHydrationWarning>
       <body className="min-h-screen bg-background">
@@ -26,7 +30,7 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <NextIntlClientProvider locale={locale}>
+          <NextIntlClientProvider locale={locale} messages={messages}>
             {children}
           </NextIntlClientProvider>
         </ThemeProvider>

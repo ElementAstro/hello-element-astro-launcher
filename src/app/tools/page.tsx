@@ -36,8 +36,6 @@ import { SearchAndFilter } from "@/components/tools/search-and-filter";
 import { ToolList } from "@/components/tools/tool-list";
 import { ToolInputField } from "@/components/tools/tool-input-field";
 import { ToolResult } from "@/components/tools/tool-result";
-import { TranslationProvider } from "@/components/i18n";
-import { ToolsTranslationProvider } from "@/components/tools/i18n-provider";
 
 function ToolsPageContent() {
   const router = useRouter();
@@ -343,18 +341,7 @@ function ToolsPageContent() {
 }
 
 export default function ToolsPage() {
-  // 应为 TranslationProvider 提供所需属性
-  const initialDictionary = {
-    // 根据需要提供字典内容
-    zh: {},
-    en: {},
-  };
-
-  return (
-    <TranslationProvider initialDictionary={initialDictionary} lang="zh">
-      <ToolsTranslationProvider>
-        <ToolsPageContent />
-      </ToolsTranslationProvider>
-    </TranslationProvider>
-  );
+  // 现在使用统一的PageTranslationProvider和ToolsTranslationProvider
+  // 它们在layout.tsx中配置，这里直接渲染内容
+  return <ToolsPageContent />;
 }

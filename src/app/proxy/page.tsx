@@ -17,15 +17,15 @@ import { ProxyLogsDialog } from "@/components/proxy/proxy-logs-dialog";
 
 export default function ProxyPage() {
   // 检测浏览器语言，设置为英文或中文
-  const userLanguage = typeof navigator !== 'undefined' ? 
-    (navigator.language.startsWith('zh') ? 'zh-CN' : 'en-US') : 'en-US';
+  const userLanguage = typeof navigator !== 'undefined' ?
+    (navigator.language.startsWith('zh') ? 'zh-CN' : 'en') : 'en';
   
   // 从用户区域确定地区
-  const userRegion = userLanguage === 'zh-CN' ? 'CN' : 'US';
+  const userRegion = userLanguage === 'zh-CN' ? 'CN' : '';
   
   return (
     <TranslationProvider 
-      initialDictionary={proxyPageTranslations[userLanguage] || proxyPageTranslations['en-US']}
+      initialDictionary={proxyPageTranslations[userLanguage] || proxyPageTranslations['en']}
       lang={userLanguage.split('-')[0]}
       initialRegion={userRegion}
     >
