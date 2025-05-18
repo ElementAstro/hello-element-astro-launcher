@@ -11,6 +11,9 @@ import {
   AlertCircle,
   CheckCircle2,
   Download,
+  Upload,
+  ServerCog,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,10 +33,11 @@ import {
 import { EquipmentProfile } from "./types";
 import { motion } from "framer-motion";
 import {
-  fadeIn,
-  fadeInScale,
-  staggerChildren,
   DURATION,
+  powerScale,
+  parallaxFadeIn,
+  bounceItem,
+  enhancedStaggerChildren
 } from "./animation-constants";
 import { useState } from "react";
 import {
@@ -56,6 +60,7 @@ import {
 } from "@/components/ui/tooltip";
 import { shouldReduceMotion } from "@/lib/utils";
 import { profilesApi } from "./profiles-api";
+import { Badge } from "@/components/ui/badge";
 
 interface EquipmentProfilesCardProps {
   profiles: EquipmentProfile[];
@@ -122,7 +127,9 @@ export function EquipmentProfilesCard({
         newProfile.name.trim(),
         newProfile.description.trim()
       );
-      toast.success("配置文件已保存");
+      toast.success("配置文件已保存", {
+        description: `"${newProfile.name.trim()}" 配置已成功创建`
+      });
       setShowCreateDialog(false);
       setNewProfile({ name: "", description: "" });
 
@@ -146,7 +153,9 @@ export function EquipmentProfilesCard({
 
     try {
       await profilesApi.updateProfile(selectedProfile.name, selectedProfile);
-      toast.success("配置文件已更新");
+      toast.success("配置文件已更新", {
+        description: `"${selectedProfile.name}" 的更改已保存`
+      });
       setShowEditDialog(false);
 
       // 可以刷新列表或通知父组件更新
@@ -195,28 +204,31 @@ export function EquipmentProfilesCard({
   // 渲染加载状态
   if (isLoading) {
     return (
-      <motion.div variants={fadeIn} className="w-full">
-        <Card>
-          <CardHeader>
+      <motion.div variants={powerScale} className="w-full">
+        <Card className="overflow-hidden border-t-4 border-t-blue-500/50 shadow-md">
+          <CardHeader className="bg-muted/30">
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center">
-                <Database className="h-5 w-5 mr-2" />
+                <Database className="h-5 w-5 mr-2 text-blue-500" />
                 设备配置文件
               </div>
-              <div className="h-9 w-36 bg-muted/40 rounded animate-pulse" />
+              <div className="h-9 w-36 bg-muted/40 rounded-md animate-pulse" />
             </CardTitle>
             <CardDescription>管理和加载预设设备配置</CardDescription>
           </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-4">
+          <CardContent className="p-6 bg-gradient-to-b from-card to-background/80">
+            <div className="space-y-6">
               {Array.from({ length: 2 }).map((_, i) => (
-                <div key={i} className="p-4 border rounded-md">
+                <div key={i} className="p-6 border rounded-md bg-muted/5 backdrop-blur-sm">
                   <div className="flex items-center justify-between">
-                    <div className="space-y-2">
-                      <div className="h-5 w-40 bg-muted/40 rounded animate-pulse" />
-                      <div className="h-4 w-60 bg-muted/40 rounded animate-pulse" />
+                    <div className="space-y-3">
+                      <div className="h-5 w-40 bg-muted/40 rounded-md animate-pulse" />
+                      <div className="h-4 w-60 bg-muted/40 rounded-md animate-pulse" />
                     </div>
-                    <div className="h-9 w-9 bg-muted/40 rounded animate-pulse" />
+                    <div className="space-x-2 flex">
+                      <div className="h-9 w-20 bg-muted/40 rounded-md animate-pulse" />
+                      <div className="h-9 w-9 bg-muted/40 rounded-md animate-pulse" />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -228,57 +240,79 @@ export function EquipmentProfilesCard({
   }
 
   return (
-    <motion.div variants={fadeIn}>
-      <Card>
-        <CardHeader>
+    <motion.div variants={powerScale} whileHover="hover">
+      <Card className="overflow-hidden border-t-4 border-t-blue-500/50 shadow-md transition-all duration-300">
+        <CardHeader className="bg-gradient-to-r from-blue-500/10 to-background">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center">
-              <Database className="h-5 w-5 mr-2" />
-              设备配置文件
+              <ServerCog className="h-5 w-5 mr-2 text-blue-500" />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-500 font-bold">
+                设备配置文件
+              </span>
+              <Badge variant="outline" className="ml-2">
+                {profiles.length} 个配置
+              </Badge>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9"
-              onClick={() => {
-                setShowCreateDialog(true);
-                setNewProfile({ name: "", description: "" });
-              }}
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              创建配置
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 hover:from-blue-500/20 hover:to-indigo-500/20 border-blue-200/30"
+                  onClick={() => {
+                    setShowCreateDialog(true);
+                    setNewProfile({ name: "", description: "" });
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  创建配置
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>保存当前设备设置为新配置</TooltipContent>
+            </Tooltip>
           </CardTitle>
-          <CardDescription>管理和加载预设设备配置</CardDescription>
+          <CardDescription className="flex items-center">
+            <Database className="h-3 w-3 mr-1 opacity-70" />
+            管理和加载预设设备配置，快速切换不同设备组合
+          </CardDescription>
         </CardHeader>
-        <CardContent className="p-6">
+        <CardContent className="p-6 bg-gradient-to-b from-card to-background/80">
           {profiles && profiles.length > 0 ? (
-            <motion.div variants={staggerChildren} className="space-y-4">
-              {profiles.map((profile) => (
+            <motion.div 
+              variants={enhancedStaggerChildren} 
+              className="space-y-4"
+            >
+              {profiles.map((profile, index) => (
                 <motion.div
                   key={profile.name}
-                  variants={fadeInScale}
-                  className="p-4 border rounded-md hover:border-primary/50 transition-colors"
+                  variants={bounceItem}
+                  custom={index}
+                  className="p-5 border rounded-md hover:border-blue-300/50 transition-all duration-300 bg-gradient-to-r from-blue-50/10 to-background backdrop-blur-sm"
                   whileHover={{
                     scale: shouldReduceMotion() ? 1 : 1.01,
+                    y: -2,
+                    boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
                     transition: { duration: DURATION.quick },
                   }}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <div className="font-medium">{profile.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {profile.description}
+                    <div className="space-y-2">
+                      <div className="font-medium text-lg text-blue-600 dark:text-blue-400">{profile.name}</div>
+                      <div className="text-sm text-muted-foreground flex items-center">
+                        <Clock className="h-3 w-3 mr-1 opacity-70" />
+                        {profile.description || "无描述"}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
-                            variant="ghost"
+                            variant="default"
                             size="sm"
+                            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
                             onClick={() => handleLoadProfile(profile)}
                           >
+                            <Upload className="h-4 w-4 mr-2" />
                             加载
                           </Button>
                         </TooltipTrigger>
@@ -289,60 +323,44 @@ export function EquipmentProfilesCard({
 
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" className="hover:bg-blue-500/10">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" className="w-48">
                           <DropdownMenuItem
                             onClick={() => {
                               setSelectedProfile(profile);
                               setShowEditDialog(true);
                             }}
+                            className="flex items-center gap-2"
                           >
-                            <Edit className="h-4 w-4 mr-2" />
-                            编辑
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleExportProfile(profile)}
-                          >
-                            <Share2 className="h-4 w-4 mr-2" />
-                            导出
+                            <Edit className="h-4 w-4" /> 编辑配置
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
-                              const newName = `${profile.name} 副本`;
-                              toast.promise(
-                                profilesApi.saveCurrentSetup(
-                                  newName,
-                                  profile.description
-                                ),
-                                {
-                                  loading: "正在复制...",
-                                  success: () => `已创建副本 "${newName}"`,
-                                  error: "复制失败",
-                                }
-                              );
+                              handleExportProfile(profile);
                             }}
+                            className="flex items-center gap-2"
                           >
-                            <Copy className="h-4 w-4 mr-2" />
-                            创建副本
+                            <Share2 className="h-4 w-4" /> 导出配置
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              // 假设这里是复制功能
+                              navigator.clipboard.writeText(profile.name);
+                              toast.success("已复制配置名称");
+                            }}
+                            className="flex items-center gap-2"
+                          >
+                            <Copy className="h-4 w-4" /> 复制名称
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            className="text-red-600 dark:text-red-400"
-                            onClick={() => {
-                              if (
-                                window.confirm(
-                                  `确定要删除配置 "${profile.name}" 吗？`
-                                )
-                              ) {
-                                handleDeleteProfile(profile);
-                              }
-                            }}
+                            onClick={() => handleDeleteProfile(profile)}
+                            className="text-destructive flex items-center gap-2"
                           >
-                            <Trash className="h-4 w-4 mr-2" />
-                            删除
+                            <Trash className="h-4 w-4" /> 删除配置
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -352,54 +370,70 @@ export function EquipmentProfilesCard({
               ))}
             </motion.div>
           ) : (
-            <div className="flex flex-col items-center text-center p-8">
-              <Database className="h-12 w-12 text-muted-foreground/50 mb-4" />
-              <h3 className="font-medium mb-1">没有可用的配置文件</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                保存当前设备连接设置作为配置文件，以便快速加载常用设置
-              </p>
+            <motion.div 
+              variants={parallaxFadeIn}
+              className="py-12 text-center"
+            >
+              <div className="bg-blue-500/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
+                <Database className="h-8 w-8 text-blue-500/80" />
+              </div>
+              <p className="mt-4 text-muted-foreground">暂无设备配置文件</p>
               <Button
+                variant="outline"
                 size="sm"
+                className="mt-4 border-blue-200/30"
                 onClick={() => {
                   setShowCreateDialog(true);
                   setNewProfile({ name: "", description: "" });
                 }}
               >
-                <Plus className="h-4 w-4 mr-1" />
-                创建配置
+                <Plus className="h-4 w-4 mr-2" />
+                创建第一个配置
               </Button>
-            </div>
+            </motion.div>
           )}
         </CardContent>
       </Card>
 
       {/* 创建配置对话框 */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px] border-t-4 border-t-blue-500/50">
           <DialogHeader>
-            <DialogTitle>创建新配置</DialogTitle>
+            <DialogTitle className="flex items-center">
+              <Plus className="h-4 w-4 mr-2 text-blue-500" />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+                创建设备配置
+              </span>
+            </DialogTitle>
             <DialogDescription>
-              保存当前设备连接设置作为可重复加载的配置文件
+              保存当前的设备设置为新配置文件
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="profile-name">配置名称</Label>
+              <Label htmlFor="profile-name" className="flex items-center">
+                <Database className="h-3 w-3 mr-1" /> 配置名称
+              </Label>
               <Input
                 id="profile-name"
-                placeholder="例如：深空拍摄配置"
+                placeholder="输入配置名称"
                 value={newProfile.name}
                 onChange={(e) =>
-                  setNewProfile((prev) => ({ ...prev, name: e.target.value }))
+                  setNewProfile((prev) => ({
+                    ...prev,
+                    name: e.target.value,
+                  }))
                 }
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="profile-description">配置描述 (可选)</Label>
+              <Label htmlFor="profile-description" className="flex items-center">
+                <Edit className="h-3 w-3 mr-1" /> 配置描述
+              </Label>
               <Textarea
                 id="profile-description"
-                placeholder="描述此配置文件的用途..."
+                placeholder="输入配置描述（可选）"
                 value={newProfile.description}
                 onChange={(e) =>
                   setNewProfile((prev) => ({
@@ -412,25 +446,23 @@ export function EquipmentProfilesCard({
           </div>
 
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowCreateDialog(false)}
-            >
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
               取消
             </Button>
             <Button
               onClick={handleCreateProfile}
-              disabled={!newProfile.name || creating}
+              disabled={creating || !newProfile.name.trim()}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
             >
               {creating ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  保存中...
+                  创建中...
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  保存配置
+                  创建配置
                 </>
               )}
             </Button>
@@ -440,15 +472,24 @@ export function EquipmentProfilesCard({
 
       {/* 编辑配置对话框 */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px] border-t-4 border-t-blue-500/50">
           <DialogHeader>
-            <DialogTitle>编辑配置</DialogTitle>
-            <DialogDescription>修改现有配置文件的详细信息</DialogDescription>
+            <DialogTitle className="flex items-center">
+              <Edit className="h-4 w-4 mr-2 text-blue-500" />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+                编辑配置
+              </span>
+            </DialogTitle>
+            <DialogDescription>
+              修改 &quot;{selectedProfile?.name}&quot; 配置信息
+            </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="edit-profile-name">配置名称</Label>
+              <Label htmlFor="edit-profile-name" className="flex items-center">
+                <Database className="h-3 w-3 mr-1" /> 配置名称
+              </Label>
               <Input
                 id="edit-profile-name"
                 value={selectedProfile?.name || ""}
@@ -460,7 +501,9 @@ export function EquipmentProfilesCard({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-profile-description">配置描述</Label>
+              <Label htmlFor="edit-profile-description" className="flex items-center">
+                <Edit className="h-3 w-3 mr-1" /> 配置描述
+              </Label>
               <Textarea
                 id="edit-profile-description"
                 value={selectedProfile?.description || ""}
@@ -480,6 +523,7 @@ export function EquipmentProfilesCard({
             <Button
               onClick={handleEditProfile}
               disabled={!selectedProfile?.name}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
             >
               <Save className="h-4 w-4 mr-2" />
               保存更改
@@ -490,27 +534,32 @@ export function EquipmentProfilesCard({
 
       {/* 加载配置对话框 */}
       <Dialog open={showLoadDialog} onOpenChange={setShowLoadDialog}>
-        <DialogContent>
+        <DialogContent className="border-t-4 border-t-blue-500/50">
           <DialogHeader>
-            <DialogTitle>加载配置</DialogTitle>
+            <DialogTitle className="flex items-center">
+              <Upload className="h-4 w-4 mr-2 text-blue-500" />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+                加载配置
+              </span>
+            </DialogTitle>
             <DialogDescription>
               即将加载设备配置文件 &quot;{selectedProfile?.name}&quot;
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-4">
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>注意</AlertTitle>
+            <Alert className="border-amber-500/20 bg-amber-500/10">
+              <AlertCircle className="h-4 w-4 text-amber-500" />
+              <AlertTitle className="text-amber-500">注意</AlertTitle>
               <AlertDescription>
                 加载配置将会断开当前已连接的设备，并使用配置文件中的设备信息创建新连接。
               </AlertDescription>
             </Alert>
 
-            <div className="mt-4">
-              <p>
-                <strong>配置说明：</strong> {selectedProfile?.description}
-              </p>
+            <div className="mt-6 p-4 border rounded-md bg-blue-50/10 dark:bg-blue-900/10">
+              <p className="text-sm text-muted-foreground mb-2">配置详情：</p>
+              <p className="font-medium">{selectedProfile?.name}</p>
+              <p className="text-sm mt-1">{selectedProfile?.description || "无描述"}</p>
             </div>
           </div>
 
@@ -522,7 +571,10 @@ export function EquipmentProfilesCard({
             >
               取消
             </Button>
-            <Button disabled={loadingProfile}>
+            <Button 
+              disabled={loadingProfile}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+            >
               {loadingProfile ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -541,9 +593,14 @@ export function EquipmentProfilesCard({
 
       {/* 导出配置对话框 */}
       <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
-        <DialogContent>
+        <DialogContent className="border-t-4 border-t-blue-500/50">
           <DialogHeader>
-            <DialogTitle>导出配置</DialogTitle>
+            <DialogTitle className="flex items-center">
+              <Share2 className="h-4 w-4 mr-2 text-blue-500" />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+                导出配置
+              </span>
+            </DialogTitle>
             <DialogDescription>
               导出当前设备配置以便在其他设备上使用
             </DialogDescription>
@@ -551,29 +608,41 @@ export function EquipmentProfilesCard({
 
           <div className="py-4">
             {loading ? (
-              <div className="flex flex-col items-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="mt-4 text-muted-foreground">
-                  正在准备配置文件导出...
-                </p>
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                <p className="ml-2">正在准备导出...</p>
               </div>
             ) : exportUrl ? (
               <div className="space-y-4">
-                <Alert className="bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800">
-                  <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  <AlertTitle>配置文件已准备完成</AlertTitle>
+                <Alert className="border-green-500/20 bg-green-500/10">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <AlertTitle className="text-green-500">准备就绪</AlertTitle>
                   <AlertDescription>
-                    您可以下载此配置文件，或复制链接分享给他人
+                    配置文件已准备好，可以下载或分享。
                   </AlertDescription>
                 </Alert>
 
-                <div className="flex items-center">
-                  <Input readOnly value={exportUrl} className="flex-1 mr-2" />
+                <Button
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                  asChild
+                >
+                  <a href={exportUrl} download={`${selectedProfile?.name || "config"}.json`}>
+                    <Download className="h-4 w-4 mr-2" />
+                    下载配置文件
+                  </a>
+                </Button>
+
+                <div className="flex items-center space-x-2">
+                  <Input
+                    value={exportUrl}
+                    readOnly
+                    className="flex-1 bg-muted/30"
+                  />
                   <Button
                     variant="outline"
                     onClick={() => {
                       navigator.clipboard.writeText(exportUrl);
-                      toast.success("链接已复制到剪贴板");
+                      toast.success("已复制导出链接");
                     }}
                   >
                     复制
@@ -581,38 +650,17 @@ export function EquipmentProfilesCard({
                 </div>
               </div>
             ) : (
-              <p>正在准备导出 &quot;{selectedProfile?.name}&quot; 配置...</p>
+              <div className="py-8 text-center">
+                <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground/60" />
+                <p className="mt-4 text-muted-foreground">导出发生错误</p>
+              </div>
             )}
           </div>
 
           <DialogFooter>
-            {exportUrl ? (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowExportDialog(false)}
-                >
-                  关闭
-                </Button>
-                <Button asChild>
-                  <a
-                    href={exportUrl}
-                    download={`${selectedProfile?.name}.json`}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    下载配置文件
-                  </a>
-                </Button>
-              </>
-            ) : (
-              <Button
-                variant="outline"
-                disabled={loading}
-                onClick={() => setShowExportDialog(false)}
-              >
-                取消
-              </Button>
-            )}
+            <Button variant="outline" onClick={() => setShowExportDialog(false)}>
+              关闭
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

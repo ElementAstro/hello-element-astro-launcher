@@ -44,6 +44,12 @@ export const fadeInScale: Variants = {
       duration: DURATION.quick,
     },
   },
+  hover: {
+    scale: 1.02,
+    transition: {
+      duration: DURATION.quick,
+    },
+  },
 };
 
 // 从下向上淡入动画
@@ -128,15 +134,18 @@ export const fadeInRight: Variants = {
 
 // 子元素交错动画（用于列表）
 export const staggerChildren: Variants = {
-  initial: {},
+  initial: { opacity: 0 },
   animate: {
+    opacity: 1,
     transition: {
-      staggerChildren: 0.06,
+      staggerChildren: 0.1, 
+      delayChildren: 0.1,
     },
   },
   exit: {
+    opacity: 0,
     transition: {
-      staggerChildren: 0.03,
+      staggerChildren: 0.05,
       staggerDirection: -1,
     },
   },
@@ -181,13 +190,14 @@ export const expandContent: Variants = {
 
 // 骨架屏脉冲动画
 export const skeletonPulse: Variants = {
-  initial: { opacity: 0.6 },
+  initial: { opacity: 0.5 },
   animate: {
-    opacity: [0.6, 0.8, 0.6],
+    opacity: [0.5, 0.8, 0.5],
     transition: {
       duration: 1.5,
+      ease: "easeInOut",
       repeat: Infinity,
-      ease: "linear",
+      repeatType: "loop",
     },
   },
 };
@@ -334,4 +344,156 @@ export const cardHover = {
       ease: EASE.easeOut,
     },
   },
+};
+
+// 新增：超强缩放动画
+export const powerScale: Variants = {
+  initial: { opacity: 0, scale: 0.8 },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 15,
+    },
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.9,
+    transition: {
+      duration: DURATION.quick,
+    },
+  },
+  hover: {
+    scale: 1.02,
+    boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+    transition: {
+      duration: DURATION.quick,
+    },
+  },
+};
+
+// 新增：高级浮动动画
+export const floatAnimation: Variants = {
+  initial: { y: 0 },
+  animate: {
+    y: [-3, 3, -3],
+    transition: {
+      duration: 6,
+      ease: "easeInOut",
+      repeat: Infinity,
+      repeatType: "loop",
+    },
+  },
+};
+
+// 新增：渐入式视差效果
+export const parallaxFadeIn: Variants = {
+  initial: { opacity: 0, y: 20 },
+  animate: (custom = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: custom * 0.2,
+      duration: DURATION.normal,
+      ease: EASE.gentle,
+    },
+  }),
+  exit: (custom = 0) => ({
+    opacity: 0,
+    y: 10,
+    transition: {
+      delay: custom * 0.1,
+      duration: DURATION.quick,
+    },
+  }),
+};
+
+// 新增：高级骨架屏幕脉动动画增强版
+export const enhancedSkeletonPulse: Variants = {
+  initial: { opacity: 0.5 },
+  animate: {
+    opacity: [0.5, 0.8, 0.5],
+    transition: {
+      duration: 1.5,
+      ease: "easeInOut",
+      repeat: Infinity,
+      repeatType: "loop",
+    },
+  },
+};
+
+// 新增：3D卡片悬停效果
+export const card3DHover = {
+  rest: {
+    scale: 1,
+    rotateX: 0,
+    rotateY: 0,
+    boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+    transition: {
+      duration: DURATION.normal,
+      ease: EASE.gentle,
+    },
+  },
+  hover: {
+    scale: 1.02,
+    boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+    transition: {
+      duration: DURATION.normal,
+      ease: EASE.gentle,
+    },
+  },
+};
+
+// 新增：高级交错子项目动画
+export const enhancedStaggerChildren = {
+  initial: { opacity: 0 },
+  animate: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1, 
+      delayChildren: 0.1,
+    },
+  },
+  exit: {
+    opacity: 0,
+    transition: {
+      staggerChildren: 0.05,
+      staggerDirection: -1,
+    },
+  },
+};
+
+// 新增：子项目弹跳动画
+export const bounceItem: Variants = {
+  initial: { opacity: 0, y: 20 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 24,
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: 20,
+    transition: {
+      duration: DURATION.quick,
+    },
+  },
+};
+
+// 新增：进度条加载动画
+export const progressBarAnimation: Variants = {
+  initial: { width: "0%" },
+  animate: { 
+    width: "100%",
+    transition: {
+      duration: 1.5,
+      ease: EASE.easeOut
+    }
+  }
 };

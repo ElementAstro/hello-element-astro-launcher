@@ -1,7 +1,7 @@
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, Server, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { fadeIn, DURATION, EASE } from "./animation-constants";
+import { fadeInUp, DURATION, EASE, parallaxFadeIn, floatAnimation } from "./animation-constants";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -39,24 +39,65 @@ export function PageHeader({ onRefresh }: PageHeaderProps) {
 
   return (
     <motion.div
-      className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
-      variants={fadeIn}
+      className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative"
+      variants={fadeInUp}
       initial="initial"
       animate="animate"
       whileHover={{ scale: 1.005 }}
       transition={{ duration: DURATION.quick, ease: EASE.gentle }}
     >
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t(pageHeader.title)}</h1>
-        <p className="text-muted-foreground">{t(pageHeader.description)}</p>
+      <div className="relative z-10">
+        {/* 添加背景装饰元素 */}
+        <motion.div 
+          className="absolute -z-10 -left-4 -top-4 w-16 h-16 rounded-full bg-primary/5 blur-xl"
+          variants={floatAnimation}
+          animate="animate"
+        />
+        <motion.div
+          variants={parallaxFadeIn}
+          custom={0}
+          className="flex items-center gap-2"
+        >
+          <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+            <Server className="h-5 w-5" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            {t(pageHeader.title)}
+          </h1>
+        </motion.div>
+        <motion.p 
+          variants={parallaxFadeIn} 
+          custom={1} 
+          className="text-muted-foreground mt-1"
+        >
+          {t(pageHeader.description)}
+        </motion.p>
+        
+        {/* 添加状态指示器 */}
+        <motion.div 
+          variants={parallaxFadeIn} 
+          custom={2}
+          className="mt-2 flex items-center text-xs text-muted-foreground"
+        >
+          <div className="flex items-center mr-4">
+            <span className="w-2 h-2 rounded-full bg-green-500 mr-1.5 animate-pulse"></span>
+            <span>系统运行正常</span>
+          </div>
+          <div className="flex items-center">
+            <Activity className="h-3 w-3 mr-1.5 text-primary/70" />
+            <span>设备状态良好</span>
+          </div>
+        </motion.div>
       </div>
+
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="relative overflow-hidden"
-          >            {isRefreshing ? (
+            className="relative overflow-hidden bg-gradient-to-r from-primary to-primary/80 text-primary-foreground hover:opacity-90"
+          >
+            {isRefreshing ? (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -77,7 +118,7 @@ export function PageHeader({ onRefresh }: PageHeaderProps) {
             )}
             {isRefreshing && (
               <motion.div
-                className="absolute bottom-0 left-0 h-1 bg-primary/30"
+                className="absolute bottom-0 left-0 h-1 bg-primary-foreground/30"
                 initial={{ width: 0 }}
                 animate={{ width: "100%" }}
                 transition={{ duration: 2, ease: "linear" }}

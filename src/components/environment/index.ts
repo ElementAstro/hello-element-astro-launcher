@@ -1,5 +1,16 @@
 // Constants
-export { fadeIn, staggerChildren } from "./animation-constants";
+export { 
+  fadeIn, 
+  staggerChildren, 
+  enhancedStaggerChildren, 
+  parallaxFadeIn,
+  floatAnimation,
+  powerScale,
+  enhancedSkeletonPulse,
+  progressBarAnimation,
+  bounceItem,
+  card3DHover
+} from "./animation-constants";
 
 // Types
 export type {

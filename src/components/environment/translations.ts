@@ -67,6 +67,10 @@ export const translationKeys = {
     firmwareVersion: "environment.equipmentItem.firmwareVersion",
     lastConnection: "environment.equipmentItem.lastConnection",
     diagnostics: "environment.equipmentItem.diagnostics",
+    runningDiagnostics: "environment.equipmentItem.runningDiagnostics",
+    diagnosticsSuccess: "environment.equipmentItem.diagnosticsSuccess",
+    diagnosticsWarning: "environment.equipmentItem.diagnosticsWarning",
+    diagnosticsError: "environment.equipmentItem.diagnosticsError",
   },
 
   // 设备列表

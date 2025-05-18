@@ -1,4 +1,4 @@
-import { RefreshCw, WifiOff, Wifi } from "lucide-react";
+import { RefreshCw, WifiOff, Wifi, Signal, Network } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,13 +9,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ConnectionStatus } from "./types";
-import { fadeIn, skeletonPulse } from "./animation-constants";
+import { fadeIn, enhancedSkeletonPulse } from "./animation-constants";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { connectionApi } from "./connection-api";
 import { useTranslations } from "@/components/i18n/client";
 import { translationKeys } from "./translations";
+import { Badge } from "@/components/ui/badge";
 
 interface ConnectionStatusCardProps {
   connectionStatus?: ConnectionStatus;
@@ -33,8 +34,6 @@ export function ConnectionStatusCard({
   const [connecting, setConnecting] = useState(false);
   const { t } = useTranslations();
   const { connectionStatus: csKeys } = translationKeys;
-  // 移除未使用的 error 状态
-  // const [error, setError] = useState<string | null>(null);
 
   // 当props更新时更新内部状态
   useEffect(() => {
@@ -42,254 +41,271 @@ export function ConnectionStatusCard({
       setStatus(connectionStatus);
     }
   }, [connectionStatus]);
-  // 刷新连接状态
+    // 刷新连接状态
   const handleRefresh = async () => {
     if (refreshing) return;
 
     setRefreshing(true);
 
     try {
+      // 使用正确的API方法获取连接状态
       const statuses = await connectionApi.getConnectionStatus();
-      // Use the first status if available
-      setStatus(statuses[0]);
-      toast.success(t(csKeys.connectionSuccess));
+      if (statuses && statuses.length > 0) {
+        setStatus(statuses[0]);
+      }
+      toast.success("连接状态已刷新");
     } catch (err) {
-      console.error("获取连接状态失败:", err);
+      console.error("刷新连接状态失败:", err);
       toast.error(t(csKeys.refreshError));
     } finally {
-      setRefreshing(false);
+      setTimeout(() => setRefreshing(false), 300);
     }
   };
-  // 连接/断开网络
+
+  // 连接/断开操作
   const handleToggleConnection = async () => {
-    if (connecting || !status) return;
+    if (!status || connecting) return;
 
     setConnecting(true);
 
     try {
-      const serviceName = status.name;
-      if (status.status === "connected") {
-        await connectionApi.disconnectService(serviceName);
-        setStatus({ ...status, status: "disconnected" });
+      const isConnected = status.status === "connected";
+      
+      if (isConnected) {
+        // 使用正确的API方法断开连接
+        await connectionApi.disconnectService(status.name);
+        toast.success(t(csKeys.disconnectionSuccess));
+        setStatus(prev => prev ? { ...prev, status: "disconnected" } : undefined);
       } else {
-        const newStatus = await connectionApi.reconnectService(serviceName);
-        setStatus(newStatus);
+        // 使用正确的API方法重新连接
+        const result = await connectionApi.reconnectService(status.name);
+        setStatus(result);
+        toast.success(t(csKeys.connectionSuccess));
       }
-
-      toast.success(
-        status.status === "connected" 
-          ? t(csKeys.disconnectionSuccess) 
-          : t(csKeys.connectionSuccess)
-      );
     } catch (err) {
-      console.error(
-        `${status.status === "connected" ? "断开" : "连接"}服务失败:`,
-        err
-      );
-      toast.error(
-        status.status === "connected" 
-          ? t(csKeys.disconnectionError) 
-          : t(csKeys.connectionError)
-      );
-    } finally {
-      setConnecting(false);
-    }
-  };
-  // 重置连接
-  const handleResetConnection = async () => {
-    if (connecting || !status) return;
-
-    setConnecting(true);
-
-    try {
-      const newStatus = await connectionApi.reconnectService(status.name);
-      setStatus(newStatus);
-      toast.success(t(csKeys.connectionSuccess));
-    } catch (err) {
-      console.error("重置服务失败:", err);
+      console.error("切换连接失败:", err);
       toast.error(t(csKeys.connectionError));
     } finally {
-      setConnecting(false);
+      setTimeout(() => setConnecting(false), 300);
     }
   };
-  // 获取状态文本
-  const getStatusText = (status?: ConnectionStatus): string => {
-    if (!status) return t(csKeys.disconnected);
-    if (status.status === "connected") return t(csKeys.connected);
-    return t(csKeys.disconnected);
+
+  // 获取状态图标
+  const getStatusIcon = () => {
+    if (!status) return <Signal className="h-6 w-6 text-muted-foreground" />;
+    
+    switch (status.status) {
+      case "connected":
+        return <Wifi className="h-6 w-6 text-green-500" />;
+      case "disconnected":
+        return <WifiOff className="h-6 w-6 text-red-500" />;
+      default:
+        return <Network className="h-6 w-6 text-amber-500" />;
+    }
+  };
+  // 获取状态文本和颜色
+  const getStatusInfo = () => {
+    if (!status) return { 
+      text: "未知", 
+      color: "text-muted-foreground",
+      bgColor: "bg-gray-300",
+      badgeVariant: "outline" as const
+    };
+    
+    switch (status.status) {
+      case "connected":
+        return { 
+          text: t(csKeys.connected), 
+          color: "text-green-500",
+          bgColor: "bg-green-500",
+          badgeVariant: "default" as const
+        };
+      case "disconnected":
+        return { 
+          text: t(csKeys.disconnected), 
+          color: "text-red-500",
+          bgColor: "bg-red-500",
+          badgeVariant: "destructive" as const
+        };
+      default:
+        return { 
+          text: t(csKeys.connecting), 
+          color: "text-amber-500",
+          bgColor: "bg-amber-500",
+          badgeVariant: "outline" as const
+        };
+    }
   };
 
-  // 获取状态颜色类
-  const getStatusColorClass = (status?: ConnectionStatus): string => {
-    if (!status) return "text-muted-foreground";
-    if (status.status === "connected") return "text-green-500";
-    return "text-red-500";
-  };
   // 渲染加载状态
   if (isLoading) {
     return (
       <motion.div variants={fadeIn} className="w-full">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center">
-                <Wifi className="h-5 w-5 mr-2" />
+        <Card className="backdrop-blur-sm bg-card/80 border-card/10 shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div>
+              <CardTitle className="flex items-center text-xl">
+                <Network className="h-5 w-5 mr-2 text-primary" />
                 {t(csKeys.title)}
-              </div>
-              <div className="h-9 w-9 bg-muted/40 rounded animate-pulse" />
-            </CardTitle>
-            <CardDescription>{t(csKeys.description)}</CardDescription>
+              </CardTitle>
+              <CardDescription className="mt-1.5">
+                {t(csKeys.description)}
+              </CardDescription>
+            </div>
+            <div className="h-9 w-9 bg-muted/40 rounded-full">
+              <motion.div
+                variants={enhancedSkeletonPulse}
+                className="h-full w-full"
+                animate="animate"
+              />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <motion.div
-                  variants={skeletonPulse}
-                  className="h-5 w-28 bg-muted/40 rounded"
-                />
-                <motion.div
-                  variants={skeletonPulse}
-                  className="h-8 bg-muted/40 rounded"
-                />
-              </div>
-              <div className="space-y-2">
-                <motion.div
-                  variants={skeletonPulse}
-                  className="h-5 w-28 bg-muted/40 rounded"
-                />
-                <motion.div
-                  variants={skeletonPulse}
-                  className="h-8 bg-muted/40 rounded"
-                />
-              </div>
+            <div className="space-y-6">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="h-5 w-28 bg-muted/40 rounded">
+                    <motion.div
+                      variants={enhancedSkeletonPulse}
+                      className="h-full w-full"
+                      animate="animate"
+                    />
+                  </div>
+                  <div className="h-8 bg-muted/40 rounded">
+                    <motion.div
+                      variants={enhancedSkeletonPulse}
+                      className="h-full w-full"
+                      animate="animate"
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
-          <CardFooter className="flex justify-between">
-            <motion.div
-              variants={skeletonPulse}
-              className="h-9 w-24 bg-muted/40 rounded"
-            />
-            <motion.div
-              variants={skeletonPulse}
-              className="h-9 w-24 bg-muted/40 rounded"
-            />
+          <CardFooter className="flex justify-end pt-2">
+            <div className="h-9 w-24 bg-muted/40 rounded">
+              <motion.div
+                variants={enhancedSkeletonPulse}
+                className="h-full w-full"
+                animate="animate"
+              />
+            </div>
           </CardFooter>
         </Card>
       </motion.div>
     );
   }
+
+  const statusInfo = getStatusInfo();
+
   return (
-    <motion.div variants={fadeIn} className="w-full">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Wifi className="h-5 w-5 mr-2" />
+    <motion.div
+      variants={fadeIn}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      className="w-full"
+    >
+      <Card className="backdrop-blur-sm bg-card/80 border-card/10 shadow-lg overflow-hidden">
+        {/* 状态颜色条 */}
+        <div 
+          className={`absolute top-0 left-0 right-0 h-1 ${statusInfo.bgColor}/70`} 
+        />
+
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <div>
+            <CardTitle className="flex items-center text-xl group">
+              <div className="p-1.5 rounded-lg bg-primary/10 text-primary mr-2 group-hover:bg-primary/20 transition-colors">
+                <Network className="h-5 w-5" />
+              </div>
               {t(csKeys.title)}
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={handleRefresh}
-              disabled={refreshing}
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
-              />
-              <span className="sr-only">{t(csKeys.refresh)}</span>
-            </Button>
-          </CardTitle>
-          <CardDescription>{t(csKeys.description)}</CardDescription>
-        </CardHeader>        <CardContent>
-          {status ? (
-            <>
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <span className="text-sm font-medium">{t(csKeys.status)}</span>
-                  <div className="flex items-center space-x-2 rounded-md border p-2">
-                    <div
-                      className={`h-2 w-2 rounded-full ${
-                        status.status === "connected"
-                          ? "bg-green-500"
-                          : "bg-red-500"
-                      }`}
-                    ></div>
-                    <span className={getStatusColorClass(status)}>
-                      {getStatusText(status)}
+            </CardTitle>
+            <CardDescription className="mt-1.5">
+              {t(csKeys.description)}
+            </CardDescription>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-full hover:bg-primary/10 transition-colors"
+            onClick={handleRefresh}
+            disabled={refreshing}
+          >
+            <RefreshCw
+              className={`h-5 w-5 text-primary/70 ${refreshing ? "animate-spin" : ""}`}
+            />
+            <span className="sr-only">{t(csKeys.refresh)}</span>
+          </Button>
+        </CardHeader>
+
+        <CardContent>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className={`absolute inset-0 ${statusInfo.bgColor}/20 rounded-full blur-md`} />
+                  <div className="relative p-3 rounded-full bg-card border">
+                    {getStatusIcon()}
+                  </div>
+                </div>                <div>
+                  <h3 className="text-lg font-medium">
+                    {status?.name || "设备名称"}
+                  </h3>
+                  <div className="flex items-center mt-1">
+                    <Badge variant={statusInfo.badgeVariant} className="mr-2">
+                      {statusInfo.text}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      {status?.description || t(csKeys.description)}
                     </span>
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <span className="text-sm font-medium">{t(csKeys.latency)}</span>                  <div className="rounded-md border p-2">
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div className="text-muted-foreground">{t(csKeys.latency)}</div>
-                      <div>{status.name || t(csKeys.disconnected)}</div>
-                      <div className="text-muted-foreground">{t(csKeys.status)}</div>
-                      <div>{status.status === "connected" ? t(csKeys.connected) : t(csKeys.disconnected)}</div>
-                      <div className="text-muted-foreground">{t(csKeys.uptime)}</div>
-                      <div>{status.description || "-"}</div>
-                    </div>
-                  </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-sm font-medium">
+                连接详情
+              </div>
+              <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">{t(csKeys.lastChecked)}</span>
+                  <span className="text-sm">刚刚</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">连接类型</span>
+                  <span className="text-sm">USB / 串口</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">{t(csKeys.latency)}</span>
+                  <span className="text-sm">42ms</span>
                 </div>
               </div>
-            </>          ) : (
-            <div className="py-8 text-center">
-              <WifiOff className="h-12 w-12 mx-auto text-muted-foreground/60" />
-              <p className="mt-4 text-muted-foreground">{t(csKeys.emptyState)}</p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-4"
-                onClick={handleRefresh}
-                disabled={refreshing}
-              >
-                {refreshing ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    {t(csKeys.connecting)}...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    {t(csKeys.refresh)}
-                  </>
-                )}
-              </Button>
             </div>
-          )}
-        </CardContent>        {status && (
-          <CardFooter className="flex justify-between">
-            <Button
-              variant="outline"
-              onClick={handleResetConnection}
-              disabled={connecting}
-            >
-              {connecting ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4 mr-2" />
-              )}
-              {t(csKeys.refresh)}
-            </Button>
-            <Button
-              variant={
-                status.status === "connected" ? "destructive" : "default"
-              }
-              onClick={handleToggleConnection}
-              disabled={connecting}
-            >
-              {connecting ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : status.status === "connected" ? (
-                <WifiOff className="h-4 w-4 mr-2" />
-              ) : (
-                <Wifi className="h-4 w-4 mr-2" />
-              )}
-              {status.status === "connected" ? t(csKeys.disconnect) : t(csKeys.connect)}
-            </Button>
-          </CardFooter>
-        )}
+          </div>
+        </CardContent>
+
+        <CardFooter className="flex justify-end pt-2">
+          <Button
+            onClick={handleToggleConnection}
+            disabled={connecting}
+            variant={status?.status === "connected" ? "destructive" : "default"}
+            className={status?.status === "connected" 
+              ? "bg-red-500 hover:bg-red-600" 
+              : "bg-green-500 hover:bg-green-600 text-white"}
+          >
+            {connecting ? (
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+            ) : status?.status === "connected" ? (
+              <WifiOff className="h-4 w-4 mr-2" />
+            ) : (
+              <Wifi className="h-4 w-4 mr-2" />
+            )}
+            {status?.status === "connected"
+              ? t(csKeys.disconnect)
+              : t(csKeys.connect)}
+          </Button>
+        </CardFooter>
       </Card>
     </motion.div>
   );

@@ -13,7 +13,7 @@ import {
   EquipmentProfilesCard,
   ConnectionStatusCard,
   ConnectionLogsCard,
-  staggerChildren,
+  enhancedStaggerChildren,
   ConnectionStatus,
   LogEntry,
   EquipmentProfile,
@@ -21,6 +21,35 @@ import {
 import { TranslationProvider } from "@/components/i18n";
 import { commonTranslations } from "@/components/i18n/common-translations";
 import { translationKeys } from "@/components/environment/translations";
+
+// 添加粒子效果组件
+const ParticleBackground = () => (
+  <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+    {Array.from({ length: 30 }).map((_, i) => (
+      <motion.div
+        key={i}
+        className="absolute w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-primary/5"
+        initial={{ 
+          x: `${Math.random() * 100}%`, 
+          y: `${Math.random() * 100}%`,
+          opacity: Math.random() * 0.5 + 0.3
+        }}
+        animate={{ 
+          y: [`${Math.random() * 100}%`, `${Math.random() * 100}%`],
+          opacity: [Math.random() * 0.5 + 0.3, Math.random() * 0.3 + 0.1, Math.random() * 0.5 + 0.3]
+        }}
+        transition={{ 
+          duration: Math.random() * 20 + 10, 
+          repeat: Infinity, 
+          ease: "linear" 
+        }}
+        style={{ 
+          scale: Math.random() * 0.5 + 0.5
+        }}
+      />
+    ))}
+  </div>
+);
 
 function EnvironmentPageContent() {
   const [activeTab, setActiveTab] = useState("system");
@@ -127,40 +156,51 @@ function EnvironmentPageContent() {
       lang="en">
       <AppLayout>
         <motion.div
-          className="flex-1 overflow-auto pb-16 md:pb-0"
+          className="flex-1 overflow-auto pb-16 md:pb-0 relative bg-gradient-to-b from-background to-background/95"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.5 }}
         >
-          <div className="container py-6 space-y-6">
+          {/* 添加粒子背景 */}
+          <ParticleBackground />
+          
+          {/* 添加页面顶部装饰 */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/30 via-primary/10 to-primary/30" />
+          
+          <div className="container py-8 space-y-8">
             <PageHeader onRefresh={handleRefreshDevices} />
 
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="system">System</TabsTrigger>
-                <TabsTrigger value="equipment">Equipment</TabsTrigger>
-                <TabsTrigger value="connections">Connections</TabsTrigger>
+            <Tabs 
+              value={activeTab} 
+              onValueChange={setActiveTab} 
+              className="relative z-10 mt-4"
+            >
+              <TabsList className="grid w-full grid-cols-3 backdrop-blur-sm bg-card/30">
+                <TabsTrigger value="system">系统</TabsTrigger>
+                <TabsTrigger value="equipment">设备</TabsTrigger>
+                <TabsTrigger value="connections">连接</TabsTrigger>
               </TabsList>
 
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeTab}
-                  variants={staggerChildren}
+                  variants={enhancedStaggerChildren}
                   initial="initial"
                   animate="animate"
                   exit="exit"
+                  className="mt-8"
                 >
-                  <TabsContent value="system" className="space-y-6 mt-6">
+                  <TabsContent value="system" className="space-y-8">
                     <SystemInformationCard systemInfo={extendedSystemInfo} />
                     <SystemSettingsCard />
                   </TabsContent>
 
-                  <TabsContent value="equipment" className="space-y-6 mt-6">
+                  <TabsContent value="equipment" className="space-y-8">
                     <EquipmentList equipment={equipment} />
                     <EquipmentProfilesCard profiles={equipmentProfiles} />
                   </TabsContent>
 
-                  <TabsContent value="connections" className="space-y-6 mt-6">
+                  <TabsContent value="connections" className="space-y-8">
                     <ConnectionStatusCard connectionStatus={connectionStatuses[0]} />
                     <ConnectionLogsCard logs={connectionLogs.map(log => ({
                       level: log.type,
