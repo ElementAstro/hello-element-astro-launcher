@@ -1,3 +1,5 @@
+"use client";
+
 import { AppLayout } from "@/components/app-layout";
 import { AnimatedSkeleton, SkeletonContainer, SkeletonItem } from "@/components/ui/animated-skeleton";
 import { motion } from "framer-motion";

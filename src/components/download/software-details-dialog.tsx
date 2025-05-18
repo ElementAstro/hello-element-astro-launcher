@@ -12,6 +12,7 @@ import {
   History,
   Settings,
 } from "lucide-react";
+import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -123,10 +124,11 @@ ${t("download.software.releaseDate", { defaultValue: "发布日期" })}: ${
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2">
-              <img
+            <div className="flex items-center gap-2">              <Image
                 src={software.icon || "/placeholder.svg"}
                 alt={software.name}
+                width={40}
+                height={40}
                 className="w-10 h-10 rounded-md"
               />
               <div className="space-y-1">

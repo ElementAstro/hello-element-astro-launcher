@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { motion } from "framer-motion";
 import { AppLayout } from "@/components/app-layout";
 import { useAppStore } from "@/store/store";
 import {
@@ -18,9 +16,7 @@ import {
   LogEntry,
   EquipmentProfile,
 } from "@/components/environment";
-import { TranslationProvider } from "@/components/i18n";
-import { commonTranslations } from "@/components/i18n/common-translations";
-import { translationKeys } from "@/components/environment/translations";
+import { PageTranslationProvider } from "@/i18n/page-provider";
 
 // 添加粒子效果组件
 const ParticleBackground = () => (
@@ -29,22 +25,26 @@ const ParticleBackground = () => (
       <motion.div
         key={i}
         className="absolute w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-primary/5"
-        initial={{ 
-          x: `${Math.random() * 100}%`, 
+        initial={{
+          x: `${Math.random() * 100}%`,
           y: `${Math.random() * 100}%`,
-          opacity: Math.random() * 0.5 + 0.3
+          opacity: Math.random() * 0.5 + 0.3,
         }}
-        animate={{ 
+        animate={{
           y: [`${Math.random() * 100}%`, `${Math.random() * 100}%`],
-          opacity: [Math.random() * 0.5 + 0.3, Math.random() * 0.3 + 0.1, Math.random() * 0.5 + 0.3]
+          opacity: [
+            Math.random() * 0.5 + 0.3,
+            Math.random() * 0.3 + 0.1,
+            Math.random() * 0.5 + 0.3,
+          ],
         }}
-        transition={{ 
-          duration: Math.random() * 20 + 10, 
-          repeat: Infinity, 
-          ease: "linear" 
+        transition={{
+          duration: Math.random() * 20 + 10,
+          repeat: Infinity,
+          ease: "linear",
         }}
-        style={{ 
-          scale: Math.random() * 0.5 + 0.5
+        style={{
+          scale: Math.random() * 0.5 + 0.5,
         }}
       />
     ))}
@@ -52,7 +52,6 @@ const ParticleBackground = () => (
 );
 
 function EnvironmentPageContent() {
-  const [activeTab, setActiveTab] = useState("system");
   const { equipment } = useAppStore();
 
   // Extended system info with default values
@@ -69,13 +68,13 @@ function EnvironmentPageContent() {
       system: {
         free: "256 GB",
         total: "1024 GB",
-        percentUsed: 75
+        percentUsed: 75,
       },
       data: {
         free: "1.5 TB",
         total: "4 TB",
-        percentUsed: 62.5
-      }
+        percentUsed: 62.5,
+      },
     },
     // Additional required properties for ExtendedSystemInfo
     cpuUsage: 45,
@@ -89,7 +88,7 @@ function EnvironmentPageContent() {
     osName: "Windows",
     osVersion: "11",
     hostname: "DESKTOP-USER",
-    uptime: "5h 30m"
+    uptime: "5h 30m",
   };
 
   const connectionStatuses: ConnectionStatus[] = [
@@ -151,88 +150,76 @@ function EnvironmentPageContent() {
   };
 
   return (
-    <TranslationProvider
-      initialDictionary={translationKeys}
-      lang="en">
+    <PageTranslationProvider locale="zh-CN" page="environment">
       <AppLayout>
         <motion.div
-          className="flex-1 overflow-auto pb-16 md:pb-0 relative bg-gradient-to-b from-background to-background/95"
+          className="flex-1 overflow-auto pb-6 md:pb-0 relative bg-gradient-to-b from-background to-background/95"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
           {/* 添加粒子背景 */}
           <ParticleBackground />
-          
+
           {/* 添加页面顶部装饰 */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/30 via-primary/10 to-primary/30" />
-          
-          <div className="container py-8 space-y-8">
-            <PageHeader onRefresh={handleRefreshDevices} />
 
-            <Tabs 
-              value={activeTab} 
-              onValueChange={setActiveTab} 
-              className="relative z-10 mt-4"
+          <div className="container py-3 space-y-2 max-h-screen">
+            <div className="mb-2">
+              <PageHeader onRefresh={handleRefreshDevices} />
+            </div>
+
+            {/* 紧凑布局：使用网格代替标签页 */}
+            <motion.div
+              variants={enhancedStaggerChildren}
+              initial="initial"
+              animate="animate"
+              className="grid grid-cols-1 md:grid-cols-3 gap-3 relative z-10 h-[calc(100vh-130px)] overflow-hidden"
             >
-              <TabsList className="grid w-full grid-cols-3 backdrop-blur-sm bg-card/30">
-                <TabsTrigger value="system">系统</TabsTrigger>
-                <TabsTrigger value="equipment">设备</TabsTrigger>
-                <TabsTrigger value="connections">连接</TabsTrigger>
-              </TabsList>
+              {/* 左侧列：系统信息卡片 + 设备列表 */}
+              <div className="md:col-span-2 space-y-3 h-full overflow-y-auto pr-2">
+                <SystemInformationCard systemInfo={extendedSystemInfo} />
+                <EquipmentList equipment={equipment} />
+                <SystemSettingsCard />
+              </div>
 
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeTab}
-                  variants={enhancedStaggerChildren}
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  className="mt-8"
-                >
-                  <TabsContent value="system" className="space-y-8">
-                    <SystemInformationCard systemInfo={extendedSystemInfo} />
-                    <SystemSettingsCard />
-                  </TabsContent>
-
-                  <TabsContent value="equipment" className="space-y-8">
-                    <EquipmentList equipment={equipment} />
-                    <EquipmentProfilesCard profiles={equipmentProfiles} />
-                  </TabsContent>
-
-                  <TabsContent value="connections" className="space-y-8">
-                    <ConnectionStatusCard connectionStatus={connectionStatuses[0]} />
-                    <ConnectionLogsCard logs={connectionLogs.map(log => ({
-                      level: log.type,
-                      message: log.title,
-                      timestamp: log.timestamp
-                    }))} />
-                  </TabsContent>
-                </motion.div>
-              </AnimatePresence>
-            </Tabs>
+              {/* 右侧列：连接状态 + 设备配置 + 连接日志 */}
+              <div className="md:col-span-1 space-y-3 h-full overflow-y-auto pr-2">
+                <ConnectionStatusCard
+                  connectionStatus={connectionStatuses[0]}
+                />
+                <EquipmentProfilesCard profiles={equipmentProfiles} />
+                <ConnectionLogsCard
+                  logs={connectionLogs.map((log) => ({
+                    level: log.type,
+                    message: log.title,
+                    timestamp: log.timestamp,
+                  }))}
+                />
+              </div>
+            </motion.div>
           </div>
         </motion.div>
       </AppLayout>
-    </TranslationProvider>
+    </PageTranslationProvider>
   );
 }
 
 export default function EnvironmentPage() {
   // 检测浏览器语言，设置为英文或中文
-  const userLanguage = typeof navigator !== 'undefined' ? 
-    (navigator.language.startsWith('zh') ? 'zh-CN' : 'en-US') : 'en-US';
-  
-  // 从用户区域确定地区
-  const userRegion = userLanguage === 'zh-CN' ? 'CN' : 'US';
-  
+  const userLanguage =
+    typeof navigator !== "undefined"
+      ? navigator.language.startsWith("zh")
+        ? "zh-CN"
+        : "en"
+      : "en";
+
   return (
-    <TranslationProvider 
-      initialDictionary={commonTranslations[userLanguage] || commonTranslations['en-US']}
-      lang={userLanguage.split('-')[0]}
-      initialRegion={userRegion}
+    <PageTranslationProvider 
+      locale={userLanguage === "zh-CN" ? "zh-CN" : "en"} 
+      page="environment"
     >
       <EnvironmentPageContent />
-    </TranslationProvider>
+    </PageTranslationProvider>
   );
 }

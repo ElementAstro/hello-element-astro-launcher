@@ -134,10 +134,8 @@ const agents = [
   },
 ];
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(_request: NextRequest, context: { params: { id: string } }) {
+  const { params } = context;
   try {
     const id = params.id;
     const agent = agents.find((a) => a.id === id);
@@ -165,10 +163,8 @@ export async function GET(
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, context: { params: { id: string } }) {
+  const { params } = context;
   try {
     const id = params.id;
     const updates: AgentUpdateParams = await request.json();
@@ -210,7 +206,7 @@ export async function PATCH(
       } as AgentConfig;
     }
 
-    agents[agentIndex] = updatedAgent;
+    agents[agentIndex] = updatedAgent as typeof agents[number];
 
     await new Promise((resolve) => setTimeout(resolve, 300));
 
@@ -227,10 +223,8 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
-  _request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(_request: NextRequest, context: { params: { id: string } }) {
+  const { params } = context;
   try {
     const id = params.id;
 

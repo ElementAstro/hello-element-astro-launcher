@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -482,12 +483,13 @@ export function AccountSettings({
                 variants={slideUp}
                 className="flex flex-col items-center space-y-3"
               >
-                <div className="relative group">
-                  <div className="h-24 w-24 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                    {avatarPreview || specialSettings.avatar ? (
-                      <img
-                        src={avatarPreview || specialSettings.avatar}
+                <div className="relative group">                  <div className="h-24 w-24 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center">                    {(avatarPreview || specialSettings.avatar) ? (
+                      <Image
+                        src={avatarPreview || specialSettings.avatar || ''}
                         alt="用户头像"
+                        width={96}
+                        height={96}
+                        unoptimized
                         className="w-full h-full object-cover"
                       />
                     ) : (
@@ -753,15 +755,14 @@ export function AccountSettings({
               使用身份验证器应用扫描下方二维码，然后输入应用生成的验证码以完成设置。
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="p-4 flex flex-col items-center gap-4">
-            {twoFactorQrCode && (
+          <div className="p-4 flex flex-col items-center gap-4">                {twoFactorQrCode && (
               <div className="border p-2 rounded-md bg-white">
-                {/* 注意：这里应该使用 Next.js 的 Image 组件，但由于简化原因保留 img */}
-                <img
+                <Image
                   src={twoFactorQrCode}
                   alt="双因素认证二维码"
                   width={200}
                   height={200}
+                  unoptimized
                 />
               </div>
             )}

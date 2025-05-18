@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Download, DownloadCloud, Loader2 } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -344,11 +345,12 @@ export function BatchDownloadDialog({
                       className="mr-2 h-3 w-3"
                     />
                     <div className="flex-1 flex items-center gap-1.5">
-                      <div className="w-5 h-5 bg-background rounded-md flex items-center justify-center border overflow-hidden">
-                        {item.icon ? (
-                          <img
+                      <div className="w-5 h-5 bg-background rounded-md flex items-center justify-center border overflow-hidden">                        {item.icon ? (
+                          <Image
                             src={item.icon}
                             alt={item.name}
+                            width={20}
+                            height={20}
                             className="w-full h-full object-cover"
                           />
                         ) : (
